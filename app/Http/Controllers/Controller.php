@@ -19,7 +19,7 @@ namespace App\Http\Controllers;
  * )
  * 
  * @OA\Server(
- *     url="https://pickpackgo.in-sourceit.com",
+ *     url="https://pickpackgo.in-sourceit.com/api",
  *     description="Production Server"
  * )
  * 
