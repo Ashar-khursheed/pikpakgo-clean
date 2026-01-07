@@ -40,7 +40,7 @@ return [
         'paths' => [
             'docs' => storage_path('api-docs'),
             'views' => base_path('resources/views/vendor/l5-swagger'),
-            'base' => env('L5_SWAGGER_BASE_PATH', null),
+            'base' => env('L5_SWAGGER_BASE_PATH', '/api'),
             'swagger_ui_assets_path' => env('L5_SWAGGER_UI_ASSETS_PATH', 'vendor/swagger-api/swagger-ui/dist/'),
             'excludes' => [],
         ],

@@ -35,4 +35,24 @@ return [
         ],
     ],
 
+    'hotelbeds' => [
+        'api_key' => env('HOTELBEDS_API_KEY'),
+        'secret' => env('HOTELBEDS_SECRET'),
+        'base_url' => env('HOTELBEDS_BASE_URL', 'https://api.test.hotelbeds.com'),
+    ],
+
+    'ownerrez' => [
+        'username' => env('OWNERREZ_USERNAME'),
+        'password' => env('OWNERREZ_PASSWORD'),
+        'base_url' => env('OWNERREZ_BASE_URL', 'https://faststage.ownerrez.com'),
+        'environment' => env('OWNERREZ_ENVIRONMENT', 'sandbox'),
+    ],
+
+    'authorize_net' => [
+        'api_login_id' => env('AUTHORIZE_NET_API_LOGIN_ID'),
+        'transaction_key' => env('AUTHORIZE_NET_TRANSACTION_KEY'),
+        'base_url' => env('AUTHORIZE_NET_BASE_URL', 'https://apitest.authorize.net/xml/v1/request.api'),
+        'environment' => env('AUTHORIZE_NET_ENVIRONMENT', 'sandbox'),
+    ],
+
 ];
