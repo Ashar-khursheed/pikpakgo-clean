@@ -1,21 +1,25 @@
 {
     "openapi": "3.0.0",
     "info": {
-        "title": "PikPakGo API Documentation",
-        "description": "Complete API documentation for PikPakGo - Unified Travel Marketplace",
+        "title": "PikPakGo API",
+        "description": "PikPakGo Travel Marketplace API - Hotels, Vacation Rentals & More",
         "contact": {
+            "name": "PikPakGo Support",
             "email": "reservations@pikpakgo.com"
         },
         "version": "1.0.0"
     },
     "servers": [
         {
-            "url": "http://localhost:8000/api",
+            "url": "http://localhost:8000",
             "description": "Local Development Server"
         },
         {
-            "url": "https://api.pikpakgo.com/api",
+            "url": "https://pickpackgo.in-sourceit.com/api",
             "description": "Production Server"
+        },
+        {
+            "url": "/api"
         }
     ],
     "paths": {
@@ -326,6 +330,1082 @@
                 ]
             }
         },
+        "/api/hotelbeds/search": {
+            "post": {
+                "tags": [
+                    "Hotelbeds"
+                ],
+                "summary": "Search hotels",
+                "description": "Search for available hotels based on destination, dates, and occupancy",
+                "operationId": "353c28f3f8769f700c4ab9484d139f04",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "checkIn",
+                                    "checkOut",
+                                    "destinationCode"
+                                ],
+                                "properties": {
+                                    "checkIn": {
+                                        "description": "Check-in date (YYYY-MM-DD)",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2024-12-25"
+                                    },
+                                    "checkOut": {
+                                        "description": "Check-out date (YYYY-MM-DD)",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2024-12-27"
+                                    },
+                                    "destinationCode": {
+                                        "description": "Destination code",
+                                        "type": "string",
+                                        "example": "NYC"
+                                    },
+                                    "occupancies": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "rooms": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "adults": {
+                                                    "type": "integer",
+                                                    "example": 2
+                                                },
+                                                "children": {
+                                                    "type": "integer",
+                                                    "example": 0
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful search",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Validation error"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/hotelbeds/hotels/{hotelCode}": {
+            "get": {
+                "tags": [
+                    "Hotelbeds"
+                ],
+                "summary": "Get hotel details",
+                "description": "Retrieve detailed information about a specific hotel",
+                "operationId": "986cbb9785d0a9bac2fde08a5ae6f47d",
+                "parameters": [
+                    {
+                        "name": "hotelCode",
+                        "in": "path",
+                        "description": "Hotel code",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "12345"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Hotel details retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Hotel not found"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/hotelbeds/check-availability": {
+            "post": {
+                "tags": [
+                    "Hotelbeds"
+                ],
+                "summary": "Check hotel availability",
+                "description": "Check availability and rates for selected rooms",
+                "operationId": "034bfa2692ccd2130b523c4cb0f1192a",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "rooms"
+                                ],
+                                "properties": {
+                                    "rooms": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "upselling": {
+                                        "type": "boolean",
+                                        "example": false
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Availability checked successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Validation error"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/hotelbeds/bookings": {
+            "post": {
+                "tags": [
+                    "Hotelbeds"
+                ],
+                "summary": "Create hotel booking",
+                "description": "Create a new hotel booking reservation",
+                "operationId": "e1648b111304f591025b2bc3b77ddc7b",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "holder",
+                                    "rooms"
+                                ],
+                                "properties": {
+                                    "holder": {
+                                        "properties": {
+                                            "name": {
+                                                "type": "string",
+                                                "example": "John"
+                                            },
+                                            "surname": {
+                                                "type": "string",
+                                                "example": "Doe"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "rooms": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "clientReference": {
+                                        "type": "string",
+                                        "example": "CLIENT-REF-12345"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Booking created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Validation error"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/hotelbeds/bookings/{bookingReference}": {
+            "get": {
+                "tags": [
+                    "Hotelbeds"
+                ],
+                "summary": "Get booking details",
+                "description": "Retrieve details of a specific booking",
+                "operationId": "b25a26a3bf68ed41eb722aaf12c77668",
+                "parameters": [
+                    {
+                        "name": "bookingReference",
+                        "in": "path",
+                        "description": "Booking reference number",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "1-12345"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Booking details retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Booking not found"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Hotelbeds"
+                ],
+                "summary": "Cancel booking",
+                "description": "Cancel an existing hotel booking",
+                "operationId": "b68880caed0557e600587ff327669a02",
+                "parameters": [
+                    {
+                        "name": "bookingReference",
+                        "in": "path",
+                        "description": "Booking reference number",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "1-12345"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Booking cancelled successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Booking not found"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/ownerrez/properties": {
+            "get": {
+                "tags": [
+                    "OwnerRez"
+                ],
+                "summary": "Search vacation rental properties",
+                "description": "Search for available vacation rental properties",
+                "operationId": "07cd072e85501615b1610b6230464be9",
+                "parameters": [
+                    {
+                        "name": "location",
+                        "in": "query",
+                        "description": "Location or city name",
+                        "schema": {
+                            "type": "string",
+                            "example": "Miami Beach"
+                        }
+                    },
+                    {
+                        "name": "checkin",
+                        "in": "query",
+                        "description": "Check-in date (YYYY-MM-DD)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2024-12-25"
+                        }
+                    },
+                    {
+                        "name": "checkout",
+                        "in": "query",
+                        "description": "Check-out date (YYYY-MM-DD)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2024-12-27"
+                        }
+                    },
+                    {
+                        "name": "guests",
+                        "in": "query",
+                        "description": "Number of guests",
+                        "schema": {
+                            "type": "integer",
+                            "example": 4
+                        }
+                    },
+                    {
+                        "name": "bedrooms",
+                        "in": "query",
+                        "description": "Minimum number of bedrooms",
+                        "schema": {
+                            "type": "integer",
+                            "example": 2
+                        }
+                    },
+                    {
+                        "name": "bathrooms",
+                        "in": "query",
+                        "description": "Minimum number of bathrooms",
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "minPrice",
+                        "in": "query",
+                        "description": "Minimum price per night",
+                        "schema": {
+                            "type": "number",
+                            "example": 100
+                        }
+                    },
+                    {
+                        "name": "maxPrice",
+                        "in": "query",
+                        "description": "Maximum price per night",
+                        "schema": {
+                            "type": "number",
+                            "example": 500
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Properties retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/ownerrez/properties/{propertyId}": {
+            "get": {
+                "tags": [
+                    "OwnerRez"
+                ],
+                "summary": "Get property details",
+                "description": "Retrieve detailed information about a specific property",
+                "operationId": "32859317a27084de3836e63af918353f",
+                "parameters": [
+                    {
+                        "name": "propertyId",
+                        "in": "path",
+                        "description": "Property ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "PROP-12345"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Property details retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Property not found"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/ownerrez/properties/{propertyId}/availability": {
+            "post": {
+                "tags": [
+                    "OwnerRez"
+                ],
+                "summary": "Check property availability",
+                "description": "Check if a property is available for specific dates",
+                "operationId": "efd54d9dfbae35a4636359d6fb87b8dc",
+                "parameters": [
+                    {
+                        "name": "propertyId",
+                        "in": "path",
+                        "description": "Property ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "PROP-12345"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "checkin",
+                                    "checkout"
+                                ],
+                                "properties": {
+                                    "checkin": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2024-12-25"
+                                    },
+                                    "checkout": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2024-12-27"
+                                    },
+                                    "guests": {
+                                        "type": "integer",
+                                        "example": 4
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Availability checked successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Validation error"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/ownerrez/properties/{propertyId}/pricing": {
+            "post": {
+                "tags": [
+                    "OwnerRez"
+                ],
+                "summary": "Get property pricing",
+                "description": "Get pricing information for a property",
+                "operationId": "1276edf25cde3d2e7dc7e13b3ad22806",
+                "parameters": [
+                    {
+                        "name": "propertyId",
+                        "in": "path",
+                        "description": "Property ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "PROP-12345"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "checkin",
+                                    "checkout"
+                                ],
+                                "properties": {
+                                    "checkin": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2024-12-25"
+                                    },
+                                    "checkout": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2024-12-27"
+                                    },
+                                    "guests": {
+                                        "type": "integer",
+                                        "example": 4
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Pricing retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Validation error"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/ownerrez/bookings": {
+            "post": {
+                "tags": [
+                    "OwnerRez"
+                ],
+                "summary": "Create a booking",
+                "description": "Create a new booking reservation for a property",
+                "operationId": "ff4fcb978f4055f9315d22303547741e",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "propertyId",
+                                    "checkin",
+                                    "checkout",
+                                    "guest"
+                                ],
+                                "properties": {
+                                    "propertyId": {
+                                        "type": "string",
+                                        "example": "PROP-12345"
+                                    },
+                                    "checkin": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2024-12-25"
+                                    },
+                                    "checkout": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2024-12-27"
+                                    },
+                                    "guest": {
+                                        "properties": {
+                                            "firstName": {
+                                                "type": "string",
+                                                "example": "John"
+                                            },
+                                            "lastName": {
+                                                "type": "string",
+                                                "example": "Doe"
+                                            },
+                                            "email": {
+                                                "type": "string",
+                                                "example": "john@example.com"
+                                            },
+                                            "phone": {
+                                                "type": "string",
+                                                "example": "+1234567890"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "guests": {
+                                        "type": "integer",
+                                        "example": 4
+                                    },
+                                    "specialRequests": {
+                                        "type": "string",
+                                        "example": "Late check-in"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Booking created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Validation error"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/ownerrez/bookings/{bookingId}": {
+            "get": {
+                "tags": [
+                    "OwnerRez"
+                ],
+                "summary": "Get booking details",
+                "description": "Retrieve details of a specific booking",
+                "operationId": "b59e7e0c3d59f4d821fedfb5b319555b",
+                "parameters": [
+                    {
+                        "name": "bookingId",
+                        "in": "path",
+                        "description": "Booking ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "BOOK-12345"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Booking details retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Booking not found"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "OwnerRez"
+                ],
+                "summary": "Update booking",
+                "description": "Update an existing booking",
+                "operationId": "63fe11da5a7b262d3366b8bb11c43503",
+                "parameters": [
+                    {
+                        "name": "bookingId",
+                        "in": "path",
+                        "description": "Booking ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "BOOK-12345"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "guests": {
+                                        "type": "integer",
+                                        "example": 5
+                                    },
+                                    "specialRequests": {
+                                        "type": "string",
+                                        "example": "Early check-in"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Booking updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Booking not found"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "OwnerRez"
+                ],
+                "summary": "Cancel booking",
+                "description": "Cancel an existing booking",
+                "operationId": "d826fdd4a2ce694bf4d6424add659a73",
+                "parameters": [
+                    {
+                        "name": "bookingId",
+                        "in": "path",
+                        "description": "Booking ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "BOOK-12345"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Booking cancelled successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Booking not found"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/ownerrez/properties/{propertyId}/reviews": {
+            "get": {
+                "tags": [
+                    "OwnerRez"
+                ],
+                "summary": "Get property reviews",
+                "description": "Retrieve reviews for a specific property",
+                "operationId": "d9085f6529324b3769c9fbf9e74d6c6b",
+                "parameters": [
+                    {
+                        "name": "propertyId",
+                        "in": "path",
+                        "description": "Property ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "PROP-12345"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Reviews retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Property not found"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/performance/database-stats": {
             "get": {
                 "tags": [
@@ -457,12 +1537,20 @@
     },
     "tags": [
         {
-            "name": "Performance",
-            "description": "Performance monitoring and system health"
+            "name": "Authentication",
+            "description": "User authentication and profile management"
         },
         {
-            "name": "Authentication",
-            "description": "Authentication"
+            "name": "Hotelbeds",
+            "description": "Hotel booking and management via Hotelbeds API"
+        },
+        {
+            "name": "OwnerRez",
+            "description": "Vacation rental property search and booking via OwnerRez API"
+        },
+        {
+            "name": "Performance",
+            "description": "Performance monitoring and system health"
         }
     ],
     "security": [
