@@ -1,4 +1,4 @@
-<!-- <?php
+<?php
 
 return [
     'default' => 'default',
@@ -19,7 +19,7 @@ return [
                 'docs_yaml' => 'api-docs.yaml',
                 'format_to_use_for_docs' => 'json',
                 'annotations' => [
-                    base_path('app'),
+                    base_path('app/Http/Controllers'),
                 ],
             ],
         ],
@@ -42,14 +42,14 @@ return [
             'docs' => storage_path('api-docs'),
             'views' => base_path('resources/views/vendor/l5-swagger'),
 
-            // ✅ API BASE COMPLETELY REMOVED
+            // ✅ BASE HATAYA — ab koi /api nahi auto add hoga
             'base' => '',
 
             'swagger_ui_assets_path' => 'vendor/swagger-api/swagger-ui/dist/',
             'excludes' => [],
         ],
 
-        // ✅ NO /api ANYWHERE
+        // ✅ SERVERS FIXED — duplicates nahi honge
         'servers' => [
             [
                 'url' => 'http://localhost:8000',
@@ -83,8 +83,22 @@ return [
         'generate_always' => false,
         'generate_yaml_copy' => false,
         'proxy' => false,
+        'additional_config_url' => null,
+        'operations_sort' => null,
+        'validator_url' => null,
 
-        // ❌ HOST GUESSING OFF
+        'ui' => [
+            'display' => [
+                'dark_mode' => false,
+                'doc_expansion' => 'none',
+                'filter' => true,
+            ],
+            'authorization' => [
+                'persist_authorization' => false,
+            ],
+        ],
+
+        // ❌ HOST CONSTANT REMOVED — duplicates aur extra add rok diya
         'constants' => [],
     ],
 ];
