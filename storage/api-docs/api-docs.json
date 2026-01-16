@@ -1468,6 +1468,191 @@
                     }
                 ]
             }
+        },
+        "/api/public/search/hotels": {
+            "post": {
+                "tags": [
+                    "Public Search"
+                ],
+                "summary": "Search hotels (PUBLIC - No Auth Required)",
+                "description": "Search for available hotels from Hotelbeds API with markup pricing",
+                "operationId": "5ba2edb1fb06af4bf3aea05699d64e0b",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "checkIn",
+                                    "checkOut",
+                                    "destination"
+                                ],
+                                "properties": {
+                                    "checkIn": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2025-02-15"
+                                    },
+                                    "checkOut": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2025-02-17"
+                                    },
+                                    "destination": {
+                                        "description": "City code or name",
+                                        "type": "string",
+                                        "example": "NYC"
+                                    },
+                                    "destinationCode": {
+                                        "description": "Optional destination code",
+                                        "type": "string",
+                                        "example": "NYC"
+                                    },
+                                    "adults": {
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "children": {
+                                        "type": "integer",
+                                        "example": 0
+                                    },
+                                    "rooms": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "occupancies": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "rooms": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "adults": {
+                                                    "type": "integer",
+                                                    "example": 2
+                                                },
+                                                "children": {
+                                                    "type": "integer",
+                                                    "example": 0
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "minPrice": {
+                                        "type": "number",
+                                        "example": 50
+                                    },
+                                    "maxPrice": {
+                                        "type": "number",
+                                        "example": 500
+                                    },
+                                    "starRating": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "sortBy": {
+                                        "type": "string",
+                                        "enum": [
+                                            "price",
+                                            "rating",
+                                            "name"
+                                        ],
+                                        "example": "price"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful search with pricing markup applied",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "total": {
+                                                    "type": "integer"
+                                                },
+                                                "hotels": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/public/search/properties": {
+            "post": {
+                "tags": [
+                    "Public Search"
+                ],
+                "summary": "Search vacation rentals (PUBLIC - No Auth Required)",
+                "description": "Search for vacation rentals from OwnerRez API with markup pricing",
+                "operationId": "2d46d23087b634ba2d8aa6f26bd9a9ed",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "checkIn",
+                                    "checkOut"
+                                ],
+                                "properties": {
+                                    "checkIn": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "checkOut": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "location": {
+                                        "type": "string"
+                                    },
+                                    "guests": {
+                                        "type": "integer"
+                                    },
+                                    "bedrooms": {
+                                        "type": "integer"
+                                    },
+                                    "propertyType": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful search"
+                    }
+                }
+            }
         }
     },
     "components": {
@@ -1551,6 +1736,10 @@
         {
             "name": "Performance",
             "description": "Performance monitoring and system health"
+        },
+        {
+            "name": "Public Search",
+            "description": "Public hotel and property search endpoints (no authentication required)"
         }
     ],
     "security": [
