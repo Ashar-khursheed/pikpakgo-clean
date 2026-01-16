@@ -1,37 +1,37 @@
 {
   "info": {
-    "name": "PikPakGo API - Authentication Module",
-    "description": "Complete authentication endpoints for PikPakGo API",
+    "name": "PikPakGo API - Complete Collection",
+    "description": "Complete API collection for PikPakGo booking platform",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-  },
-  "auth": {
-    "type": "bearer",
-    "bearer": [
-      {
-        "key": "token",
-        "value": "{{jwt_token}}",
-        "type": "string"
-      }
-    ]
   },
   "variable": [
     {
-      "key": "base_url",
+      "key": "baseUrl",
       "value": "http://localhost:8000/api",
       "type": "string"
     },
     {
-      "key": "jwt_token",
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "session_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "booking_reference",
       "value": "",
       "type": "string"
     }
   ],
   "item": [
     {
-      "name": "Auth",
+      "name": "Public Endpoints",
       "item": [
         {
-          "name": "Register Customer",
+          "name": "Search Hotels",
           "request": {
             "method": "POST",
             "header": [
@@ -42,17 +42,17 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"first_name\": \"John\",\n    \"last_name\": \"Doe\",\n    \"email\": \"john@example.com\",\n    \"password\": \"password123\",\n    \"password_confirmation\": \"password123\",\n    \"phone\": \"+1234567890\",\n    \"user_type\": \"customer\",\n    \"country\": \"USA\",\n    \"preferred_currency\": \"USD\",\n    \"preferred_language\": \"en\"\n}"
+              "raw": "{\n  \"checkIn\": \"2025-03-01\",\n  \"checkOut\": \"2025-03-03\",\n  \"destination\": \"NYC\",\n  \"adults\": 2,\n  \"children\": 0,\n  \"rooms\": 1\n}"
             },
             "url": {
-              "raw": "{{base_url}}/auth/register",
-              "host": ["{{base_url}}"],
-              "path": ["auth", "register"]
+              "raw": "{{baseUrl}}/public/search/hotels",
+              "host": ["{{baseUrl}}"],
+              "path": ["public", "search", "hotels"]
             }
           }
         },
         {
-          "name": "Register Host",
+          "name": "Search Properties",
           "request": {
             "method": "POST",
             "header": [
@@ -63,17 +63,53 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"first_name\": \"Jane\",\n    \"last_name\": \"Smith\",\n    \"email\": \"jane@example.com\",\n    \"password\": \"password123\",\n    \"password_confirmation\": \"password123\",\n    \"user_type\": \"host\",\n    \"host_profile\": {\n        \"business_name\": \"Luxury Rentals LLC\",\n        \"business_registration_number\": \"REG123456\",\n        \"bio\": \"Professional property management with 10+ years experience\"\n    }\n}"
+              "raw": "{\n  \"checkIn\": \"2025-03-01\",\n  \"checkOut\": \"2025-03-05\",\n  \"location\": \"Miami Beach\",\n  \"guests\": 4,\n  \"bedrooms\": 2\n}"
             },
             "url": {
-              "raw": "{{base_url}}/auth/register",
-              "host": ["{{base_url}}"],
-              "path": ["auth", "register"]
+              "raw": "{{baseUrl}}/public/search/properties",
+              "host": ["{{baseUrl}}"],
+              "path": ["public", "search", "properties"]
             }
           }
         },
         {
-          "name": "Register Agency",
+          "name": "Get Destinations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/public/destinations",
+              "host": ["{{baseUrl}}"],
+              "path": ["public", "destinations"]
+            }
+          }
+        },
+        {
+          "name": "Get Popular Destinations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/public/popular-destinations",
+              "host": ["{{baseUrl}}"],
+              "path": ["public", "popular-destinations"]
+            }
+          }
+        },
+        {
+          "name": "Get Property Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/public/properties/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["public", "properties", "1"]
+            }
+          }
+        },
+        {
+          "name": "Check Property Availability",
           "request": {
             "method": "POST",
             "header": [
@@ -84,11 +120,222 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"first_name\": \"Mike\",\n    \"last_name\": \"Johnson\",\n    \"email\": \"mike@travelagency.com\",\n    \"password\": \"password123\",\n    \"password_confirmation\": \"password123\",\n    \"user_type\": \"agency\",\n    \"agency_profile\": {\n        \"agency_name\": \"Global Travel Agency\",\n        \"agency_registration_number\": \"AGY123456\",\n        \"tax_id\": \"TAX123456\",\n        \"website\": \"https://globaltravelagency.com\"\n    }\n}"
+              "raw": "{\n  \"check_in\": \"2025-03-01\",\n  \"check_out\": \"2025-03-03\",\n  \"adults\": 2,\n  \"children\": 0\n}"
             },
             "url": {
-              "raw": "{{base_url}}/auth/register",
-              "host": ["{{base_url}}"],
+              "raw": "{{baseUrl}}/public/properties/1/check-availability",
+              "host": ["{{baseUrl}}"],
+              "path": ["public", "properties", "1", "check-availability"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Guest Session",
+      "item": [
+        {
+          "name": "Create Guest Session",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data.session_id) {",
+                  "    pm.collectionVariables.set('session_id', jsonData.data.session_id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/guest/session/create",
+              "host": ["{{baseUrl}}"],
+              "path": ["guest", "session", "create"]
+            }
+          }
+        },
+        {
+          "name": "Get Guest Session",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/guest/session/{{session_id}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["guest", "session", "{{session_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Guest Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"session_id\": \"{{session_id}}\",\n  \"email\": \"guest@example.com\",\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/guest/session/update",
+              "host": ["{{baseUrl}}"],
+              "path": ["guest", "session", "update"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Guest Bookings",
+      "item": [
+        {
+          "name": "Create Guest Booking",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data.booking_reference) {",
+                  "    pm.collectionVariables.set('booking_reference', jsonData.data.booking_reference);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"guest_session_id\": \"{{session_id}}\",\n  \"provider\": \"hotelbeds\",\n  \"property_code\": \"12345\",\n  \"check_in_date\": \"2025-03-01\",\n  \"check_out_date\": \"2025-03-03\",\n  \"total_adults\": 2,\n  \"total_children\": 0,\n  \"total_rooms\": 1,\n  \"holder_first_name\": \"John\",\n  \"holder_last_name\": \"Doe\",\n  \"holder_email\": \"john@example.com\",\n  \"holder_phone\": \"+1234567890\",\n  \"property_name\": \"Grand Hotel NYC\",\n  \"property_city\": \"New York\",\n  \"property_country\": \"USA\",\n  \"base_price\": 200,\n  \"total_price\": 230,\n  \"currency\": \"USD\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/bookings/guest/create",
+              "host": ["{{baseUrl}}"],
+              "path": ["bookings", "guest", "create"]
+            }
+          }
+        },
+        {
+          "name": "Get Guest Booking",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/bookings/guest/{{booking_reference}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["bookings", "guest", "{{booking_reference}}"]
+            }
+          }
+        },
+        {
+          "name": "Verify Guest Booking",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/bookings/guest/{{booking_reference}}/verify",
+              "host": ["{{baseUrl}}"],
+              "path": ["bookings", "guest", "{{booking_reference}}", "verify"]
+            }
+          }
+        },
+        {
+          "name": "Cancel Guest Booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john@example.com\",\n  \"reason\": \"Change of plans\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/bookings/guest/{{booking_reference}}/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["bookings", "guest", "{{booking_reference}}", "cancel"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payment",
+      "item": [
+        {
+          "name": "Process Guest Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"booking_reference\": \"{{booking_reference}}\",\n  \"payment_method\": \"credit_card\",\n  \"card_number\": \"4111111111111111\",\n  \"card_holder_name\": \"John Doe\",\n  \"card_expiry_month\": \"12\",\n  \"card_expiry_year\": \"2026\",\n  \"card_cvv\": \"123\",\n  \"billing_first_name\": \"John\",\n  \"billing_last_name\": \"Doe\",\n  \"billing_email\": \"john@example.com\",\n  \"billing_address\": \"123 Main St\",\n  \"billing_city\": \"New York\",\n  \"billing_country\": \"USA\",\n  \"billing_postal_code\": \"10001\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/payments/guest/process",
+              "host": ["{{baseUrl}}"],
+              "path": ["payments", "guest", "process"]
+            }
+          }
+        },
+        {
+          "name": "Get Payment Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/payments/guest/TXN-123/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["payments", "guest", "TXN-123", "status"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\",\n  \"email\": \"john@example.com\",\n  \"password\": \"password123\",\n  \"password_confirmation\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
               "path": ["auth", "register"]
             }
           }
@@ -101,8 +348,8 @@
               "script": {
                 "exec": [
                   "var jsonData = pm.response.json();",
-                  "if (jsonData.data && jsonData.data.token) {",
-                  "    pm.collectionVariables.set(\"jwt_token\", jsonData.data.token);",
+                  "if (jsonData.access_token) {",
+                  "    pm.collectionVariables.set('token', jsonData.access_token);",
                   "}"
                 ]
               }
@@ -118,109 +365,63 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"email\": \"john@example.com\",\n    \"password\": \"password123\",\n    \"remember_me\": false\n}"
+              "raw": "{\n  \"email\": \"john@example.com\",\n  \"password\": \"password123\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/auth/login",
-              "host": ["{{base_url}}"],
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
               "path": ["auth", "login"]
             }
           }
         },
         {
-          "name": "Get Current User",
+          "name": "Get User Profile",
           "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{jwt_token}}",
-                  "type": "string"
-                }
-              ]
-            },
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
             "url": {
-              "raw": "{{base_url}}/auth/me",
-              "host": ["{{base_url}}"],
+              "raw": "{{baseUrl}}/auth/me",
+              "host": ["{{baseUrl}}"],
               "path": ["auth", "me"]
             }
           }
-        },
+        }
+      ]
+    },
+    {
+      "name": "User Bookings",
+      "item": [
         {
-          "name": "Refresh Token",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "var jsonData = pm.response.json();",
-                  "if (jsonData.data && jsonData.data.token) {",
-                  "    pm.collectionVariables.set(\"jwt_token\", jsonData.data.token);",
-                  "}"
-                ]
+          "name": "Get My Bookings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
               }
-            }
-          ],
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{jwt_token}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "POST",
-            "header": [],
+            ],
             "url": {
-              "raw": "{{base_url}}/auth/refresh",
-              "host": ["{{base_url}}"],
-              "path": ["auth", "refresh"]
+              "raw": "{{baseUrl}}/bookings",
+              "host": ["{{baseUrl}}"],
+              "path": ["bookings"]
             }
           }
         },
         {
-          "name": "Logout",
+          "name": "Create User Booking",
           "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{jwt_token}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "POST",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/auth/logout",
-              "host": ["{{base_url}}"],
-              "path": ["auth", "logout"]
-            }
-          }
-        },
-        {
-          "name": "Change Password",
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{jwt_token}}",
-                  "type": "string"
-                }
-              ]
-            },
             "method": "POST",
             "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
               {
                 "key": "Content-Type",
                 "value": "application/json"
@@ -228,20 +429,46 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"current_password\": \"password123\",\n    \"password\": \"newpassword123\",\n    \"password_confirmation\": \"newpassword123\"\n}"
+              "raw": "{\n  \"provider\": \"hotelbeds\",\n  \"property_code\": \"12345\",\n  \"check_in_date\": \"2025-03-01\",\n  \"check_out_date\": \"2025-03-03\",\n  \"total_adults\": 2,\n  \"total_rooms\": 1,\n  \"property_name\": \"Grand Hotel NYC\",\n  \"base_price\": 200\n}"
             },
             "url": {
-              "raw": "{{base_url}}/auth/change-password",
-              "host": ["{{base_url}}"],
-              "path": ["auth", "change-password"]
+              "raw": "{{baseUrl}}/bookings",
+              "host": ["{{baseUrl}}"],
+              "path": ["bookings"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - Pricing Markups",
+      "item": [
+        {
+          "name": "Get All Markups",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/pricing-markups",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "pricing-markups"]
             }
           }
         },
         {
-          "name": "Forgot Password",
+          "name": "Create Percentage Markup",
           "request": {
             "method": "POST",
             "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
               {
                 "key": "Content-Type",
                 "value": "application/json"
@@ -249,20 +476,24 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"email\": \"john@example.com\"\n}"
+              "raw": "{\n  \"name\": \"Standard Hotels 15%\",\n  \"description\": \"Default markup for standard hotels\",\n  \"markup_type\": \"percentage\",\n  \"markup_percentage\": 15,\n  \"provider\": \"hotelbeds\",\n  \"is_active\": true\n}"
             },
             "url": {
-              "raw": "{{base_url}}/auth/forgot-password",
-              "host": ["{{base_url}}"],
-              "path": ["auth", "forgot-password"]
+              "raw": "{{baseUrl}}/admin/pricing-markups",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "pricing-markups"]
             }
           }
         },
         {
-          "name": "Reset Password",
+          "name": "Create Tiered Markup",
           "request": {
             "method": "POST",
             "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
               {
                 "key": "Content-Type",
                 "value": "application/json"
@@ -270,32 +501,24 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"token\": \"reset_token_here\",\n    \"password\": \"newpassword123\",\n    \"password_confirmation\": \"newpassword123\"\n}"
+              "raw": "{\n  \"name\": \"Tiered Pricing Strategy\",\n  \"markup_type\": \"tiered\",\n  \"provider\": \"all\",\n  \"tiered_pricing\": [\n    {\"min\": 0, \"max\": 100, \"percentage\": 25},\n    {\"min\": 100, \"max\": 300, \"percentage\": 20},\n    {\"min\": 300, \"max\": 999999, \"percentage\": 15}\n  ],\n  \"is_active\": true\n}"
             },
             "url": {
-              "raw": "{{base_url}}/auth/reset-password",
-              "host": ["{{base_url}}"],
-              "path": ["auth", "reset-password"]
+              "raw": "{{baseUrl}}/admin/pricing-markups",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "pricing-markups"]
             }
           }
         },
         {
-          "name": "Verify Email",
-          "request": {
-            "method": "POST",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/auth/verify-email/{token}",
-              "host": ["{{base_url}}"],
-              "path": ["auth", "verify-email", "{token}"]
-            }
-          }
-        },
-        {
-          "name": "Resend Verification",
+          "name": "Calculate Markup Test",
           "request": {
             "method": "POST",
             "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
               {
                 "key": "Content-Type",
                 "value": "application/json"
@@ -303,12 +526,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"email\": \"john@example.com\"\n}"
+              "raw": "{\n  \"base_price\": 250,\n  \"provider\": \"hotelbeds\",\n  \"property_type\": \"hotel\",\n  \"check_in_date\": \"2025-03-01\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/auth/resend-verification",
-              "host": ["{{base_url}}"],
-              "path": ["auth", "resend-verification"]
+              "raw": "{{baseUrl}}/admin/pricing-markups/calculate",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "pricing-markups", "calculate"]
             }
           }
         }
