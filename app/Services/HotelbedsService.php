@@ -22,16 +22,20 @@ class HotelbedsService
     /**
      * Generate API signature
      */
-    private function generateSignature()
-    {
-        $timestamp = time();
-        return [
-            'Api-key' => $this->apiKey,
-            'X-Signature' => hash('sha256', $this->apiKey . $this->secret . $timestamp),
-            'Accept' => 'application/json',
-            'Content-Type' => 'application/json'
-        ];
-    }
+   private function generateSignature()
+{
+    $timestamp = round(microtime(true) * 1000); // milliseconds
+    $signature = hash_hmac('sha256', $timestamp . $this->apiKey, $this->secret);
+
+    return [
+        'Api-Key' => $this->apiKey,
+        'X-Signature' => $signature,
+        'X-Time' => $timestamp,
+        'Accept' => 'application/json',
+        'Content-Type' => 'application/json',
+    ];
+}
+
     
     /**
      * Search hotels by destination
