@@ -24,7 +24,7 @@ class OwnerRezController extends Controller
     
     /**
      * @OA\Get(
-     *     path="/api/ownerrez/properties",
+     *     path="/ownerrez/properties",
      *     summary="Search vacation rental properties",
      *     description="Search for available vacation rental properties",
      *     tags={"OwnerRez"},
@@ -116,7 +116,7 @@ class OwnerRezController extends Controller
     
     /**
      * @OA\Get(
-     *     path="/api/ownerrez/properties/{propertyId}",
+     *     path="/ownerrez/properties/{propertyId}",
      *     summary="Get property details",
      *     description="Retrieve detailed information about a specific property",
      *     tags={"OwnerRez"},
@@ -149,7 +149,7 @@ class OwnerRezController extends Controller
     
     /**
      * @OA\Post(
-     *     path="/api/ownerrez/properties/{propertyId}/availability",
+     *     path="/ownerrez/properties/{propertyId}/availability",
      *     summary="Check property availability",
      *     description="Check if a property is available for specific dates",
      *     tags={"OwnerRez"},
@@ -205,7 +205,7 @@ class OwnerRezController extends Controller
     
     /**
      * @OA\Post(
-     *     path="/api/ownerrez/properties/{propertyId}/pricing",
+     *     path="/ownerrez/properties/{propertyId}/pricing",
      *     summary="Get property pricing",
      *     description="Get pricing information for a property",
      *     tags={"OwnerRez"},
@@ -261,7 +261,7 @@ class OwnerRezController extends Controller
     
     /**
      * @OA\Post(
-     *     path="/api/ownerrez/bookings",
+     *     path="/ownerrez/bookings",
      *     summary="Create a booking",
      *     description="Create a new booking reservation for a property",
      *     tags={"OwnerRez"},
@@ -327,7 +327,7 @@ class OwnerRezController extends Controller
     
     /**
      * @OA\Get(
-     *     path="/api/ownerrez/bookings/{bookingId}",
+     *     path="/ownerrez/bookings/{bookingId}",
      *     summary="Get booking details",
      *     description="Retrieve details of a specific booking",
      *     tags={"OwnerRez"},
@@ -360,7 +360,7 @@ class OwnerRezController extends Controller
     
     /**
      * @OA\Put(
-     *     path="/api/ownerrez/bookings/{bookingId}",
+     *     path="/ownerrez/bookings/{bookingId}",
      *     summary="Update booking",
      *     description="Update an existing booking",
      *     tags={"OwnerRez"},
@@ -400,7 +400,7 @@ class OwnerRezController extends Controller
     
     /**
      * @OA\Delete(
-     *     path="/api/ownerrez/bookings/{bookingId}",
+     *     path="/ownerrez/bookings/{bookingId}",
      *     summary="Cancel booking",
      *     description="Cancel an existing booking",
      *     tags={"OwnerRez"},
@@ -433,7 +433,7 @@ class OwnerRezController extends Controller
     
     /**
      * @OA\Get(
-     *     path="/api/ownerrez/properties/{propertyId}/reviews",
+     *     path="/ownerrez/properties/{propertyId}/reviews",
      *     summary="Get property reviews",
      *     description="Retrieve reviews for a specific property",
      *     tags={"OwnerRez"},

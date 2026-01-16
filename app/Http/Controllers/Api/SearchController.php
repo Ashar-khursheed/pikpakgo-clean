@@ -36,7 +36,7 @@ class SearchController extends Controller
     
     /**
      * @OA\Post(
-     *     path="/api/public/search/hotels",
+     *     path="/public/search/hotels",
      *     summary="Search hotels (PUBLIC - No Auth Required)",
      *     description="Search for available hotels from Hotelbeds API with markup pricing",
      *     tags={"Public Search"},
@@ -155,7 +155,7 @@ class SearchController extends Controller
     
     /**
      * @OA\Post(
-     *     path="/api/public/search/properties",
+     *     path="/public/search/properties",
      *     summary="Search vacation rentals (PUBLIC - No Auth Required)",
      *     description="Search for vacation rentals from OwnerRez API with markup pricing",
      *     tags={"Public Search"},

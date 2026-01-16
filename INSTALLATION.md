@@ -131,7 +131,7 @@ Your API is now running at: **http://localhost:8000**
 Open your browser and visit:
 
 ```
-http://localhost:8000/api/documentation
+http://localhost:8000/documentation
 ```
 
 You'll see the complete Swagger UI with all endpoints, request/response examples, and the ability to test APIs directly!
@@ -142,7 +142,7 @@ You'll see the complete Swagger UI with all endpoints, request/response examples
 
 ### Method 1: Using Swagger UI (Recommended)
 
-1. Go to `http://localhost:8000/api/documentation`
+1. Go to `http://localhost:8000/documentation`
 2. Click on any endpoint to expand it
 3. Click "Try it out"
 4. Fill in the request body
@@ -153,7 +153,7 @@ You'll see the complete Swagger UI with all endpoints, request/response examples
 #### Register a Customer
 
 ```bash
-curl -X POST http://localhost:8000/api/auth/register \
+curl -X POST http://localhost:8000/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "first_name": "John",
@@ -168,7 +168,7 @@ curl -X POST http://localhost:8000/api/auth/register \
 #### Login
 
 ```bash
-curl -X POST http://localhost:8000/api/auth/login \
+curl -X POST http://localhost:8000/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "john@example.com",
@@ -181,7 +181,7 @@ Save the token from response!
 #### Get Current User (Protected Endpoint)
 
 ```bash
-curl -X GET http://localhost:8000/api/auth/me \
+curl -X GET http://localhost:8000/auth/me \
   -H "Authorization: Bearer YOUR_JWT_TOKEN_HERE"
 ```
 
@@ -230,21 +230,21 @@ pikpakgo-api/
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/auth/register` | Register new user (customer/host/agency) |
-| POST | `/api/auth/login` | Login and get JWT token |
-| POST | `/api/auth/forgot-password` | Request password reset link |
-| POST | `/api/auth/reset-password` | Reset password with token |
-| POST | `/api/auth/verify-email/{token}` | Verify email address |
-| POST | `/api/auth/resend-verification` | Resend verification email |
+| POST | `/auth/register` | Register new user (customer/host/agency) |
+| POST | `/auth/login` | Login and get JWT token |
+| POST | `/auth/forgot-password` | Request password reset link |
+| POST | `/auth/reset-password` | Reset password with token |
+| POST | `/auth/verify-email/{token}` | Verify email address |
+| POST | `/auth/resend-verification` | Resend verification email |
 
 ### Protected Endpoints (Requires JWT Token)
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/auth/logout` | Logout and invalidate token |
-| POST | `/api/auth/refresh` | Refresh JWT token |
-| GET | `/api/auth/me` | Get current authenticated user |
-| POST | `/api/auth/change-password` | Change user password |
+| POST | `/auth/logout` | Logout and invalidate token |
+| POST | `/auth/refresh` | Refresh JWT token |
+| GET | `/auth/me` | Get current authenticated user |
+| POST | `/auth/change-password` | Change user password |
 
 ---
 
@@ -331,7 +331,7 @@ Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
 ### Refresh Token Before Expiration
 
 ```bash
-curl -X POST http://localhost:8000/api/auth/refresh \
+curl -X POST http://localhost:8000/auth/refresh \
   -H "Authorization: Bearer YOUR_CURRENT_TOKEN"
 ```
 
@@ -446,7 +446,7 @@ The authentication module is complete! Here are the upcoming modules:
 For questions or issues:
 - **Email**: reservations@pikpakgo.com
 - **Phone**: 800-920-0398
-- **Documentation**: http://localhost:8000/api/documentation
+- **Documentation**: http://localhost:8000/documentation
 
 ---
 
@@ -465,7 +465,7 @@ After installation, verify everything is working:
 - [ ] Database created and connected
 - [ ] `php artisan migrate` ran successfully
 - [ ] JWT secret generated
-- [ ] Swagger documentation accessible at `/api/documentation`
+- [ ] Swagger documentation accessible at `/documentation`
 - [ ] Can register a new user via API
 - [ ] Can login and receive JWT token
 - [ ] Can access protected endpoint with token
@@ -474,4 +474,4 @@ After installation, verify everything is working:
 
 **Ready to develop!** 🚀
 
-Start testing your APIs at: http://localhost:8000/api/documentation
+Start testing your APIs at: http://localhost:8000/documentation

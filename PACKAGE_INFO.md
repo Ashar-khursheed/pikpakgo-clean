@@ -14,7 +14,7 @@
 pikpakgo-api/
 ├── 📂 app/
 │   ├── Http/
-│   │   ├── Controllers/Api/
+│   │   ├── Controllers/
 │   │   │   └── AuthController.php          ✅ Complete Auth API
 │   │   └── Middleware/
 │   │       ├── CheckUserType.php           ✅ Role-based access
@@ -70,7 +70,7 @@ pikpakgo-api/
    php artisan serve
    ```
 
-Visit: `http://localhost:8000/api/documentation`
+Visit: `http://localhost:8000/documentation`
 
 ---
 
@@ -114,18 +114,18 @@ Visit: `http://localhost:8000/api/documentation`
 ## 🎯 API Endpoints (11 Total)
 
 ### Public (6 endpoints)
-- POST `/api/auth/register`
-- POST `/api/auth/login`
-- POST `/api/auth/forgot-password`
-- POST `/api/auth/reset-password`
-- POST `/api/auth/verify-email/{token}`
-- POST `/api/auth/resend-verification`
+- POST `/auth/register`
+- POST `/auth/login`
+- POST `/auth/forgot-password`
+- POST `/auth/reset-password`
+- POST `/auth/verify-email/{token}`
+- POST `/auth/resend-verification`
 
 ### Protected (5 endpoints)
-- GET `/api/auth/me`
-- POST `/api/auth/logout`
-- POST `/api/auth/refresh`
-- POST `/api/auth/change-password`
+- GET `/auth/me`
+- POST `/auth/logout`
+- POST `/auth/refresh`
+- POST `/auth/change-password`
 
 ---
 
@@ -184,7 +184,7 @@ All configured and ready to use!
 ## 🧪 Testing Options
 
 1. **Swagger UI** (Recommended)
-   - http://localhost:8000/api/documentation
+   - http://localhost:8000/documentation
    - Interactive testing interface
 
 2. **Postman Collection**
@@ -238,7 +238,7 @@ All configured and ready to use!
 
 - Email: reservations@pikpakgo.com
 - Phone: 800-920-0398
-- Documentation: /api/documentation
+- Documentation: /documentation
 
 ---
 

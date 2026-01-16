@@ -76,7 +76,7 @@ API will be available at: `http://localhost:8000/api`
 Once the server is running, access the Swagger UI at:
 
 ```
-http://localhost:8000/api/documentation
+http://localhost:8000/documentation
 ```
 
 ## API Endpoints
@@ -85,28 +85,28 @@ http://localhost:8000/api/documentation
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/auth/register` | Register new user |
-| POST | `/api/auth/login` | Login user |
-| POST | `/api/auth/forgot-password` | Request password reset |
-| POST | `/api/auth/reset-password` | Reset password with token |
-| POST | `/api/auth/verify-email/{token}` | Verify email address |
-| POST | `/api/auth/resend-verification` | Resend verification email |
+| POST | `/auth/register` | Register new user |
+| POST | `/auth/login` | Login user |
+| POST | `/auth/forgot-password` | Request password reset |
+| POST | `/auth/reset-password` | Reset password with token |
+| POST | `/auth/verify-email/{token}` | Verify email address |
+| POST | `/auth/resend-verification` | Resend verification email |
 
 ### Protected Endpoints (Authentication Required)
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/auth/logout` | Logout user |
-| POST | `/api/auth/refresh` | Refresh JWT token |
-| GET | `/api/auth/me` | Get current user |
-| POST | `/api/auth/change-password` | Change password |
+| POST | `/auth/logout` | Logout user |
+| POST | `/auth/refresh` | Refresh JWT token |
+| GET | `/auth/me` | Get current user |
+| POST | `/auth/change-password` | Change password |
 
 ## Request Examples
 
 ### 1. Register Customer
 
 ```json
-POST /api/auth/register
+POST /auth/register
 
 {
     "first_name": "John",
@@ -125,7 +125,7 @@ POST /api/auth/register
 ### 2. Register Host
 
 ```json
-POST /api/auth/register
+POST /auth/register
 
 {
     "first_name": "Jane",
@@ -145,7 +145,7 @@ POST /api/auth/register
 ### 3. Register Agency
 
 ```json
-POST /api/auth/register
+POST /auth/register
 
 {
     "first_name": "Mike",
@@ -166,7 +166,7 @@ POST /api/auth/register
 ### 4. Login
 
 ```json
-POST /api/auth/login
+POST /auth/login
 
 {
     "email": "john@example.com",
@@ -178,7 +178,7 @@ POST /api/auth/login
 ### 5. Get Current User (Protected)
 
 ```bash
-GET /api/auth/me
+GET /auth/me
 Headers: Authorization: Bearer {your-jwt-token}
 ```
 
@@ -223,7 +223,7 @@ Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
 To refresh your token before expiration:
 
 ```bash
-POST /api/auth/refresh
+POST /auth/refresh
 Headers: Authorization: Bearer {your-current-token}
 ```
 
@@ -304,7 +304,7 @@ Route::middleware(['auth:api', 'verified'])->group(function () {
 
 ## Testing with Swagger
 
-1. Open Swagger UI: `http://localhost:8000/api/documentation`
+1. Open Swagger UI: `http://localhost:8000/documentation`
 2. Click "Authorize" button
 3. Enter: `Bearer {your-jwt-token}`
 4. Test any protected endpoint

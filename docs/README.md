@@ -28,7 +28,7 @@ A complete Laravel-based booking platform similar to Booking.com that integrates
 ```
 pikpakgo-complete/
 ├── app/
-│   ├── Http/Controllers/Api/
+│   ├── Http/Controllers/
 │   │   ├── Admin/
 │   │   │   └── PricingMarkupController.php
 │   │   ├── AuthController.php (your existing)
@@ -78,7 +78,7 @@ pikpakgo-complete/
 cp database/migrations/*.php /path/to/your-project/database/migrations/
 
 # Copy controllers
-cp -r app/Http/Controllers/Api/* /path/to/your-project/app/Http/Controllers/Api/
+cp -r app/Http/Controllers/* /path/to/your-project/app/Http/Controllers/
 
 # Copy models
 cp app/Models/*.php /path/to/your-project/app/Models/
@@ -188,7 +188,7 @@ protected $middlewareAliases = [
 
 #### Search Hotels
 ```http
-POST /api/public/search/hotels
+POST /public/search/hotels
 Content-Type: application/json
 
 {
@@ -203,7 +203,7 @@ Content-Type: application/json
 
 #### Search Properties
 ```http
-POST /api/public/search/properties
+POST /public/search/properties
 Content-Type: application/json
 
 {
@@ -217,19 +217,19 @@ Content-Type: application/json
 
 #### Get Destinations
 ```http
-GET /api/public/destinations?search=new york
+GET /public/destinations?search=new york
 ```
 
 #### Get Property Details
 ```http
-GET /api/public/properties/{id}
+GET /public/properties/{id}
 ```
 
 ### Guest Booking Endpoints
 
 #### Create Guest Session
 ```http
-POST /api/guest/session/create
+POST /guest/session/create
 ```
 
 Response:
@@ -245,7 +245,7 @@ Response:
 
 #### Create Guest Booking
 ```http
-POST /api/bookings/guest/create
+POST /bookings/guest/create
 Content-Type: application/json
 
 {
@@ -271,13 +271,13 @@ Content-Type: application/json
 
 #### Get User Bookings
 ```http
-GET /api/bookings
+GET /bookings
 Authorization: Bearer {token}
 ```
 
 #### Create User Booking
 ```http
-POST /api/bookings
+POST /bookings
 Authorization: Bearer {token}
 Content-Type: application/json
 
@@ -297,7 +297,7 @@ Content-Type: application/json
 
 #### Process Guest Payment
 ```http
-POST /api/payments/guest/process
+POST /payments/guest/process
 Content-Type: application/json
 
 {
@@ -322,13 +322,13 @@ Content-Type: application/json
 
 #### Get All Pricing Markups
 ```http
-GET /api/admin/pricing-markups
+GET /admin/pricing-markups
 Authorization: Bearer {token}
 ```
 
 #### Create Pricing Markup
 ```http
-POST /api/admin/pricing-markups
+POST /admin/pricing-markups
 Authorization: Bearer {token}
 Content-Type: application/json
 
@@ -348,7 +348,7 @@ Content-Type: application/json
 
 #### Tiered Pricing Example
 ```http
-POST /api/admin/pricing-markups
+POST /admin/pricing-markups
 Authorization: Bearer {token}
 Content-Type: application/json
 
@@ -367,7 +367,7 @@ Content-Type: application/json
 
 #### Test Markup Calculator
 ```http
-POST /api/admin/pricing-markups/calculate
+POST /admin/pricing-markups/calculate
 Authorization: Bearer {token}
 Content-Type: application/json
 
@@ -386,7 +386,7 @@ Content-Type: application/json
 
 ```javascript
 // 1. Search for hotels
-const searchResponse = await fetch('/api/public/search/hotels', {
+const searchResponse = await fetch('/public/search/hotels', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
@@ -406,13 +406,13 @@ const hotels = await searchResponse.json();
 
 ```javascript
 // 1. Create guest session
-const sessionRes = await fetch('/api/guest/session/create', {
+const sessionRes = await fetch('/guest/session/create', {
   method: 'POST'
 });
 const { session_id } = await sessionRes.json();
 
 // 2. Create booking
-const bookingRes = await fetch('/api/bookings/guest/create', {
+const bookingRes = await fetch('/bookings/guest/create', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
@@ -424,7 +424,7 @@ const bookingRes = await fetch('/api/bookings/guest/create', {
 const { booking_reference } = await bookingRes.json();
 
 // 3. Process payment
-const paymentRes = await fetch('/api/payments/guest/process', {
+const paymentRes = await fetch('/payments/guest/process', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({

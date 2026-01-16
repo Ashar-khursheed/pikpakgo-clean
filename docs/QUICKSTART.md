@@ -9,7 +9,7 @@ cd /path/to/your-laravel-project
 
 # Copy all files
 cp -r /path/to/pikpakgo-complete/database/migrations/* database/migrations/
-cp -r /path/to/pikpakgo-complete/app/Http/Controllers/Api/* app/Http/Controllers/Api/
+cp -r /path/to/pikpakgo-complete/app/Http/Controllers/* app/Http/Controllers/
 cp -r /path/to/pikpakgo-complete/app/Models/* app/Models/
 cp -r /path/to/pikpakgo-complete/app/Services/* app/Services/
 
@@ -48,7 +48,7 @@ exit;
 
 ```bash
 # Test public search (no auth needed)
-curl -X POST http://localhost:8000/api/public/search/hotels \
+curl -X POST http://localhost:8000/public/search/hotels \
   -H "Content-Type: application/json" \
   -d '{
     "checkIn": "2025-03-01",
@@ -63,7 +63,7 @@ curl -X POST http://localhost:8000/api/public/search/hotels \
 ### Test Public Search
 
 ```javascript
-const response = await fetch('http://localhost:8000/api/public/search/hotels', {
+const response = await fetch('http://localhost:8000/public/search/hotels', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
@@ -112,7 +112,7 @@ console.log(data);
 ### 1. Create Guest Session
 
 ```javascript
-const sessionRes = await fetch('/api/guest/session/create', {
+const sessionRes = await fetch('/guest/session/create', {
   method: 'POST'
 });
 const { data } = await sessionRes.json();
@@ -122,7 +122,7 @@ const sessionId = data.session_id;
 ### 2. Search Hotels
 
 ```javascript
-const searchRes = await fetch('/api/public/search/hotels', {
+const searchRes = await fetch('/public/search/hotels', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
@@ -138,7 +138,7 @@ const hotels = await searchRes.json();
 ### 3. Create Booking
 
 ```javascript
-const bookingRes = await fetch('/api/bookings/guest/create', {
+const bookingRes = await fetch('/bookings/guest/create', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
@@ -165,7 +165,7 @@ const booking = await bookingRes.json();
 ### 4. Process Payment
 
 ```javascript
-const paymentRes = await fetch('/api/payments/guest/process', {
+const paymentRes = await fetch('/payments/guest/process', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
@@ -197,7 +197,7 @@ console.log(payment.data.transaction_id);
 
 ```bash
 # Login as admin
-curl -X POST http://localhost:8000/api/auth/login \
+curl -X POST http://localhost:8000/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "admin@example.com",
@@ -205,7 +205,7 @@ curl -X POST http://localhost:8000/api/auth/login \
   }'
 
 # Create markup rule
-curl -X POST http://localhost:8000/api/admin/pricing-markups \
+curl -X POST http://localhost:8000/admin/pricing-markups \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -d '{
@@ -221,7 +221,7 @@ curl -X POST http://localhost:8000/api/admin/pricing-markups \
 ### Test Markup Calculator
 
 ```javascript
-const calcRes = await fetch('/api/admin/pricing-markups/calculate', {
+const calcRes = await fetch('/admin/pricing-markups/calculate', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
@@ -370,15 +370,15 @@ PricingMarkup::create([
 #!/bin/bash
 
 echo "Testing public search..."
-curl -X POST http://localhost:8000/api/public/search/hotels \
+curl -X POST http://localhost:8000/public/search/hotels \
   -H "Content-Type: application/json" \
   -d '{"checkIn":"2025-03-01","checkOut":"2025-03-03","destination":"NYC","adults":2}'
 
 echo "\n\nTesting guest session..."
-curl -X POST http://localhost:8000/api/guest/session/create
+curl -X POST http://localhost:8000/guest/session/create
 
 echo "\n\nTesting destinations..."
-curl http://localhost:8000/api/public/destinations
+curl http://localhost:8000/public/destinations
 
 echo "\n\nAll tests complete!"
 ```
@@ -401,7 +401,7 @@ chmod +x test-api.sh
 ### Tip 1: Testing Markup Rules
 Use the calculator endpoint to test before activating:
 ```bash
-POST /api/admin/pricing-markups/calculate
+POST /admin/pricing-markups/calculate
 ```
 
 ### Tip 2: Debugging

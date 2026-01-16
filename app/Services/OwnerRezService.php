@@ -56,7 +56,7 @@ class OwnerRezService
             return Cache::remember($cacheKey, 3600, function () use ($queryParams) {
                 $response = Http::withHeaders($this->getHeaders())
                     ->timeout(30)
-                    ->get("{$this->baseUrl}/api/v2/properties", $queryParams);
+                    ->get("{$this->baseUrl}/v2/properties", $queryParams);
                 
                 if ($response->successful()) {
                     return [
@@ -101,7 +101,7 @@ class OwnerRezService
             return Cache::remember($cacheKey, 86400, function () use ($propertyId) {
                 $response = Http::withHeaders($this->getHeaders())
                     ->timeout(30)
-                    ->get("{$this->baseUrl}/api/v2/properties/{$propertyId}");
+                    ->get("{$this->baseUrl}/v2/properties/{$propertyId}");
                 
                 if ($response->successful()) {
                     return [
@@ -139,7 +139,7 @@ class OwnerRezService
         try {
             $response = Http::withHeaders($this->getHeaders())
                 ->timeout(30)
-                ->get("{$this->baseUrl}/api/v2/properties/{$propertyId}/availability", [
+                ->get("{$this->baseUrl}/v2/properties/{$propertyId}/availability", [
                     'checkin' => $params['checkin'],
                     'checkout' => $params['checkout'],
                     'guests' => $params['guests'] ?? 2
@@ -180,7 +180,7 @@ class OwnerRezService
         try {
             $response = Http::withHeaders($this->getHeaders())
                 ->timeout(30)
-                ->get("{$this->baseUrl}/api/v2/properties/{$propertyId}/pricing", [
+                ->get("{$this->baseUrl}/v2/properties/{$propertyId}/pricing", [
                     'checkin' => $params['checkin'],
                     'checkout' => $params['checkout'],
                     'guests' => $params['guests'] ?? 2
@@ -220,7 +220,7 @@ class OwnerRezService
         try {
             $response = Http::withHeaders($this->getHeaders())
                 ->timeout(30)
-                ->post("{$this->baseUrl}/api/v2/bookings", $bookingData);
+                ->post("{$this->baseUrl}/v2/bookings", $bookingData);
             
             if ($response->successful()) {
                 return [
@@ -256,7 +256,7 @@ class OwnerRezService
         try {
             $response = Http::withHeaders($this->getHeaders())
                 ->timeout(30)
-                ->get("{$this->baseUrl}/api/v2/bookings/{$bookingId}");
+                ->get("{$this->baseUrl}/v2/bookings/{$bookingId}");
             
             if ($response->successful()) {
                 return [
@@ -293,7 +293,7 @@ class OwnerRezService
         try {
             $response = Http::withHeaders($this->getHeaders())
                 ->timeout(30)
-                ->put("{$this->baseUrl}/api/v2/bookings/{$bookingId}", $updateData);
+                ->put("{$this->baseUrl}/v2/bookings/{$bookingId}", $updateData);
             
             if ($response->successful()) {
                 return [
@@ -329,7 +329,7 @@ class OwnerRezService
         try {
             $response = Http::withHeaders($this->getHeaders())
                 ->timeout(30)
-                ->delete("{$this->baseUrl}/api/v2/bookings/{$bookingId}");
+                ->delete("{$this->baseUrl}/v2/bookings/{$bookingId}");
             
             if ($response->successful()) {
                 return [
@@ -368,7 +368,7 @@ class OwnerRezService
             return Cache::remember($cacheKey, 3600, function () use ($propertyId) {
                 $response = Http::withHeaders($this->getHeaders())
                     ->timeout(30)
-                    ->get("{$this->baseUrl}/api/v2/properties/{$propertyId}/reviews");
+                    ->get("{$this->baseUrl}/v2/properties/{$propertyId}/reviews");
                 
                 if ($response->successful()) {
                     return [

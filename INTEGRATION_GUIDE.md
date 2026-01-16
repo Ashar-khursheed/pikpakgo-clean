@@ -65,12 +65,12 @@ cd /path/to/your-pikpakgo-project
 cp database/migrations/2025_01_16_*.php ./database/migrations/
 
 # Copy new controllers
-cp app/Http/Controllers/Api/SearchController.php ./app/Http/Controllers/Api/
-cp app/Http/Controllers/Api/BookingController.php ./app/Http/Controllers/Api/
-cp app/Http/Controllers/Api/PropertyController.php ./app/Http/Controllers/Api/
-cp app/Http/Controllers/Api/GuestController.php ./app/Http/Controllers/Api/
-cp app/Http/Controllers/Api/PaymentController.php ./app/Http/Controllers/Api/
-cp -r app/Http/Controllers/Api/Admin ./app/Http/Controllers/Api/
+cp app/Http/Controllers/SearchController.php ./app/Http/Controllers/
+cp app/Http/Controllers/BookingController.php ./app/Http/Controllers/
+cp app/Http/Controllers/PropertyController.php ./app/Http/Controllers/
+cp app/Http/Controllers/GuestController.php ./app/Http/Controllers/
+cp app/Http/Controllers/PaymentController.php ./app/Http/Controllers/
+cp -r app/Http/Controllers/Admin ./app/Http/Controllers/
 
 # Copy new models
 cp app/Models/*.php ./app/Models/
@@ -157,37 +157,37 @@ php artisan l5-swagger:generate
 ## 📝 API Routes Overview
 
 ### Your Existing Routes (Preserved)
-- ✅ `/api/auth/*` - Authentication (login, register, etc.)
-- ✅ `/api/hotelbeds/*` - Hotelbeds API (now requires auth)
-- ✅ `/api/ownerrez/*` - OwnerRez API (now requires auth)
-- ✅ `/api/performance/*` - Performance monitoring
+- ✅ `/auth/*` - Authentication (login, register, etc.)
+- ✅ `/hotelbeds/*` - Hotelbeds API (now requires auth)
+- ✅ `/ownerrez/*` - OwnerRez API (now requires auth)
+- ✅ `/performance/*` - Performance monitoring
 
 ### New Public Routes (No Auth Required)
-- 🆕 `POST /api/public/search/hotels` - Search hotels
-- 🆕 `POST /api/public/search/properties` - Search vacation rentals
-- 🆕 `GET /api/public/destinations` - Get destinations
-- 🆕 `GET /api/public/popular-destinations` - Popular cities
-- 🆕 `GET /api/public/properties/{id}` - Property details
-- 🆕 `POST /api/public/properties/{id}/check-availability` - Check availability
+- 🆕 `POST /public/search/hotels` - Search hotels
+- 🆕 `POST /public/search/properties` - Search vacation rentals
+- 🆕 `GET /public/destinations` - Get destinations
+- 🆕 `GET /public/popular-destinations` - Popular cities
+- 🆕 `GET /public/properties/{id}` - Property details
+- 🆕 `POST /public/properties/{id}/check-availability` - Check availability
 
 ### New Guest Booking Routes (No Auth)
-- 🆕 `POST /api/guest/session/create` - Create guest session
-- 🆕 `POST /api/bookings/guest/create` - Create guest booking
-- 🆕 `GET /api/bookings/guest/{ref}` - Get guest booking
-- 🆕 `POST /api/bookings/guest/{ref}/cancel` - Cancel booking
+- 🆕 `POST /guest/session/create` - Create guest session
+- 🆕 `POST /bookings/guest/create` - Create guest booking
+- 🆕 `GET /bookings/guest/{ref}` - Get guest booking
+- 🆕 `POST /bookings/guest/{ref}/cancel` - Cancel booking
 
 ### New User Routes (Auth Required)
-- 🆕 `GET /api/bookings` - Get user bookings
-- 🆕 `POST /api/bookings` - Create user booking
-- 🆕 `GET /api/bookings/{ref}` - Get booking details
-- 🆕 `POST /api/bookings/{ref}/cancel` - Cancel booking
+- 🆕 `GET /bookings` - Get user bookings
+- 🆕 `POST /bookings` - Create user booking
+- 🆕 `GET /bookings/{ref}` - Get booking details
+- 🆕 `POST /bookings/{ref}/cancel` - Cancel booking
 
 ### New Admin Routes (Admin Role Required)
-- 🆕 `GET /api/admin/pricing-markups` - List markup rules
-- 🆕 `POST /api/admin/pricing-markups` - Create markup rule
-- 🆕 `PUT /api/admin/pricing-markups/{id}` - Update markup
-- 🆕 `DELETE /api/admin/pricing-markups/{id}` - Delete markup
-- 🆕 `POST /api/admin/pricing-markups/calculate` - Test calculator
+- 🆕 `GET /admin/pricing-markups` - List markup rules
+- 🆕 `POST /admin/pricing-markups` - Create markup rule
+- 🆕 `PUT /admin/pricing-markups/{id}` - Update markup
+- 🆕 `DELETE /admin/pricing-markups/{id}` - Delete markup
+- 🆕 `POST /admin/pricing-markups/calculate` - Test calculator
 
 ---
 
@@ -203,7 +203,7 @@ After generating docs:
 php artisan l5-swagger:generate
 ```
 
-Visit: `http://your-domain/api/documentation`
+Visit: `http://your-domain/documentation`
 
 ### New Swagger Tags
 
@@ -295,7 +295,7 @@ Route::prefix('public')->group(function () {
 ### Test Public Search
 
 ```bash
-curl -X POST http://localhost:8000/api/public/search/hotels \
+curl -X POST http://localhost:8000/public/search/hotels \
   -H "Content-Type: application/json" \
   -d '{
     "checkIn": "2025-03-01",
@@ -312,7 +312,7 @@ curl -X POST http://localhost:8000/api/public/search/hotels \
 php artisan l5-swagger:generate
 
 # Visit in browser
-open http://localhost:8000/api/documentation
+open http://localhost:8000/documentation
 ```
 
 ### Import Postman Collection

@@ -65,7 +65,7 @@ Authorization: Bearer YOUR_JWT_TOKEN
 To obtain a token, use the login endpoint:
 
 ```bash
-POST /api/auth/login
+POST /auth/login
 Content-Type: application/json
 
 {
@@ -76,13 +76,13 @@ Content-Type: application/json
 
 ## Hotelbeds API
 
-Base URL: `/api/hotelbeds`
+Base URL: `/hotelbeds`
 
 ### 1. Search Hotels
 
 Search for available hotels based on destination and dates.
 
-**Endpoint:** `POST /api/hotelbeds/search`
+**Endpoint:** `POST /hotelbeds/search`
 
 **Request:**
 ```json
@@ -119,9 +119,9 @@ Search for available hotels based on destination and dates.
 
 Retrieve detailed information about a specific hotel.
 
-**Endpoint:** `GET /api/hotelbeds/hotels/{hotelCode}`
+**Endpoint:** `GET /hotelbeds/hotels/{hotelCode}`
 
-**Example:** `GET /api/hotelbeds/hotels/12345`
+**Example:** `GET /hotelbeds/hotels/12345`
 
 **Response:**
 ```json
@@ -146,7 +146,7 @@ Retrieve detailed information about a specific hotel.
 
 Verify room availability and get updated rates.
 
-**Endpoint:** `POST /api/hotelbeds/check-availability`
+**Endpoint:** `POST /hotelbeds/check-availability`
 
 **Request:**
 ```json
@@ -166,7 +166,7 @@ Verify room availability and get updated rates.
 
 Create a new hotel reservation.
 
-**Endpoint:** `POST /api/hotelbeds/bookings`
+**Endpoint:** `POST /hotelbeds/bookings`
 
 **Request:**
 ```json
@@ -210,9 +210,9 @@ Create a new hotel reservation.
 
 Retrieve information about an existing booking.
 
-**Endpoint:** `GET /api/hotelbeds/bookings/{bookingReference}`
+**Endpoint:** `GET /hotelbeds/bookings/{bookingReference}`
 
-**Example:** `GET /api/hotelbeds/bookings/1-12345`
+**Example:** `GET /hotelbeds/bookings/1-12345`
 
 ---
 
@@ -220,9 +220,9 @@ Retrieve information about an existing booking.
 
 Cancel an existing reservation.
 
-**Endpoint:** `DELETE /api/hotelbeds/bookings/{bookingReference}`
+**Endpoint:** `DELETE /hotelbeds/bookings/{bookingReference}`
 
-**Example:** `DELETE /api/hotelbeds/bookings/1-12345`
+**Example:** `DELETE /hotelbeds/bookings/1-12345`
 
 **Response:**
 ```json
@@ -240,13 +240,13 @@ Cancel an existing reservation.
 
 ## OwnerRez API
 
-Base URL: `/api/ownerrez`
+Base URL: `/ownerrez`
 
 ### 1. Search Properties
 
 Search for vacation rental properties.
 
-**Endpoint:** `GET /api/ownerrez/properties`
+**Endpoint:** `GET /ownerrez/properties`
 
 **Query Parameters:**
 - `location` - Location or city name (optional)
@@ -258,7 +258,7 @@ Search for vacation rental properties.
 - `minPrice` - Minimum price per night (optional)
 - `maxPrice` - Maximum price per night (optional)
 
-**Example:** `GET /api/ownerrez/properties?location=Miami+Beach&guests=4&bedrooms=2`
+**Example:** `GET /ownerrez/properties?location=Miami+Beach&guests=4&bedrooms=2`
 
 **Response:**
 ```json
@@ -279,9 +279,9 @@ Search for vacation rental properties.
 
 Get detailed information about a specific property.
 
-**Endpoint:** `GET /api/ownerrez/properties/{propertyId}`
+**Endpoint:** `GET /ownerrez/properties/{propertyId}`
 
-**Example:** `GET /api/ownerrez/properties/PROP-12345`
+**Example:** `GET /ownerrez/properties/PROP-12345`
 
 **Response:**
 ```json
@@ -307,7 +307,7 @@ Get detailed information about a specific property.
 
 Check if a property is available for specific dates.
 
-**Endpoint:** `POST /api/ownerrez/properties/{propertyId}/availability`
+**Endpoint:** `POST /ownerrez/properties/{propertyId}/availability`
 
 **Request:**
 ```json
@@ -336,7 +336,7 @@ Check if a property is available for specific dates.
 
 Get pricing information for a property.
 
-**Endpoint:** `POST /api/ownerrez/properties/{propertyId}/pricing`
+**Endpoint:** `POST /ownerrez/properties/{propertyId}/pricing`
 
 **Request:**
 ```json
@@ -367,7 +367,7 @@ Get pricing information for a property.
 
 Create a new property reservation.
 
-**Endpoint:** `POST /api/ownerrez/bookings`
+**Endpoint:** `POST /ownerrez/bookings`
 
 **Request:**
 ```json
@@ -404,9 +404,9 @@ Create a new property reservation.
 
 Retrieve information about a booking.
 
-**Endpoint:** `GET /api/ownerrez/bookings/{bookingId}`
+**Endpoint:** `GET /ownerrez/bookings/{bookingId}`
 
-**Example:** `GET /api/ownerrez/bookings/BOOK-12345`
+**Example:** `GET /ownerrez/bookings/BOOK-12345`
 
 ---
 
@@ -414,7 +414,7 @@ Retrieve information about a booking.
 
 Modify an existing booking.
 
-**Endpoint:** `PUT /api/ownerrez/bookings/{bookingId}`
+**Endpoint:** `PUT /ownerrez/bookings/{bookingId}`
 
 **Request:**
 ```json
@@ -430,9 +430,9 @@ Modify an existing booking.
 
 Cancel a property reservation.
 
-**Endpoint:** `DELETE /api/ownerrez/bookings/{bookingId}`
+**Endpoint:** `DELETE /ownerrez/bookings/{bookingId}`
 
-**Example:** `DELETE /api/ownerrez/bookings/BOOK-12345`
+**Example:** `DELETE /ownerrez/bookings/BOOK-12345`
 
 ---
 
@@ -440,9 +440,9 @@ Cancel a property reservation.
 
 Retrieve reviews for a property.
 
-**Endpoint:** `GET /api/ownerrez/properties/{propertyId}/reviews`
+**Endpoint:** `GET /ownerrez/properties/{propertyId}/reviews`
 
-**Example:** `GET /api/ownerrez/properties/PROP-12345/reviews`
+**Example:** `GET /ownerrez/properties/PROP-12345/reviews`
 
 **Response:**
 ```json
@@ -520,7 +520,7 @@ Cache keys are generated using MD5 hash of request parameters.
 
 To clear cache manually:
 ```bash
-POST /api/performance/clear-cache
+POST /performance/clear-cache
 Authorization: Bearer YOUR_JWT_TOKEN
 ```
 
@@ -528,7 +528,7 @@ Authorization: Bearer YOUR_JWT_TOKEN
 
 Access interactive API documentation at:
 ```
-http://your-domain/api/documentation
+http://your-domain/documentation
 ```
 
 Generate/update Swagger docs:
@@ -544,12 +544,12 @@ Or test with cURL:
 
 ```bash
 # Login
-curl -X POST http://localhost:8000/api/auth/login \
+curl -X POST http://localhost:8000/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"user@example.com","password":"password"}'
 
 # Search Hotels
-curl -X POST http://localhost:8000/api/hotelbeds/search \
+curl -X POST http://localhost:8000/hotelbeds/search \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -559,7 +559,7 @@ curl -X POST http://localhost:8000/api/hotelbeds/search \
   }'
 
 # Search Properties
-curl -X GET "http://localhost:8000/api/ownerrez/properties?location=Miami&guests=4" \
+curl -X GET "http://localhost:8000/ownerrez/properties?location=Miami&guests=4" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
@@ -568,7 +568,7 @@ curl -X GET "http://localhost:8000/api/ownerrez/properties?location=Miami&guests
 For questions or issues:
 - Email: reservations@pikpakgo.com
 - Check logs: `storage/logs/laravel.log`
-- Monitor performance: `GET /api/performance/cache-stats`
+- Monitor performance: `GET /performance/cache-stats`
 
 ## Next Steps
 

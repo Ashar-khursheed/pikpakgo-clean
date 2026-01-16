@@ -11,11 +11,11 @@
     },
     "servers": [
         {
-            "url": "http://localhost:8000",
+            "url": "http://localhost:8000/api",
             "description": "Local Development Server"
         },
         {
-            "url": "https://pickpackgo.in-sourceit.com",
+            "url": "https://pickpackgo.in-sourceit.com/api",
             "description": "Production Server"
         },
         {
@@ -330,14 +330,14 @@
                 ]
             }
         },
-        "/api/hotelbeds/search": {
+        "/hotelbeds/search": {
             "post": {
                 "tags": [
                     "Hotelbeds"
                 ],
                 "summary": "Search hotels",
                 "description": "Search for available hotels based on destination, dates, and occupancy",
-                "operationId": "353c28f3f8769f700c4ab9484d139f04",
+                "operationId": "6dc91bb0018786b3d0dca341ce6de9c8",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -426,14 +426,14 @@
                 ]
             }
         },
-        "/api/hotelbeds/hotels/{hotelCode}": {
+        "/hotelbeds/hotels/{hotelCode}": {
             "get": {
                 "tags": [
                     "Hotelbeds"
                 ],
                 "summary": "Get hotel details",
                 "description": "Retrieve detailed information about a specific hotel",
-                "operationId": "986cbb9785d0a9bac2fde08a5ae6f47d",
+                "operationId": "e4f6fbb2d557fdaabd1e55113be78e60",
                 "parameters": [
                     {
                         "name": "hotelCode",
@@ -480,14 +480,14 @@
                 ]
             }
         },
-        "/api/hotelbeds/check-availability": {
+        "/hotelbeds/check-availability": {
             "post": {
                 "tags": [
                     "Hotelbeds"
                 ],
                 "summary": "Check hotel availability",
                 "description": "Check availability and rates for selected rooms",
-                "operationId": "034bfa2692ccd2130b523c4cb0f1192a",
+                "operationId": "83e63294571e645468d2b080bd7e9b93",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -547,14 +547,14 @@
                 ]
             }
         },
-        "/api/hotelbeds/bookings": {
+        "/hotelbeds/bookings": {
             "post": {
                 "tags": [
                     "Hotelbeds"
                 ],
                 "summary": "Create hotel booking",
                 "description": "Create a new hotel booking reservation",
-                "operationId": "e1648b111304f591025b2bc3b77ddc7b",
+                "operationId": "1d8f56a23ad23913420c07790dc1a269",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -628,14 +628,14 @@
                 ]
             }
         },
-        "/api/hotelbeds/bookings/{bookingReference}": {
+        "/hotelbeds/bookings/{bookingReference}": {
             "get": {
                 "tags": [
                     "Hotelbeds"
                 ],
                 "summary": "Get booking details",
                 "description": "Retrieve details of a specific booking",
-                "operationId": "b25a26a3bf68ed41eb722aaf12c77668",
+                "operationId": "360012ee300e35ff75d84d42ae289519",
                 "parameters": [
                     {
                         "name": "bookingReference",
@@ -687,7 +687,7 @@
                 ],
                 "summary": "Cancel booking",
                 "description": "Cancel an existing hotel booking",
-                "operationId": "b68880caed0557e600587ff327669a02",
+                "operationId": "850f6c95b866350b5ecf0932eebb3c00",
                 "parameters": [
                     {
                         "name": "bookingReference",
@@ -734,14 +734,14 @@
                 ]
             }
         },
-        "/api/ownerrez/properties": {
+        "/ownerrez/properties": {
             "get": {
                 "tags": [
                     "OwnerRez"
                 ],
                 "summary": "Search vacation rental properties",
                 "description": "Search for available vacation rental properties",
-                "operationId": "07cd072e85501615b1610b6230464be9",
+                "operationId": "36ff3c219e92980e9241fc70421a5729",
                 "parameters": [
                     {
                         "name": "location",
@@ -849,14 +849,14 @@
                 ]
             }
         },
-        "/api/ownerrez/properties/{propertyId}": {
+        "/ownerrez/properties/{propertyId}": {
             "get": {
                 "tags": [
                     "OwnerRez"
                 ],
                 "summary": "Get property details",
                 "description": "Retrieve detailed information about a specific property",
-                "operationId": "32859317a27084de3836e63af918353f",
+                "operationId": "18bb429b3e410b3bd4d0ba708fe958ae",
                 "parameters": [
                     {
                         "name": "propertyId",
@@ -903,14 +903,14 @@
                 ]
             }
         },
-        "/api/ownerrez/properties/{propertyId}/availability": {
+        "/ownerrez/properties/{propertyId}/availability": {
             "post": {
                 "tags": [
                     "OwnerRez"
                 ],
                 "summary": "Check property availability",
                 "description": "Check if a property is available for specific dates",
-                "operationId": "efd54d9dfbae35a4636359d6fb87b8dc",
+                "operationId": "e80fa92fc2ba458c3d5f35c229330a3a",
                 "parameters": [
                     {
                         "name": "propertyId",
@@ -987,14 +987,14 @@
                 ]
             }
         },
-        "/api/ownerrez/properties/{propertyId}/pricing": {
+        "/ownerrez/properties/{propertyId}/pricing": {
             "post": {
                 "tags": [
                     "OwnerRez"
                 ],
                 "summary": "Get property pricing",
                 "description": "Get pricing information for a property",
-                "operationId": "1276edf25cde3d2e7dc7e13b3ad22806",
+                "operationId": "b95eaef761101a37c5dc26f0cebc8417",
                 "parameters": [
                     {
                         "name": "propertyId",
@@ -1071,14 +1071,14 @@
                 ]
             }
         },
-        "/api/ownerrez/bookings": {
+        "/ownerrez/bookings": {
             "post": {
                 "tags": [
                     "OwnerRez"
                 ],
                 "summary": "Create a booking",
                 "description": "Create a new booking reservation for a property",
-                "operationId": "ff4fcb978f4055f9315d22303547741e",
+                "operationId": "1bb30a026c1b84b634ecff4179134133",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -1174,14 +1174,14 @@
                 ]
             }
         },
-        "/api/ownerrez/bookings/{bookingId}": {
+        "/ownerrez/bookings/{bookingId}": {
             "get": {
                 "tags": [
                     "OwnerRez"
                 ],
                 "summary": "Get booking details",
                 "description": "Retrieve details of a specific booking",
-                "operationId": "b59e7e0c3d59f4d821fedfb5b319555b",
+                "operationId": "eb3bb94e6b8531ea314de179bd914359",
                 "parameters": [
                     {
                         "name": "bookingId",
@@ -1233,7 +1233,7 @@
                 ],
                 "summary": "Update booking",
                 "description": "Update an existing booking",
-                "operationId": "63fe11da5a7b262d3366b8bb11c43503",
+                "operationId": "60f9a7dfc0b4ca705972f7544694e799",
                 "parameters": [
                     {
                         "name": "bookingId",
@@ -1305,7 +1305,7 @@
                 ],
                 "summary": "Cancel booking",
                 "description": "Cancel an existing booking",
-                "operationId": "d826fdd4a2ce694bf4d6424add659a73",
+                "operationId": "1ecbc3fcf8d535594016c6404df90e18",
                 "parameters": [
                     {
                         "name": "bookingId",
@@ -1352,14 +1352,14 @@
                 ]
             }
         },
-        "/api/ownerrez/properties/{propertyId}/reviews": {
+        "/ownerrez/properties/{propertyId}/reviews": {
             "get": {
                 "tags": [
                     "OwnerRez"
                 ],
                 "summary": "Get property reviews",
                 "description": "Retrieve reviews for a specific property",
-                "operationId": "d9085f6529324b3769c9fbf9e74d6c6b",
+                "operationId": "fccbb8994112e121cd040200a0ac4bec",
                 "parameters": [
                     {
                         "name": "propertyId",
@@ -1469,14 +1469,14 @@
                 ]
             }
         },
-        "/api/public/search/hotels": {
+        "/public/search/hotels": {
             "post": {
                 "tags": [
                     "Public Search"
                 ],
                 "summary": "Search hotels (PUBLIC - No Auth Required)",
                 "description": "Search for available hotels from Hotelbeds API with markup pricing",
-                "operationId": "5ba2edb1fb06af4bf3aea05699d64e0b",
+                "operationId": "3607c9948985d339ddb93222d839f0ae",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -1603,14 +1603,14 @@
                 }
             }
         },
-        "/api/public/search/properties": {
+        "/public/search/properties": {
             "post": {
                 "tags": [
                     "Public Search"
                 ],
                 "summary": "Search vacation rentals (PUBLIC - No Auth Required)",
                 "description": "Search for vacation rentals from OwnerRez API with markup pricing",
-                "operationId": "2d46d23087b634ba2d8aa6f26bd9a9ed",
+                "operationId": "df1b0b35e7a45c415b73d753169e8901",
                 "requestBody": {
                     "required": true,
                     "content": {

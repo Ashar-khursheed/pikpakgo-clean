@@ -81,7 +81,7 @@ php artisan l5-swagger:generate
 php artisan serve
 ```
 
-Visit: **http://localhost:8000/api/documentation**
+Visit: **http://localhost:8000/documentation**
 
 ---
 
@@ -91,24 +91,24 @@ Visit: **http://localhost:8000/api/documentation**
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/auth/register` | Register user |
-| POST | `/api/auth/login` | Login |
-| POST | `/api/auth/logout` | Logout |
-| POST | `/api/auth/refresh` | Refresh token |
-| GET | `/api/auth/me` | Get current user |
-| POST | `/api/auth/verify-email/{token}` | Verify email |
-| POST | `/api/auth/resend-verification` | Resend verification |
-| POST | `/api/auth/forgot-password` | Forgot password |
-| POST | `/api/auth/reset-password` | Reset password |
-| POST | `/api/auth/change-password` | Change password |
+| POST | `/auth/register` | Register user |
+| POST | `/auth/login` | Login |
+| POST | `/auth/logout` | Logout |
+| POST | `/auth/refresh` | Refresh token |
+| GET | `/auth/me` | Get current user |
+| POST | `/auth/verify-email/{token}` | Verify email |
+| POST | `/auth/resend-verification` | Resend verification |
+| POST | `/auth/forgot-password` | Forgot password |
+| POST | `/auth/reset-password` | Reset password |
+| POST | `/auth/change-password` | Change password |
 
 ### Performance (3 APIs)
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/health` | Health check |
-| GET | `/api/performance/database-stats` | Database stats |
-| POST | `/api/performance/clear-cache` | Clear cache (admin) |
+| GET | `/health` | Health check |
+| GET | `/performance/database-stats` | Database stats |
+| POST | `/performance/clear-cache` | Clear cache (admin) |
 
 ---
 
@@ -116,8 +116,8 @@ Visit: **http://localhost:8000/api/documentation**
 
 ### Via Swagger UI (Recommended)
 
-1. Go to: `http://localhost:8000/api/documentation`
-2. Find **POST /api/auth/register**
+1. Go to: `http://localhost:8000/documentation`
+2. Find **POST /auth/register**
 3. Click "Try it out"
 4. Fill in the data
 5. Click "Execute"
@@ -126,7 +126,7 @@ Visit: **http://localhost:8000/api/documentation**
 
 **Register:**
 ```bash
-curl -X POST http://localhost:8000/api/auth/register \
+curl -X POST http://localhost:8000/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "first_name": "John",
@@ -140,7 +140,7 @@ curl -X POST http://localhost:8000/api/auth/register \
 
 **Login:**
 ```bash
-curl -X POST http://localhost:8000/api/auth/login \
+curl -X POST http://localhost:8000/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "admin@pikpakgo.com",
@@ -235,7 +235,7 @@ php artisan db:seed --class=AdminUserSeeder
 pikpakgo-clean/
 ├── app/
 │   ├── Http/
-│   │   ├── Controllers/Api/
+│   │   ├── Controllers/
 │   │   │   ├── AuthController.php
 │   │   │   └── PerformanceController.php
 │   │   └── Middleware/
@@ -318,7 +318,7 @@ JWT_TTL=60
 - [ ] Admin user created (`php artisan db:seed`)
 - [ ] JWT secret generated (`php artisan jwt:secret`)
 - [ ] Swagger generated (`php artisan l5-swagger:generate`)
-- [ ] Can access Swagger UI (`/api/documentation`)
+- [ ] Can access Swagger UI (`/documentation`)
 - [ ] Can login as admin
 - [ ] Can register new user
 
@@ -331,7 +331,7 @@ JWT_TTL=60
 - Phone: 800-920-0398
 
 **Documentation:**
-- Swagger UI: http://localhost:8000/api/documentation
+- Swagger UI: http://localhost:8000/documentation
 - README: This file
 - Installation: INSTALLATION.md
 

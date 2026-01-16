@@ -9,16 +9,16 @@ Complete hotel booking system with the following capabilities:
 - `app/Services/HotelbedsService.php` - Core service handling all Hotelbeds API communications
 
 #### Controllers Created:
-- `app/Http/Controllers/Api/HotelbedsController.php` - REST API endpoints with Swagger documentation
+- `app/Http/Controllers/HotelbedsController.php` - REST API endpoints with Swagger documentation
 
 #### Available Endpoints:
 ```
-POST   /api/hotelbeds/search                           - Search hotels
-GET    /api/hotelbeds/hotels/{hotelCode}              - Get hotel details
-POST   /api/hotelbeds/check-availability              - Check room availability
-POST   /api/hotelbeds/bookings                        - Create booking
-GET    /api/hotelbeds/bookings/{bookingReference}     - Get booking details
-DELETE /api/hotelbeds/bookings/{bookingReference}     - Cancel booking
+POST   /hotelbeds/search                           - Search hotels
+GET    /hotelbeds/hotels/{hotelCode}              - Get hotel details
+POST   /hotelbeds/check-availability              - Check room availability
+POST   /hotelbeds/bookings                        - Create booking
+GET    /hotelbeds/bookings/{bookingReference}     - Get booking details
+DELETE /hotelbeds/bookings/{bookingReference}     - Cancel booking
 ```
 
 #### Features:
@@ -40,19 +40,19 @@ Complete vacation rental property management system:
 - `app/Services/OwnerRezService.php` - Core service handling all OwnerRez API communications
 
 #### Controllers Created:
-- `app/Http/Controllers/Api/OwnerRezController.php` - REST API endpoints with Swagger documentation
+- `app/Http/Controllers/OwnerRezController.php` - REST API endpoints with Swagger documentation
 
 #### Available Endpoints:
 ```
-GET    /api/ownerrez/properties                              - Search properties
-GET    /api/ownerrez/properties/{propertyId}                 - Get property details
-POST   /api/ownerrez/properties/{propertyId}/availability    - Check availability
-POST   /api/ownerrez/properties/{propertyId}/pricing         - Get pricing
-GET    /api/ownerrez/properties/{propertyId}/reviews         - Get reviews
-POST   /api/ownerrez/bookings                                - Create booking
-GET    /api/ownerrez/bookings/{bookingId}                    - Get booking details
-PUT    /api/ownerrez/bookings/{bookingId}                    - Update booking
-DELETE /api/ownerrez/bookings/{bookingId}                    - Cancel booking
+GET    /ownerrez/properties                              - Search properties
+GET    /ownerrez/properties/{propertyId}                 - Get property details
+POST   /ownerrez/properties/{propertyId}/availability    - Check availability
+POST   /ownerrez/properties/{propertyId}/pricing         - Get pricing
+GET    /ownerrez/properties/{propertyId}/reviews         - Get reviews
+POST   /ownerrez/bookings                                - Create booking
+GET    /ownerrez/bookings/{bookingId}                    - Get booking details
+PUT    /ownerrez/bookings/{bookingId}                    - Update booking
+DELETE /ownerrez/bookings/{bookingId}                    - Cancel booking
 ```
 
 #### Features:
@@ -124,7 +124,7 @@ AUTHORIZE_NET_ENVIRONMENT=sandbox
 #### Swagger/OpenAPI Documentation:
 - Added complete OpenAPI annotations to all controllers
 - Base controller updated with API info and security schemes
-- Auto-generated interactive documentation available at `/api/documentation`
+- Auto-generated interactive documentation available at `/documentation`
 
 ---
 
@@ -192,13 +192,13 @@ php artisan l5-swagger:generate
 #### Option B: Use cURL
 ```bash
 # Login
-TOKEN=$(curl -X POST http://localhost:8000/api/auth/login \
+TOKEN=$(curl -X POST http://localhost:8000/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"user@example.com","password":"password"}' \
   | jq -r '.access_token')
 
 # Search hotels
-curl -X POST http://localhost:8000/api/hotelbeds/search \
+curl -X POST http://localhost:8000/hotelbeds/search \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -209,7 +209,7 @@ curl -X POST http://localhost:8000/api/hotelbeds/search \
 ```
 
 #### Option C: Use Swagger UI
-1. Navigate to `http://localhost:8000/api/documentation`
+1. Navigate to `http://localhost:8000/documentation`
 2. Click "Authorize" and enter your JWT token
 3. Test endpoints interactively
 
@@ -219,21 +219,21 @@ curl -X POST http://localhost:8000/api/hotelbeds/search \
 
 | Provider  | Method | Endpoint | Purpose |
 |-----------|--------|----------|---------|
-| **Hotelbeds** | POST | `/api/hotelbeds/search` | Search hotels |
-| | GET | `/api/hotelbeds/hotels/{code}` | Hotel details |
-| | POST | `/api/hotelbeds/check-availability` | Check rooms |
-| | POST | `/api/hotelbeds/bookings` | Create booking |
-| | GET | `/api/hotelbeds/bookings/{ref}` | Get booking |
-| | DELETE | `/api/hotelbeds/bookings/{ref}` | Cancel booking |
-| **OwnerRez** | GET | `/api/ownerrez/properties` | Search properties |
-| | GET | `/api/ownerrez/properties/{id}` | Property details |
-| | POST | `/api/ownerrez/properties/{id}/availability` | Check availability |
-| | POST | `/api/ownerrez/properties/{id}/pricing` | Get pricing |
-| | GET | `/api/ownerrez/properties/{id}/reviews` | Get reviews |
-| | POST | `/api/ownerrez/bookings` | Create booking |
-| | GET | `/api/ownerrez/bookings/{id}` | Get booking |
-| | PUT | `/api/ownerrez/bookings/{id}` | Update booking |
-| | DELETE | `/api/ownerrez/bookings/{id}` | Cancel booking |
+| **Hotelbeds** | POST | `/hotelbeds/search` | Search hotels |
+| | GET | `/hotelbeds/hotels/{code}` | Hotel details |
+| | POST | `/hotelbeds/check-availability` | Check rooms |
+| | POST | `/hotelbeds/bookings` | Create booking |
+| | GET | `/hotelbeds/bookings/{ref}` | Get booking |
+| | DELETE | `/hotelbeds/bookings/{ref}` | Cancel booking |
+| **OwnerRez** | GET | `/ownerrez/properties` | Search properties |
+| | GET | `/ownerrez/properties/{id}` | Property details |
+| | POST | `/ownerrez/properties/{id}/availability` | Check availability |
+| | POST | `/ownerrez/properties/{id}/pricing` | Get pricing |
+| | GET | `/ownerrez/properties/{id}/reviews` | Get reviews |
+| | POST | `/ownerrez/bookings` | Create booking |
+| | GET | `/ownerrez/bookings/{id}` | Get booking |
+| | PUT | `/ownerrez/bookings/{id}` | Update booking |
+| | DELETE | `/ownerrez/bookings/{id}` | Cancel booking |
 
 **Total New Endpoints: 15**
 

@@ -24,7 +24,7 @@ class HotelbedsController extends Controller
     
     /**
      * @OA\Post(
-     *     path="/api/hotelbeds/search",
+     *     path="/hotelbeds/search",
      *     summary="Search hotels",
      *     description="Search for available hotels based on destination, dates, and occupancy",
      *     tags={"Hotelbeds"},
@@ -86,7 +86,7 @@ class HotelbedsController extends Controller
     
     /**
      * @OA\Get(
-     *     path="/api/hotelbeds/hotels/{hotelCode}",
+     *     path="/hotelbeds/hotels/{hotelCode}",
      *     summary="Get hotel details",
      *     description="Retrieve detailed information about a specific hotel",
      *     tags={"Hotelbeds"},
@@ -119,7 +119,7 @@ class HotelbedsController extends Controller
     
     /**
      * @OA\Post(
-     *     path="/api/hotelbeds/check-availability",
+     *     path="/hotelbeds/check-availability",
      *     summary="Check hotel availability",
      *     description="Check availability and rates for selected rooms",
      *     tags={"Hotelbeds"},
@@ -166,7 +166,7 @@ class HotelbedsController extends Controller
     
     /**
      * @OA\Post(
-     *     path="/api/hotelbeds/bookings",
+     *     path="/hotelbeds/bookings",
      *     summary="Create hotel booking",
      *     description="Create a new hotel booking reservation",
      *     tags={"Hotelbeds"},
@@ -226,7 +226,7 @@ class HotelbedsController extends Controller
     
     /**
      * @OA\Get(
-     *     path="/api/hotelbeds/bookings/{bookingReference}",
+     *     path="/hotelbeds/bookings/{bookingReference}",
      *     summary="Get booking details",
      *     description="Retrieve details of a specific booking",
      *     tags={"Hotelbeds"},
@@ -259,7 +259,7 @@ class HotelbedsController extends Controller
     
     /**
      * @OA\Delete(
-     *     path="/api/hotelbeds/bookings/{bookingReference}",
+     *     path="/hotelbeds/bookings/{bookingReference}",
      *     summary="Cancel booking",
      *     description="Cancel an existing hotel booking",
      *     tags={"Hotelbeds"},

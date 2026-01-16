@@ -3,14 +3,14 @@
 ## Problem
 Your Swagger documentation is showing URLs like:
 ```
-https://pickpackgo.in-sourceit.com/api/api/public/search/hotels
+https://pickpackgo.in-sourceit.com/api/public/search/hotels
                                     ↑   ↑
                                     Double /api
 ```
 
 This causes 404 errors because the correct URL should be:
 ```
-https://pickpackgo.in-sourceit.com/api/public/search/hotels
+https://pickpackgo.in-sourceit.com/public/search/hotels
 ```
 
 ## Solution - Update Controller.php
@@ -108,13 +108,13 @@ php artisan route:clear
 ```
 
 ### Step 4: Test
-Visit: `https://pickpackgo.in-sourceit.com/api/documentation`
+Visit: `https://pickpackgo.in-sourceit.com/documentation`
 
 The URLs should now be correct:
 ```
-✅ https://pickpackgo.in-sourceit.com/api/public/search/hotels
-✅ https://pickpackgo.in-sourceit.com/api/bookings/guest/create
-✅ https://pickpackgo.in-sourceit.com/api/auth/login
+✅ https://pickpackgo.in-sourceit.com/public/search/hotels
+✅ https://pickpackgo.in-sourceit.com/bookings/guest/create
+✅ https://pickpackgo.in-sourceit.com/auth/login
 ```
 
 ## Alternative: Check l5-swagger.php Config
@@ -136,7 +136,7 @@ After the fix, test with curl:
 
 ```bash
 # Test public search (should work without auth)
-curl -X POST https://pickpackgo.in-sourceit.com/api/public/search/hotels \
+curl -X POST https://pickpackgo.in-sourceit.com/public/search/hotels \
   -H "Content-Type: application/json" \
   -d '{
     "checkIn": "2025-03-01",
@@ -152,7 +152,7 @@ You should get a 200 response with hotel data, NOT a 404!
 
 After fixing:
 
-- [ ] Swagger UI loads at `/api/documentation`
+- [ ] Swagger UI loads at `/documentation`
 - [ ] Server dropdown shows correct URLs (no double /api)
 - [ ] Test search endpoint returns 200, not 404
 - [ ] All routes work in Swagger "Try it out"
