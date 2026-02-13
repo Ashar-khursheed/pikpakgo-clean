@@ -330,6 +330,30 @@
                 ]
             }
         },
+        "/bookings/guest/create": {
+            "post": {
+                "tags": [
+                    "Bookings"
+                ],
+                "summary": "Create guest booking",
+                "operationId": "76bbd665ca2b835377ebe9cd8ea42d6b",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Booking created"
+                    }
+                }
+            }
+        },
         "/hotelbeds/search": {
             "post": {
                 "tags": [
@@ -1469,6 +1493,34 @@
                 ]
             }
         },
+        "/public/properties/{id}": {
+            "get": {
+                "tags": [
+                    "Properties"
+                ],
+                "summary": "Get property details",
+                "operationId": "29012cf60a58b969ba0487a4af1f1d78",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Property ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Property details"
+                    },
+                    "404": {
+                        "description": "Property not found"
+                    }
+                }
+            }
+        },
         "/public/search/hotels": {
             "post": {
                 "tags": [
@@ -1623,23 +1675,29 @@
                                 "properties": {
                                     "checkIn": {
                                         "type": "string",
-                                        "format": "date"
+                                        "format": "date",
+                                        "example": "2027-01-23"
                                     },
                                     "checkOut": {
                                         "type": "string",
-                                        "format": "date"
+                                        "format": "date",
+                                        "example": "2027-01-25"
                                     },
                                     "location": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "example": "Miami"
                                     },
                                     "guests": {
-                                        "type": "integer"
+                                        "type": "integer",
+                                        "example": 2
                                     },
                                     "bedrooms": {
-                                        "type": "integer"
+                                        "type": "integer",
+                                        "example": 1
                                     },
                                     "propertyType": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "example": "apartment"
                                     }
                                 },
                                 "type": "object"
@@ -1726,6 +1784,10 @@
             "description": "User authentication and profile management"
         },
         {
+            "name": "Bookings",
+            "description": "Booking management for both guest and authenticated users"
+        },
+        {
             "name": "Hotelbeds",
             "description": "Hotel booking and management via Hotelbeds API"
         },
@@ -1736,6 +1798,10 @@
         {
             "name": "Performance",
             "description": "Performance monitoring and system health"
+        },
+        {
+            "name": "Properties",
+            "description": "Property details and availability"
         },
         {
             "name": "Public Search",

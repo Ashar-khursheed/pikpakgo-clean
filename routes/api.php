@@ -56,6 +56,13 @@ Route::prefix('public')->group(function () {
         Route::post('session/update', [GuestController::class, 'updateSession']);
         Route::get('session/{sessionId}', [GuestController::class, 'getSession']);
     });
+
+    // Content Pages
+    Route::prefix('content')->group(function () {
+        Route::get('pages/{slug}', [\App\Http\Controllers\Api\ContentController::class, 'getPage']);
+        Route::get('header', [\App\Http\Controllers\Api\ContentController::class, 'getHeader']);
+        Route::get('footer', [\App\Http\Controllers\Api\ContentController::class, 'getFooter']);
+    });
 });
 
 // ============================================
@@ -132,24 +139,24 @@ Route::prefix('payments')->group(function () {
 
 Route::prefix('admin')->middleware(['auth:api', 'admin'])->group(function () {
     
-    // Dashboard & Analytics
-    Route::prefix('dashboard')->group(function () {
-        Route::get('stats', [DashboardController::class, 'getStats']);
-        Route::get('revenue', [DashboardController::class, 'getRevenueStats']);
-        Route::get('bookings/chart', [DashboardController::class, 'getBookingsChart']);
-        Route::get('recent-bookings', [DashboardController::class, 'getRecentBookings']);
-        Route::get('top-properties', [DashboardController::class, 'getTopProperties']);
-    });
+    // Dashboard & Analytics (Controllers missing in clean repo)
+    // Route::prefix('dashboard')->group(function () {
+    //     Route::get('stats', [DashboardController::class, 'getStats']);
+    //     Route::get('revenue', [DashboardController::class, 'getRevenueStats']);
+    //     Route::get('bookings/chart', [DashboardController::class, 'getBookingsChart']);
+    //     Route::get('recent-bookings', [DashboardController::class, 'getRecentBookings']);
+    //     Route::get('top-properties', [DashboardController::class, 'getTopProperties']);
+    // });
     
     // Booking Management
     Route::prefix('bookings')->group(function () {
         Route::get('/', [AdminBookingController::class, 'index']);
         Route::get('{id}', [AdminBookingController::class, 'show']);
         Route::put('{id}/status', [AdminBookingController::class, 'updateStatus']);
-        Route::post('{id}/refund', [AdminBookingController::class, 'processRefund']);
-        Route::put('{id}/notes', [AdminBookingController::class, 'updateNotes']);
-        Route::get('export/csv', [AdminBookingController::class, 'exportCSV']);
-        Route::get('export/pdf', [AdminBookingController::class, 'exportPDF']);
+        // Route::post('{id}/refund', [AdminBookingController::class, 'processRefund']);
+        // Route::put('{id}/notes', [AdminBookingController::class, 'updateNotes']);
+        // Route::get('export/csv', [AdminBookingController::class, 'exportCSV']);
+        // Route::get('export/pdf', [AdminBookingController::class, 'exportPDF']);
     });
     
     // Property Management
@@ -157,10 +164,10 @@ Route::prefix('admin')->middleware(['auth:api', 'admin'])->group(function () {
         Route::get('/', [AdminPropertyController::class, 'index']);
         Route::get('{id}', [AdminPropertyController::class, 'show']);
         Route::post('sync', [AdminPropertyController::class, 'syncFromAPIs']);
-        Route::post('{id}/sync', [AdminPropertyController::class, 'syncSingle']);
+        // Route::post('{id}/sync', [AdminPropertyController::class, 'syncSingle']);
         Route::put('{id}/status', [AdminPropertyController::class, 'updateStatus']);
-        Route::put('{id}/featured', [AdminPropertyController::class, 'toggleFeatured']);
-        Route::delete('{id}', [AdminPropertyController::class, 'destroy']);
+        // Route::put('{id}/featured', [AdminPropertyController::class, 'toggleFeatured']);
+        // Route::delete('{id}', [AdminPropertyController::class, 'destroy']);
     });
     
     // Pricing Markup Management
@@ -175,26 +182,29 @@ Route::prefix('admin')->middleware(['auth:api', 'admin'])->group(function () {
         Route::post('calculate', [PricingMarkupController::class, 'calculateMarkup']); // Test calculator
     });
     
-    // User Management
-    Route::prefix('users')->group(function () {
-        Route::get('/', [AdminBookingController::class, 'getUsers']);
-        Route::get('{id}', [AdminBookingController::class, 'getUser']);
-        Route::put('{id}/status', [AdminBookingController::class, 'updateUserStatus']);
-        Route::get('{id}/bookings', [AdminBookingController::class, 'getUserBookings']);
-    });
+    // User Management (Controllers missing)
+    // Route::prefix('users')->group(function () {
+    //     Route::get('/', [AdminBookingController::class, 'getUsers']);
+    //     Route::get('{id}', [AdminBookingController::class, 'getUser']);
+    //     Route::put('{id}/status', [AdminBookingController::class, 'updateUserStatus']);
+    //     Route::get('{id}/bookings', [AdminBookingController::class, 'getUserBookings']);
+    // });
     
-    // Payment Management
-    Route::prefix('payments')->group(function () {
-        Route::get('/', [AdminBookingController::class, 'getPayments']);
-        Route::get('{id}', [AdminBookingController::class, 'getPayment']);
-        Route::get('export/csv', [AdminBookingController::class, 'exportPaymentsCSV']);
-    });
+    // Payment Management (Controllers missing)
+    // Route::prefix('payments')->group(function () {
+    //     Route::get('/', [AdminBookingController::class, 'getPayments']);
+    //     Route::get('{id}', [AdminBookingController::class, 'getPayment']);
+    //     Route::get('export/csv', [AdminBookingController::class, 'exportPaymentsCSV']);
+    // });
     
-    // Settings
-    Route::prefix('settings')->group(function () {
-        Route::get('/', [DashboardController::class, 'getSettings']);
-        Route::put('/', [DashboardController::class, 'updateSettings']);
-        Route::get('api-config', [DashboardController::class, 'getAPIConfig']);
-        Route::put('api-config', [DashboardController::class, 'updateAPIConfig']);
-    });
+    // Settings (Controllers missing)
+    // Route::prefix('settings')->group(function () {
+    //     Route::get('/', [DashboardController::class, 'getSettings']);
+    //     Route::put('/', [DashboardController::class, 'updateSettings']);
+    //     Route::get('api-config', [DashboardController::class, 'getAPIConfig']);
+    //     Route::put('api-config', [DashboardController::class, 'updateAPIConfig']);
+    // });
+
+    // Content Management
+    Route::apiResource('content', \App\Http\Controllers\Api\Admin\AdminContentController::class);
 });

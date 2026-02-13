@@ -37,7 +37,13 @@ class BookingController extends Controller
     }
     
     /**
-     * Create a guest booking (no authentication required)
+     * @OA\Post(
+     *     path="/bookings/guest/create",
+     *     summary="Create guest booking",
+     *     tags={"Bookings"},
+     *     @OA\RequestBody(required=true, @OA\JsonContent(type="object")),
+     *     @OA\Response(response=201, description="Booking created")
+     * )
      */
     public function createGuestBooking(Request $request)
     {

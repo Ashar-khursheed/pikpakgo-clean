@@ -11,6 +11,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
+
+/**
+ * @OA\Tag(
+ *     name="Properties",
+ *     description="Property details and availability"
+ * )
+ */
 class PropertyController extends Controller
 {
     protected $hotelbedsService;
@@ -28,7 +35,20 @@ class PropertyController extends Controller
     }
     
     /**
-     * Get property details by ID
+     * @OA\Get(
+     *     path="/public/properties/{id}",
+     *     summary="Get property details",
+     *     tags={"Properties"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Property ID",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(response=200, description="Property details"),
+     *     @OA\Response(response=404, description="Property not found")
+     * )
      */
     public function show($id)
     {

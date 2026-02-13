@@ -12,6 +12,12 @@ use Illuminate\Support\Str;
 
 class PaymentController extends Controller
 {
+    protected $authorizeNetService;
+
+    public function __construct(\App\Services\AuthorizeNetService $authorizeNetService)
+    {
+        $this->authorizeNetService = $authorizeNetService;
+    }
     /**
      * Process guest payment
      */
@@ -319,15 +325,16 @@ class PaymentController extends Controller
      */
     protected function processWithAuthorizeNet($transaction, $cardData)
     {
-        // This is a placeholder - implement actual Authorize.Net API calls
-        // For now, simulate successful payment
+        $amount = $transaction->amount;
+        $refId = $transaction->transaction_id;
         
-        return [
-            'success' => true,
-            'transaction_id' => 'AUTH-' . Str::random(12),
-            'response_code' => '1',
-            'message' => 'This transaction has been approved.'
+        $cardDetails = [
+            'cardNumber' => $cardData['card_number'],
+            'expirationDate' => $transaction->card_expiry_year . '-' . $transaction->card_expiry_month,
+            'cvv' => $cardData['card_cvv'],
         ];
+
+        return $this->authorizeNetService->chargeCreditCard($cardDetails, $amount, $refId);
     }
     
     /**

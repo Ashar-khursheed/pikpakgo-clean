@@ -39,6 +39,10 @@ class OwnerRezService
      */
     public function searchProperties(array $params = [])
     {
+        if (env('MOCK_SERVICES', false)) {
+            return $this->getMockProperties();
+        }
+
         try {
             $queryParams = array_filter([
                 'location' => $params['location'] ?? null,
@@ -54,9 +58,10 @@ class OwnerRezService
             $cacheKey = 'ownerrez_search_' . md5(json_encode($queryParams));
             
             return Cache::remember($cacheKey, 3600, function () use ($queryParams) {
+                $url = "{$this->baseUrl}/v2/properties";
                 $response = Http::withHeaders($this->getHeaders())
                     ->timeout(30)
-                    ->get("{$this->baseUrl}/v2/properties", $queryParams);
+                    ->get($url, $queryParams);
                 
                 if ($response->successful()) {
                     return [
@@ -67,13 +72,15 @@ class OwnerRezService
                 
                 Log::error('OwnerRez API Error', [
                     'status' => $response->status(),
+                    'url' => $url,
                     'body' => $response->body()
                 ]);
                 
                 return [
                     'success' => false,
                     'message' => 'Failed to search properties',
-                    'error' => $response->json()
+                    'url' => $url,
+                    'error' => $response->json() ?? $response->body()
                 ];
             });
         } catch (\Exception $e) {
@@ -95,6 +102,10 @@ class OwnerRezService
      */
     public function getPropertyDetails(string $propertyId)
     {
+        if (env('MOCK_SERVICES', false)) {
+            return $this->getMockPropertyDetails($propertyId);
+        }
+
         try {
             $cacheKey = "ownerrez_property_{$propertyId}";
             
@@ -113,7 +124,7 @@ class OwnerRezService
                 return [
                     'success' => false,
                     'message' => 'Failed to get property details',
-                    'error' => $response->json()
+                    'error' => $response->json() ?? $response->body()
                 ];
             });
         } catch (\Exception $e) {
@@ -392,5 +403,55 @@ class OwnerRezService
                 'error' => $e->getMessage()
             ];
         }
+    }
+
+    private function getMockProperties()
+    {
+        return [
+            'success' => true,
+            'data' => [
+                'properties' => [
+                    [
+                        'id' => 101,
+                        'property_id' => 'mock_101',
+                        'name' => 'Luxury Ocean View Apartment',
+                        'description' => 'Beautiful apartment with direct ocean views.',
+                        'property_type' => 'apartment',
+                        'city' => 'Miami',
+                        'country' => 'United States',
+                        'bedrooms' => 2,
+                        'bathrooms' => 2,
+                        'guests' => 4,
+                        'rate' => 250.00,
+                        'currency' => 'USD',
+                        'images' => [
+                            'https://placehold.co/600x400?text=Ocean+View',
+                            'https://placehold.co/600x400?text=Bedroom'
+                        ],
+                        'amenities' => ['Wifi', 'Pool', 'Gym', 'Kitchen'],
+                        'star_rating' => 5
+                    ],
+                    [
+                        'id' => 102,
+                        'property_id' => 'mock_102',
+                        'name' => 'Downtown Modern Loft',
+                        'description' => 'Stylish loft in the heart of the city.',
+                        'property_type' => 'loft',
+                        'city' => 'Miami',
+                        'country' => 'United States',
+                        'bedrooms' => 1,
+                        'bathrooms' => 1,
+                        'guests' => 2,
+                        'rate' => 175.00,
+                        'currency' => 'USD',
+                        'images' => [
+                            'https://placehold.co/600x400?text=Modern+Loft'
+                        ],
+                        'amenities' => ['Wifi', 'Elevator', 'Air Conditioning'],
+                        'star_rating' => 4
+                    ]
+                ]
+            ]
+        ];
     }
 }

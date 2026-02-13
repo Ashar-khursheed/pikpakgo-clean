@@ -163,12 +163,12 @@ class SearchController extends Controller
      *         required=true,
      *         @OA\JsonContent(
      *             required={"checkIn", "checkOut"},
-     *             @OA\Property(property="checkIn", type="string", format="date"),
-     *             @OA\Property(property="checkOut", type="string", format="date"),
-     *             @OA\Property(property="location", type="string"),
-     *             @OA\Property(property="guests", type="integer"),
-     *             @OA\Property(property="bedrooms", type="integer"),
-     *             @OA\Property(property="propertyType", type="string")
+     *             @OA\Property(property="checkIn", type="string", format="date", example="2027-01-23"),
+     *             @OA\Property(property="checkOut", type="string", format="date", example="2027-01-25"),
+     *             @OA\Property(property="location", type="string", example="Miami"),
+     *             @OA\Property(property="guests", type="integer", example=2),
+     *             @OA\Property(property="bedrooms", type="integer", example=1),
+     *             @OA\Property(property="propertyType", type="string", example="apartment")
      *         )
      *     ),
      *     @OA\Response(response=200, description="Successful search")
@@ -231,7 +231,8 @@ class SearchController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'An error occurred while searching properties',
-                'error' => config('app.debug') ? $e->getMessage() : null
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ], 500);
         }
     }

@@ -44,7 +44,7 @@ return [
     'ownerrez' => [
         'username' => env('OWNERREZ_USERNAME'),
         'password' => env('OWNERREZ_PASSWORD'),
-        'base_url' => env('OWNERREZ_BASE_URL', 'https://faststage.ownerrez.com'),
+        'base_url' => env('OWNERREZ_BASE_URL', 'https://api.ownerrez.com/v2'),
         'environment' => env('OWNERREZ_ENVIRONMENT', 'sandbox'),
     ],
 
