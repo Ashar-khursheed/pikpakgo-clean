@@ -43,6 +43,7 @@ Route::prefix('public')->group(function () {
     
     // Property details - PUBLIC
     Route::prefix('properties')->group(function () {
+        Route::get('/', [PropertyController::class, 'index']);
         Route::get('{id}', [PropertyController::class, 'show']);
         Route::post('{id}/check-availability', [PropertyController::class, 'checkAvailability']);
         Route::post('{id}/get-pricing', [PropertyController::class, 'getPricing']);

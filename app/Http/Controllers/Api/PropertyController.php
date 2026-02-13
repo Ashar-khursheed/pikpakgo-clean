@@ -36,6 +36,92 @@ class PropertyController extends Controller
     
     /**
      * @OA\Get(
+     *     path="/public/properties",
+     *     summary="List all properties with pagination",
+     *     tags={"Properties"},
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         description="Page number",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="per_page",
+     *         in="query",
+     *         description="Items per page (default 20, max 100)",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Paginated list of properties with pricing markup applied",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="data", type="object")
+     *         )
+     *     )
+     * )
+     */
+    public function index(Request $request)
+    {
+        try {
+            $perPage = min($request->input('per_page', 20), 100);
+            
+            $query = PropertyListing::where('is_active', true);
+            
+            // Optional filters
+            if ($request->has('city')) {
+                $query->where('city', 'like', "%{$request->city}%");
+            }
+            
+            if ($request->has('country')) {
+                $query->where('country', 'like', "%{$request->country}%");
+            }
+            
+            $properties = $query->orderBy('created_at', 'desc')->paginate($perPage);
+            
+            // Apply markup to each property in the collection
+            $properties->getCollection()->transform(function ($property) {
+                // Calculate markup for default stay (e.g. 1 night, 2 guests, next week)
+                // This is an estimation for display purposes. 
+                // Detailed pricing requires specific dates via check-availability endpoint.
+                
+                $basePrice = $property->price_from ?? 0;
+                
+                if ($basePrice > 0) {
+                    $markupData = $this->pricingService->calculateMarkup([
+                        'base_price' => $basePrice,
+                        'provider' => $property->provider,
+                        'property_type' => $property->property_type,
+                        'destination_code' => $property->destination_code,
+                        'check_in_date' => now()->addDays(7)->toDateString(), // Assumption for general listing
+                    ]);
+                    
+                    $property->display_price = $markupData['final_price'];
+                    $property->markup_applied = true;
+                } else {
+                    $property->display_price = $basePrice;
+                }
+                
+                return $property;
+            });
+            
+            return response()->json([
+                'success' => true,
+                'data' => $properties
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('List properties error: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to list properties'
+            ], 500);
+        }
+    }
+
+    /**
+     * @OA\Get(
      *     path="/public/properties/{id}",
      *     summary="Get property details",
      *     tags={"Properties"},
