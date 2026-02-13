@@ -64,6 +64,11 @@ Route::prefix('public')->group(function () {
         Route::get('header', [\App\Http\Controllers\Api\ContentController::class, 'getHeader']);
         Route::get('footer', [\App\Http\Controllers\Api\ContentController::class, 'getFooter']);
     });
+
+    // OwnerRez specific endpoints (Alias for public properties for now)
+    Route::prefix('ownerrez')->group(function () {
+        Route::get('properties', [PropertyController::class, 'index']);
+    });
 });
 
 // ============================================

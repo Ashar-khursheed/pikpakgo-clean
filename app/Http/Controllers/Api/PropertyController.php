@@ -68,16 +68,32 @@ class PropertyController extends Controller
             
             $query = PropertyListing::where('is_active', true);
             
-            // Optional filters
+            // Filter by location (city/address/name)
+            if ($request->has('location')) {
+                $query->search($request->location);
+            }
+            
+            // Filter by specific city
             if ($request->has('city')) {
-                $query->where('city', 'like', "%{$request->city}%");
+                $query->city($request->city);
             }
             
             if ($request->has('country')) {
                 $query->where('country', 'like', "%{$request->country}%");
             }
+
+            // Filter by Price Range
+            if ($request->has('minPrice') || $request->has('maxPrice')) {
+                $query->priceRange($request->minPrice, $request->maxPrice);
+            }
             
-            $properties = $query->orderBy('created_at', 'desc')->paginate($perPage);
+            // Filter by Guests (if mapping allows, currently naive max filter or ignore)
+            // if ($request->has('guests')) { ... }
+
+            // Standard sorting
+            $query->orderBy('created_at', 'desc');
+            
+            $properties = $query->paginate($perPage);
             
             // Apply markup to each property in the collection
             $properties->getCollection()->transform(function ($property) {

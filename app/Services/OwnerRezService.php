@@ -405,6 +405,80 @@ class OwnerRezService
         }
     }
 
+    /**
+     * Fetch properties via Channel API (HAXML)
+     */
+    public function fetchPropertiesWithChannelApi()
+    {
+        // Requires Advertiser ID (ora...)
+        // URL: /haapi/haxml/{advertiserId}/listingindex
+        
+        $advertiserId = config('services.ownerrez.advertiser_id');
+        
+        if (!$advertiserId) {
+            // Try to discover via index? (Failed in testing)
+            // For now, return empty or error
+            return [
+                'success' => false,
+                'message' => 'Advertiser ID (ora...) not configured. Please add OWNERREZ_ADVERTISER_ID to .env'
+            ];
+        }
+
+        $url = "{$this->baseUrl}/haapi/haxml/{$advertiserId}/listingindex";
+        
+        try {
+             $response = Http::withBasicAuth($this->username, $this->password)
+                ->withHeaders([
+                    'User-Agent' => 'PikPakGo/1.0', // Mandatory
+                    'Content-Type' => 'application/xml'
+                ])
+                ->timeout(60)
+                ->get($url);
+
+            if ($response->successful()) {
+                // Parse XML response
+                $xml = simplexml_load_string($response->body());
+                $json = json_encode($xml);
+                $data = json_decode($json, true);
+                
+                return [
+                    'success' => true,
+                    'data' => $data
+                ];
+            }
+            
+            Log::error('OwnerRez Channel API Error', [
+                'status' => $response->status(),
+                'body' => $response->body()
+            ]);
+            
+            return [
+                'success' => false,
+                'message' => 'Failed to fetch properties from Channel API',
+                'error' => $response->body()
+            ];
+
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Channel API Exception',
+                'error' => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Check Availability via Channel API (OLB)
+     */
+    public function checkChannelAvailability($params)
+    {
+        $url = "{$this->baseUrl}/haapi/haolbjson/fastavailability";
+        
+        // Construct body...
+        // This is complex, will implement stub first
+        return ['success' => false, 'message' => 'Not implemented yet'];
+    }
+    
     private function getMockProperties()
     {
         return [

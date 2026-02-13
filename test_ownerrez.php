@@ -13,6 +13,13 @@ echo "Env URL: " . env('OWNERREZ_BASE_URL') . "\n";
 echo "Config URL: " . config('services.ownerrez.base_url') . "\n";
 
 $service = new OwnerRezService();
+$rand = rand(1, 1000);
+echo "Testing with random param: $rand\n";
+// Pass a dummy param that won't affect search but changes cache key if service uses all params
+// OwnerRez might ignore unknown params, or we can vary a valid one slightly if needed.
+// But wait, the service filters params. 
+// Let's modify the service to accept a unique param or just clear cache in the script.
+Cache::forget('ownerrez_search_' . md5(json_encode(['guests' => 2])));
 $result = $service->searchProperties(['guests' => 2]);
 
 echo "Success: " . ($result['success'] ? 'YES' : 'NO') . "\n";
