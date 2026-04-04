@@ -71,18 +71,17 @@ class OwnerRezController extends Controller
      *         description="Minimum price per night",
      *         @OA\Schema(type="number", example=100)
      *     ),
-     *     @OA\Parameter(
-     *         name="maxPrice",
-     *         in="query",
-     *         description="Maximum price per night",
-     *         @OA\Schema(type="number", example=500)
-     *     ),
-     *     @OA\Response(
+     * @OA\Response(
      *         response=200,
-     *         description="Properties retrieved successfully",
+     *         description="Properties retrieved successfully via Channel API",
      *         @OA\JsonContent(
      *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="data", type="object")
+     *             @OA\Property(
+     *                 property="data", 
+     *                 type="object",
+     *                 @OA\Property(property="items", type="array", @OA\Items(type="object")),
+     *                 @OA\Property(property="total", type="integer", example=10)
+     *             )
      *         )
      *     ),
      *     @OA\Response(response=401, description="Unauthorized")
@@ -128,9 +127,9 @@ class OwnerRezController extends Controller
      *         description="Property ID",
      *         @OA\Schema(type="string", example="PROP-12345")
      *     ),
-     *     @OA\Response(
+     * @OA\Response(
      *         response=200,
-     *         description="Property details retrieved successfully",
+     *         description="Property details retrieved successfully via Channel API XML",
      *         @OA\JsonContent(
      *             @OA\Property(property="success", type="boolean", example=true),
      *             @OA\Property(property="data", type="object")
@@ -320,147 +319,64 @@ class OwnerRezController extends Controller
             ], 400);
         }
         
-        $result = $this->ownerRezService->createBooking($request->all());
-        
+        $bookingData = $request->all();
+        $propertyId  = $bookingData['propertyId'];
+        $guests      = (int)($bookingData['guests'] ?? 2);
+
+        // Step 1: Get a quote to obtain orderItems + paymentSchedule (required by createbooking)
+        $quote = $this->ownerRezService->getPricing($propertyId, [
+            'checkin'  => $bookingData['checkin'],
+            'checkout' => $bookingData['checkout'],
+            'guests'   => $guests,
+        ]);
+
+        if (!$quote['success']) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to get pricing quote before booking: ' . ($quote['message'] ?? 'Unknown error'),
+            ], 500);
+        }
+
+        // Extract orderItems and paymentScheduleItems from quote
+        $currency      = $quote['data']['quoteResponseDetails']['orderList']['order']['currency'] ?? 'USD';
+        $rawItems      = $quote['data']['quoteResponseDetails']['orderList']['order']['orderItemList']['orderItem'] ?? [];
+        // If single item (not array of arrays), wrap it
+        if (isset($rawItems['feeType'])) {
+            $rawItems = [$rawItems];
+        }
+        $orderItems = array_map(fn($i) => array_merge($i, ['currency' => $currency]), $rawItems);
+
+        $rawSched = $quote['data']['quoteResponseDetails']['orderList']['order']['paymentSchedule']['paymentScheduleItemList']['paymentScheduleItem'] ?? [];
+        if (isset($rawSched['amount'])) {
+            $rawSched = [$rawSched];
+        }
+        $scheduleItems = array_map(fn($s) => [
+            'amount'   => $s['amount'],
+            'dueDate'  => $s['dueDate'],
+            'currency' => $currency,
+        ], $rawSched);
+
+        // Step 2: Build the booking payload
+        $channelPayload = [
+            'listingExternalId'    => $propertyId,
+            'unitExternalId'       => $propertyId,
+            'arrivalDate'          => $bookingData['checkin'],
+            'departureDate'        => $bookingData['checkout'],
+            'message'              => $bookingData['specialRequests'] ?? null,
+            'traveler'             => [
+                'firstName'    => $bookingData['guest']['firstName'],
+                'lastName'     => $bookingData['guest']['lastName'],
+                'emailAddress' => $bookingData['guest']['email'],
+                'phoneNumbers' => [$bookingData['guest']['phone']],
+            ],
+            'travelers'            => ['adults' => $guests, 'children' => 0, 'pets' => 0],
+            'orderItems'           => $orderItems,
+            'paymentScheduleItems' => $scheduleItems,
+        ];
+
+        $result = $this->ownerRezService->createBooking($channelPayload);
+
         return response()->json($result, $result['success'] ? 201 : 500);
     }
-    
-    /**
-     * @OA\Get(
-     *     path="/ownerrez/bookings/{bookingId}",
-     *     summary="Get booking details",
-     *     description="Retrieve details of a specific booking",
-     *     tags={"OwnerRez"},
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(
-     *         name="bookingId",
-     *         in="path",
-     *         required=true,
-     *         description="Booking ID",
-     *         @OA\Schema(type="string", example="BOOK-12345")
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Booking details retrieved successfully",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="data", type="object")
-     *         )
-     *     ),
-     *     @OA\Response(response=404, description="Booking not found"),
-     *     @OA\Response(response=401, description="Unauthorized")
-     * )
-     */
-    public function getBooking($bookingId)
-    {
-        $result = $this->ownerRezService->getBooking($bookingId);
-        
-        return response()->json($result, $result['success'] ? 200 : 404);
-    }
-    
-    /**
-     * @OA\Put(
-     *     path="/ownerrez/bookings/{bookingId}",
-     *     summary="Update booking",
-     *     description="Update an existing booking",
-     *     tags={"OwnerRez"},
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(
-     *         name="bookingId",
-     *         in="path",
-     *         required=true,
-     *         description="Booking ID",
-     *         @OA\Schema(type="string", example="BOOK-12345")
-     *     ),
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             @OA\Property(property="guests", type="integer", example=5),
-     *             @OA\Property(property="specialRequests", type="string", example="Early check-in")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Booking updated successfully",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="data", type="object")
-     *         )
-     *     ),
-     *     @OA\Response(response=404, description="Booking not found"),
-     *     @OA\Response(response=401, description="Unauthorized")
-     * )
-     */
-    public function updateBooking(Request $request, $bookingId)
-    {
-        $result = $this->ownerRezService->updateBooking($bookingId, $request->all());
-        
-        return response()->json($result, $result['success'] ? 200 : 404);
-    }
-    
-    /**
-     * @OA\Delete(
-     *     path="/ownerrez/bookings/{bookingId}",
-     *     summary="Cancel booking",
-     *     description="Cancel an existing booking",
-     *     tags={"OwnerRez"},
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(
-     *         name="bookingId",
-     *         in="path",
-     *         required=true,
-     *         description="Booking ID",
-     *         @OA\Schema(type="string", example="BOOK-12345")
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Booking cancelled successfully",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="data", type="object")
-     *         )
-     *     ),
-     *     @OA\Response(response=404, description="Booking not found"),
-     *     @OA\Response(response=401, description="Unauthorized")
-     * )
-     */
-    public function cancelBooking($bookingId)
-    {
-        $result = $this->ownerRezService->cancelBooking($bookingId);
-        
-        return response()->json($result, $result['success'] ? 200 : 404);
-    }
-    
-    /**
-     * @OA\Get(
-     *     path="/ownerrez/properties/{propertyId}/reviews",
-     *     summary="Get property reviews",
-     *     description="Retrieve reviews for a specific property",
-     *     tags={"OwnerRez"},
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(
-     *         name="propertyId",
-     *         in="path",
-     *         required=true,
-     *         description="Property ID",
-     *         @OA\Schema(type="string", example="PROP-12345")
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Reviews retrieved successfully",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="data", type="object")
-     *         )
-     *     ),
-     *     @OA\Response(response=404, description="Property not found"),
-     *     @OA\Response(response=401, description="Unauthorized")
-     * )
-     */
-    public function getReviews($propertyId)
-    {
-        $result = $this->ownerRezService->getReviews($propertyId);
-        
-        return response()->json($result, $result['success'] ? 200 : 200);
-    }
 }
+    

@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\PropertyListing;
-use App\Services\HotelbedsService;
 use App\Services\OwnerRezService;
 use App\Services\PricingMarkupService;
 use Illuminate\Http\Request;
@@ -20,16 +19,13 @@ use Illuminate\Support\Facades\Log;
  */
 class PropertyController extends Controller
 {
-    protected $hotelbedsService;
     protected $ownerrezService;
     protected $pricingService;
     
     public function __construct(
-        HotelbedsService $hotelbedsService,
         OwnerRezService $ownerrezService,
         PricingMarkupService $pricingService
     ) {
-        $this->hotelbedsService = $hotelbedsService;
         $this->ownerrezService = $ownerrezService;
         $this->pricingService = $pricingService;
     }
@@ -192,7 +188,21 @@ class PropertyController extends Controller
     }
     
     /**
-     * Check property availability
+     * @OA\Post(
+     *     path="/public/properties/{id}/check-availability",
+     *     summary="Check property availability",
+     *     tags={"Properties"},
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="string")),
+     *     @OA\RequestBody(required=true, @OA\JsonContent(
+     *         required={"check_in","check_out","adults"},
+     *         @OA\Property(property="check_in", type="string", format="date", example="2027-01-23"),
+     *         @OA\Property(property="check_out", type="string", format="date", example="2027-01-26"),
+     *         @OA\Property(property="adults", type="integer", example=2),
+     *         @OA\Property(property="children", type="integer", example=0)
+     *     )),
+     *     @OA\Response(response=200, description="Availability result"),
+     *     @OA\Response(response=400, description="Validation error")
+     * )
      */
     public function checkAvailability(Request $request, $id)
     {
@@ -223,12 +233,8 @@ class PropertyController extends Controller
                 'rooms' => $request->rooms ?? 1,
             ];
             
-            // Call appropriate API based on provider
-            if ($property->provider === 'hotelbeds') {
-                $result = $this->hotelbedsService->checkAvailability($availabilityData);
-            } else {
-                $result = $this->ownerrezService->checkAvailability($availabilityData);
-            }
+            // Call OwnerRez channel API
+            $result = $this->ownerrezService->checkAvailability($availabilityData);
             
             return response()->json($result);
             
@@ -243,7 +249,20 @@ class PropertyController extends Controller
     }
     
     /**
-     * Get pricing for property
+     * @OA\Post(
+     *     path="/public/properties/{id}/get-pricing",
+     *     summary="Get pricing for a property",
+     *     tags={"Properties"},
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="string")),
+     *     @OA\RequestBody(required=true, @OA\JsonContent(
+     *         required={"check_in","check_out","adults"},
+     *         @OA\Property(property="check_in", type="string", format="date", example="2027-01-23"),
+     *         @OA\Property(property="check_out", type="string", format="date", example="2027-01-26"),
+     *         @OA\Property(property="adults", type="integer", example=2)
+     *     )),
+     *     @OA\Response(response=200, description="Pricing details with markup applied"),
+     *     @OA\Response(response=400, description="Validation error")
+     * )
      */
     public function getPricing(Request $request, $id)
     {
@@ -306,7 +325,14 @@ class PropertyController extends Controller
     }
     
     /**
-     * Get property reviews
+     * @OA\Get(
+     *     path="/public/properties/{id}/reviews",
+     *     summary="Get property reviews",
+     *     tags={"Properties"},
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="string")),
+     *     @OA\Response(response=200, description="Property rating and reviews"),
+     *     @OA\Response(response=404, description="Property not found")
+     * )
      */
     public function getReviews($id)
     {
@@ -333,7 +359,14 @@ class PropertyController extends Controller
     }
     
     /**
-     * Get similar properties
+     * @OA\Get(
+     *     path="/public/properties/{id}/similar",
+     *     summary="Get similar properties",
+     *     tags={"Properties"},
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="string")),
+     *     @OA\Response(response=200, description="List of similar properties"),
+     *     @OA\Response(response=404, description="Property not found")
+     * )
      */
     public function getSimilarProperties($id)
     {
@@ -375,11 +408,7 @@ class PropertyController extends Controller
     protected function syncPropertyData(PropertyListing $property)
     {
         try {
-            if ($property->provider === 'hotelbeds') {
-                $result = $this->hotelbedsService->getHotelDetails($property->provider_property_id);
-            } else {
-                $result = $this->ownerrezService->getPropertyDetails($property->provider_property_id);
-            }
+            $result = $this->ownerrezService->getPropertyDetails($property->provider_property_id);
             
             if ($result['success'] && isset($result['data'])) {
                 $property->update([

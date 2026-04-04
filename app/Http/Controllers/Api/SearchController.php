@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Services\HotelbedsService;
 use App\Services\OwnerRezService;
 use App\Services\PricingMarkupService;
 use App\Models\PropertyListing;
@@ -15,144 +14,49 @@ use Illuminate\Support\Facades\Log;
 /**
  * @OA\Tag(
  *     name="Public Search",
- *     description="Public hotel and property search endpoints (no authentication required)"
+ *     description="Public search endpoints — no authentication required"
  * )
  */
 class SearchController extends Controller
 {
-    protected $hotelbedsService;
     protected $ownerrezService;
     protected $pricingService;
     
     public function __construct(
-        HotelbedsService $hotelbedsService,
         OwnerRezService $ownerrezService,
         PricingMarkupService $pricingService
     ) {
-        $this->hotelbedsService = $hotelbedsService;
         $this->ownerrezService = $ownerrezService;
         $this->pricingService = $pricingService;
     }
+    
+
     
     /**
      * @OA\Post(
      *     path="/public/search/hotels",
      *     summary="Search hotels (PUBLIC - No Auth Required)",
-     *     description="Search for available hotels from Hotelbeds API with markup pricing",
+     *     description="Alias of searchProperties — searches vacation rental properties from OwnerRez",
      *     tags={"Public Search"},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             required={"checkIn", "checkOut", "destination"},
-     *             @OA\Property(property="checkIn", type="string", format="date", example="2025-02-15"),
-     *             @OA\Property(property="checkOut", type="string", format="date", example="2025-02-17"),
-     *             @OA\Property(property="destination", type="string", example="NYC", description="City code or name"),
-     *             @OA\Property(property="destinationCode", type="string", example="NYC", description="Optional destination code"),
-     *             @OA\Property(property="adults", type="integer", example=2),
-     *             @OA\Property(property="children", type="integer", example=0),
-     *             @OA\Property(property="rooms", type="integer", example=1),
-     *             @OA\Property(
-     *                 property="occupancies",
-     *                 type="array",
-     *                 @OA\Items(
-     *                     @OA\Property(property="rooms", type="integer", example=1),
-     *                     @OA\Property(property="adults", type="integer", example=2),
-     *                     @OA\Property(property="children", type="integer", example=0)
-     *                 )
-     *             ),
-     *             @OA\Property(property="minPrice", type="number", example=50),
-     *             @OA\Property(property="maxPrice", type="number", example=500),
-     *             @OA\Property(property="starRating", type="array", @OA\Items(type="integer")),
-     *             @OA\Property(property="sortBy", type="string", enum={"price", "rating", "name"}, example="price")
+     *             required={"checkIn", "checkOut"},
+     *             @OA\Property(property="checkIn", type="string", format="date", example="2027-01-23"),
+     *             @OA\Property(property="checkOut", type="string", format="date", example="2027-01-25"),
+     *             @OA\Property(property="location", type="string", example="Miami"),
+     *             @OA\Property(property="guests", type="integer", example=2)
      *         )
      *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Successful search with pricing markup applied",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(
-     *                 property="data",
-     *                 type="object",
-     *                 @OA\Property(property="total", type="integer"),
-     *                 @OA\Property(property="hotels", type="array", @OA\Items(type="object"))
-     *             )
-     *         )
-     *     )
+     *     @OA\Response(response=200, description="Successful search"),
+     *     @OA\Response(response=400, description="Validation error")
      * )
      */
     public function searchHotels(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'checkIn' => 'required|date|after_or_equal:today',
-            'checkOut' => 'required|date|after:checkIn',
-            'destination' => 'nullable|string',
-            'destinationCode' => 'nullable|string',
-            'adults' => 'nullable|integer|min:1',
-            'children' => 'nullable|integer|min:0',
-            'rooms' => 'nullable|integer|min:1',
-            'occupancies' => 'nullable|array',
-            'occupancies.*.rooms' => 'integer|min:1',
-            'occupancies.*.adults' => 'integer|min:1',
-            'occupancies.*.children' => 'integer|min:0',
-            'minPrice' => 'nullable|numeric|min:0',
-            'maxPrice' => 'nullable|numeric|min:0',
-            'starRating' => 'nullable|array',
-            'starRating.*' => 'integer|min:1|max:5',
-            'sortBy' => 'nullable|string|in:price,rating,name,distance'
-        ]);
-        
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation error',
-                'errors' => $validator->errors()
-            ], 400);
-        }
-        
-        try {
-            // Create cache key
-            $cacheKey = 'hotel_search_' . md5(json_encode($request->all()));
-            
-            // Check cache first (5 minutes)
-            $result = Cache::remember($cacheKey, 300, function () use ($request) {
-                // Call Hotelbeds API
-                $apiResponse = $this->hotelbedsService->searchHotels($request->all());
-                
-                if (!$apiResponse['success']) {
-                    return $apiResponse;
-                }
-                
-                // Apply pricing markup to all hotels
-                if (isset($apiResponse['data']['hotels'])) {
-                    $apiResponse['data']['hotels'] = array_map(function ($hotel) {
-                        return $this->applyPricingMarkup($hotel, 'hotelbeds');
-                    }, $apiResponse['data']['hotels']);
-                }
-                
-                return $apiResponse;
-            });
-            
-            // Cache property listings in database for faster subsequent searches
-            if ($result['success'] && isset($result['data']['hotels'])) {
-                $this->cachePropertyListings($result['data']['hotels'], 'hotelbeds');
-            }
-            
-            return response()->json($result, $result['success'] ? 200 : 500);
-            
-        } catch (\Exception $e) {
-            Log::error('Hotel search error: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
-            ]);
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred while searching hotels',
-                'error' => config('app.debug') ? $e->getMessage() : null
-            ], 500);
-        }
+        return $this->searchProperties($request);
     }
-    
+
     /**
      * @OA\Post(
      *     path="/public/search/properties",
@@ -238,7 +142,20 @@ class SearchController extends Controller
     }
     
     /**
-     * Get popular destinations with cached properties
+     * @OA\Get(
+     *     path="/public/search/popular-destinations",
+     *     summary="Get popular destinations (PUBLIC)",
+     *     description="Returns top destinations ranked by property count",
+     *     tags={"Public Search"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="List of popular destinations",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="data", type="array", @OA\Items(type="object"))
+     *         )
+     *     )
+     * )
      */
     public function getPopularDestinations()
     {
@@ -272,7 +189,26 @@ class SearchController extends Controller
     }
     
     /**
-     * Get all available destinations
+     * @OA\Get(
+     *     path="/public/search/destinations",
+     *     summary="Get all destinations (PUBLIC)",
+     *     description="Returns all active destination cities, optionally filtered by search term",
+     *     tags={"Public Search"},
+     *     @OA\Parameter(
+     *         name="search",
+     *         in="query",
+     *         description="Filter by city or country name",
+     *         @OA\Schema(type="string", example="Miami")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="List of destinations",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="data", type="array", @OA\Items(type="object"))
+     *         )
+     *     )
+     * )
      */
     public function getDestinations(Request $request)
     {

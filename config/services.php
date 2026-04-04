@@ -42,10 +42,11 @@ return [
     ],
 
     'ownerrez' => [
-        'username' => env('OWNERREZ_USERNAME'),
-        'password' => env('OWNERREZ_PASSWORD'),
-        'base_url' => env('OWNERREZ_BASE_URL', 'https://api.ownerrez.com/v2'),
-        'environment' => env('OWNERREZ_ENVIRONMENT', 'sandbox'),
+        'username'           => env('OWNERREZ_USERNAME'),
+        'password'           => env('OWNERREZ_PASSWORD'),
+        'base_url'           => env('OWNERREZ_BASE_URL', 'https://faststage.ownerrez.com'),
+        'advertiser_id'      => env('OWNERREZ_ADVERTISER_ID'),
+        'system_external_id' => env('OWNERREZ_SYSTEM_EXTERNAL_ID', 'PikPakGo'),
     ],
 
     'authorize_net' => [

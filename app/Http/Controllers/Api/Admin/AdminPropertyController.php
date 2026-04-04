@@ -5,23 +5,36 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\PropertyListing;
 use App\Services\OwnerRezService;
-use App\Services\HotelbedsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * @OA\Tag(
+ *     name="Admin - Properties",
+ *     description="Admin property management endpoints"
+ * )
+ */
 class AdminPropertyController extends Controller
 {
     protected $ownerrezService;
-    protected $hotelbedsService;
 
-    public function __construct(OwnerRezService $ownerrezService, HotelbedsService $hotelbedsService)
+    public function __construct(OwnerRezService $ownerrezService)
     {
         $this->ownerrezService = $ownerrezService;
-        $this->hotelbedsService = $hotelbedsService;
     }
 
     /**
-     * List all properties
+     * @OA\Get(
+     *     path="/admin/properties",
+     *     summary="List all properties (Admin)",
+     *     tags={"Admin - Properties"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(name="provider", in="query", @OA\Schema(type="string", example="ownerrez")),
+     *     @OA\Parameter(name="search", in="query", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="is_active", in="query", @OA\Schema(type="boolean")),
+     *     @OA\Response(response=200, description="Paginated property list"),
+     *     @OA\Response(response=401, description="Unauthorized")
+     * )
      */
     public function index(Request $request)
     {
@@ -53,7 +66,15 @@ class AdminPropertyController extends Controller
     }
 
     /**
-     * Show single property
+     * @OA\Get(
+     *     path="/admin/properties/{id}",
+     *     summary="Get single property (Admin)",
+     *     tags={"Admin - Properties"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Response(response=200, description="Property details"),
+     *     @OA\Response(response=404, description="Not found")
+     * )
      */
     public function show($id)
     {
@@ -62,7 +83,17 @@ class AdminPropertyController extends Controller
     }
 
     /**
-     * Sync properties from external APIs
+     * @OA\Post(
+     *     path="/admin/properties/sync",
+     *     summary="Sync properties from OwnerRez API (Admin)",
+     *     tags={"Admin - Properties"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(required=false, @OA\JsonContent(
+     *         @OA\Property(property="provider", type="string", example="ownerrez")
+     *     )),
+     *     @OA\Response(response=200, description="Sync result with count"),
+     *     @OA\Response(response=401, description="Unauthorized")
+     * )
      */
     public function syncFromAPIs(Request $request)
     {
@@ -88,9 +119,6 @@ class AdminPropertyController extends Controller
                         $count++;
                     }
                 }
-            } elseif ($provider === 'hotelbeds') {
-                // Placeholder for Hotelbeds sync if needed
-                // typically Hotelbeds is search-only, not full sync
             }
 
             return response()->json([
@@ -108,7 +136,19 @@ class AdminPropertyController extends Controller
     }
     
     /**
-     * Update Property Status
+     * @OA\Put(
+     *     path="/admin/properties/{id}/status",
+     *     summary="Update property active status (Admin)",
+     *     tags={"Admin - Properties"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\RequestBody(required=true, @OA\JsonContent(
+     *         required={"is_active"},
+     *         @OA\Property(property="is_active", type="boolean", example=true)
+     *     )),
+     *     @OA\Response(response=200, description="Status updated"),
+     *     @OA\Response(response=404, description="Not found")
+     * )
      */
     public function updateStatus(Request $request, $id)
     {

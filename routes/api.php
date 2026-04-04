@@ -10,7 +10,7 @@ use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\Admin\AdminBookingController;
 use App\Http\Controllers\Api\Admin\AdminPropertyController;
 use App\Http\Controllers\Api\Admin\PricingMarkupController;
-use App\Http\Controllers\Api\Admin\DashboardController;
+use App\Http\Controllers\Api\OwnerRezController;
 
 /*
 |--------------------------------------------------------------------------
@@ -58,17 +58,7 @@ Route::prefix('public')->group(function () {
         Route::get('session/{sessionId}', [GuestController::class, 'getSession']);
     });
 
-    // Content Pages
-    Route::prefix('content')->group(function () {
-        Route::get('pages/{slug}', [\App\Http\Controllers\Api\ContentController::class, 'getPage']);
-        Route::get('header', [\App\Http\Controllers\Api\ContentController::class, 'getHeader']);
-        Route::get('footer', [\App\Http\Controllers\Api\ContentController::class, 'getFooter']);
-    });
 
-    // OwnerRez specific endpoints (Alias for public properties for now)
-    Route::prefix('ownerrez')->group(function () {
-        Route::get('properties', [PropertyController::class, 'index']);
-    });
 });
 
 // ============================================
@@ -135,6 +125,17 @@ Route::prefix('payments')->group(function () {
     
     // Webhooks (no auth, but verified by signature)
     Route::post('webhook/authorize-net', [PaymentController::class, 'authorizeNetWebhook']);
+});
+
+// ============================================
+// OWNERREZ ROUTES (Direct Channel API)
+// ============================================
+Route::prefix('ownerrez')->group(function () {
+    Route::get('properties', [OwnerRezController::class, 'searchProperties']);
+    Route::get('properties/{propertyId}', [OwnerRezController::class, 'getPropertyDetails']);
+    Route::post('properties/{propertyId}/availability', [OwnerRezController::class, 'checkAvailability']);
+    Route::post('properties/{propertyId}/pricing', [OwnerRezController::class, 'getPricing']);
+    Route::post('bookings', [OwnerRezController::class, 'createBooking']);
 });
 
 /*
@@ -211,6 +212,5 @@ Route::prefix('admin')->middleware(['auth:api', 'admin'])->group(function () {
     //     Route::put('api-config', [DashboardController::class, 'updateAPIConfig']);
     // });
 
-    // Content Management
-    Route::apiResource('content', \App\Http\Controllers\Api\Admin\AdminContentController::class);
+
 });

@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls *.php)",
+      "Bash(php -r ':*)",
+      "Bash(php -l app/Http/Controllers/Api/SearchController.php)",
+      "Bash(php -l app/Http/Controllers/Api/PropertyController.php)",
+      "Bash(php -l app/Http/Controllers/Api/BookingController.php)",
+      "Bash(php -l app/Http/Controllers/Api/Admin/AdminPropertyController.php)",
+      "Bash(php -l app/Services/OwnerRezService.php)"
+    ]
+  }
+}

@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\User;
 use App\Models\GuestSession;
-use App\Services\HotelbedsService;
 use App\Services\OwnerRezService;
 use App\Services\PricingMarkupService;
 use Illuminate\Http\Request;
@@ -14,24 +13,22 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
+
 /**
  * @OA\Tag(
  *     name="Bookings",
- *     description="Booking management for both guest and authenticated users"
+ *     description="Booking management — guest and authenticated user flows"
  * )
  */
 class BookingController extends Controller
 {
-    protected $hotelbedsService;
     protected $ownerrezService;
     protected $pricingService;
     
     public function __construct(
-        HotelbedsService $hotelbedsService,
         OwnerRezService $ownerrezService,
         PricingMarkupService $pricingService
     ) {
-        $this->hotelbedsService = $hotelbedsService;
         $this->ownerrezService = $ownerrezService;
         $this->pricingService = $pricingService;
     }
@@ -49,7 +46,6 @@ class BookingController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'guest_session_id' => 'required|string',
-            'provider' => 'required|in:hotelbeds,ownerrez',
             'property_code' => 'required|string',
             'check_in_date' => 'required|date|after_or_equal:today',
             'check_out_date' => 'required|date|after:check_in_date',
@@ -105,8 +101,8 @@ class BookingController extends Controller
             // Calculate markup
             $markupData = $this->pricingService->calculateMarkup([
                 'base_price' => $request->base_price,
-                'provider' => $request->provider,
-                'property_type' => $request->property_type ?? 'hotel',
+                'provider' => 'ownerrez',
+                'property_type' => $request->property_type ?? 'vacation_rental',
                 'destination_code' => $request->destination_code,
                 'check_in_date' => $request->check_in_date,
             ]);
@@ -117,7 +113,7 @@ class BookingController extends Controller
             // Create booking in database
             $booking = Booking::create([
                 'booking_reference' => $bookingReference,
-                'provider' => $request->provider,
+                'provider' => 'ownerrez',
                 'guest_session_id' => $request->guest_session_id,
                 'guest_email' => $request->holder_email,
                 'guest_phone' => $request->holder_phone,
@@ -154,6 +150,67 @@ class BookingController extends Controller
                 'payment_status' => 'pending'
             ]);
             
+            // Fetch quote to obtain orderItems + paymentSchedule (required by OwnerRez createbooking)
+            $quote = $this->ownerrezService->getPricing($request->property_code, [
+                'checkin'  => $request->check_in_date,
+                'checkout' => $request->check_out_date,
+                'guests'   => $request->total_adults ?? 2,
+            ]);
+
+            if (!$quote['success']) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to get pricing quote: ' . ($quote['message'] ?? 'Unknown error'),
+                ], 500);
+            }
+
+            $currency  = $quote['data']['quoteResponseDetails']['orderList']['order']['currency'] ?? ($request->currency ?? 'USD');
+            $rawItems  = $quote['data']['quoteResponseDetails']['orderList']['order']['orderItemList']['orderItem'] ?? [];
+            if (isset($rawItems['feeType'])) $rawItems = [$rawItems];
+            $orderItems = array_map(fn($i) => array_merge($i, ['currency' => $currency]), $rawItems);
+
+            $rawSched = $quote['data']['quoteResponseDetails']['orderList']['order']['paymentSchedule']['paymentScheduleItemList']['paymentScheduleItem'] ?? [];
+            if (isset($rawSched['amount'])) $rawSched = [$rawSched];
+            $scheduleItems = array_map(fn($s) => [
+                'amount'   => $s['amount'],
+                'dueDate'  => $s['dueDate'],
+                'currency' => $currency,
+            ], $rawSched);
+
+            // Call API
+            $channelPayload = [
+                'listingExternalId'    => $request->property_code,
+                'unitExternalId'       => $request->property_code,
+                'arrivalDate'          => $request->check_in_date,
+                'departureDate'        => $request->check_out_date,
+                'traveler'             => [
+                    'firstName'    => $request->holder_first_name,
+                    'lastName'     => $request->holder_last_name,
+                    'emailAddress' => $request->holder_email,
+                    'phoneNumbers' => [$request->holder_phone],
+                ],
+                'travelers'            => ['adults' => (int)($request->total_adults ?? 2), 'children' => 0, 'pets' => 0],
+                'orderItems'           => $orderItems,
+                'paymentScheduleItems' => $scheduleItems,
+            ];
+
+            $apiResult = $this->ownerrezService->createBooking($channelPayload);
+            
+            if (!$apiResult['success']) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to confirm booking with OwnerRez',
+                    'error' => $apiResult['error'] ?? null
+                ], 500);
+            }
+            
+            // Save the external ID from OwnerRez to our local booking reference
+            if (isset($apiResult['data']['externalId'])) {
+                $booking->update([
+                    'provider_booking_id' => $apiResult['data']['externalId']
+                ]);
+            }
+            
             // Update guest session
             $guestSession->increment('booking_count');
             $guestSession->update([
@@ -168,7 +225,7 @@ class BookingController extends Controller
                 'success' => true,
                 'message' => 'Booking created successfully',
                 'data' => [
-                    'booking' => $booking,
+                    'booking' => $booking->fresh(),
                     'booking_reference' => $bookingReference,
                     'verification_email_sent' => true
                 ]
@@ -188,12 +245,34 @@ class BookingController extends Controller
     }
     
     /**
-     * Create authenticated user booking
+     * @OA\Post(
+     *     path="/bookings",
+     *     summary="Create authenticated user booking",
+     *     tags={"Bookings"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"property_code","check_in_date","check_out_date","total_adults","total_rooms","property_name","base_price"},
+     *             @OA\Property(property="property_code", type="string", example="orp5b27f9x"),
+     *             @OA\Property(property="check_in_date", type="string", format="date", example="2027-01-23"),
+     *             @OA\Property(property="check_out_date", type="string", format="date", example="2027-01-26"),
+     *             @OA\Property(property="total_adults", type="integer", example=2),
+     *             @OA\Property(property="total_rooms", type="integer", example=1),
+     *             @OA\Property(property="property_name", type="string", example="Beach House"),
+     *             @OA\Property(property="base_price", type="number", example=500.00),
+     *             @OA\Property(property="provider", type="string", example="ownerrez"),
+     *             @OA\Property(property="special_requests", type="string", example="Late check-in")
+     *         )
+     *     ),
+     *     @OA\Response(response=201, description="Booking created successfully"),
+     *     @OA\Response(response=400, description="Validation error"),
+     *     @OA\Response(response=401, description="Unauthorized")
+     * )
      */
     public function createBooking(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'provider' => 'required|in:hotelbeds,ownerrez',
             'property_code' => 'required|string',
             'check_in_date' => 'required|date|after_or_equal:today',
             'check_out_date' => 'required|date|after:check_in_date',
@@ -268,11 +347,74 @@ class BookingController extends Controller
                 'payment_status' => 'pending'
             ]);
             
+            // Call Provider API if ownerrez
+            if ($request->provider === 'ownerrez') {
+                // Fetch quote to obtain orderItems + paymentSchedule (required by OwnerRez createbooking)
+                $quote = $this->ownerrezService->getPricing($request->property_code, [
+                    'checkin'  => $request->check_in_date,
+                    'checkout' => $request->check_out_date,
+                    'guests'   => $request->total_adults ?? 2,
+                ]);
+
+                if (!$quote['success']) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Failed to get pricing quote: ' . ($quote['message'] ?? 'Unknown error'),
+                    ], 500);
+                }
+
+                $currency  = $quote['data']['quoteResponseDetails']['orderList']['order']['currency'] ?? ($request->currency ?? 'USD');
+                $rawItems  = $quote['data']['quoteResponseDetails']['orderList']['order']['orderItemList']['orderItem'] ?? [];
+                if (isset($rawItems['feeType'])) $rawItems = [$rawItems];
+                $orderItems = array_map(fn($i) => array_merge($i, ['currency' => $currency]), $rawItems);
+
+                $rawSched = $quote['data']['quoteResponseDetails']['orderList']['order']['paymentSchedule']['paymentScheduleItemList']['paymentScheduleItem'] ?? [];
+                if (isset($rawSched['amount'])) $rawSched = [$rawSched];
+                $scheduleItems = array_map(fn($s) => [
+                    'amount'   => $s['amount'],
+                    'dueDate'  => $s['dueDate'],
+                    'currency' => $currency,
+                ], $rawSched);
+
+                $channelPayload = [
+                    'listingExternalId'    => $request->property_code,
+                    'unitExternalId'       => $request->property_code,
+                    'arrivalDate'          => $request->check_in_date,
+                    'departureDate'        => $request->check_out_date,
+                    'traveler'             => [
+                        'firstName'    => $user->first_name,
+                        'lastName'     => $user->last_name,
+                        'emailAddress' => $user->email,
+                        'phoneNumbers' => [$user->phone ?? $request->holder_phone],
+                    ],
+                    'travelers'            => ['adults' => (int)($request->total_adults ?? 2), 'children' => 0, 'pets' => 0],
+                    'orderItems'           => $orderItems,
+                    'paymentScheduleItems' => $scheduleItems,
+                ];
+
+                $apiResult = $this->ownerrezService->createBooking($channelPayload);
+                
+                if (!$apiResult['success']) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Failed to confirm booking with OwnerRez',
+                        'error' => $apiResult['error'] ?? null
+                    ], 500);
+                }
+
+                // Save the external ID from OwnerRez to our local booking reference
+                if (isset($apiResult['data']['externalId'])) {
+                    $booking->update([
+                        'provider_booking_id' => $apiResult['data']['externalId']
+                    ]);
+                }
+            }
+            
             return response()->json([
                 'success' => true,
                 'message' => 'Booking created successfully',
                 'data' => [
-                    'booking' => $booking,
+                    'booking' => $booking->fresh(),
                     'booking_reference' => $bookingReference
                 ]
             ], 201);
@@ -289,7 +431,14 @@ class BookingController extends Controller
     }
     
     /**
-     * Get guest booking by reference
+     * @OA\Get(
+     *     path="/bookings/guest/{bookingReference}",
+     *     summary="Get guest booking by reference",
+     *     tags={"Bookings"},
+     *     @OA\Parameter(name="bookingReference", in="path", required=true, @OA\Schema(type="string", example="PKG-ABCD1234XY")),
+     *     @OA\Response(response=200, description="Booking found"),
+     *     @OA\Response(response=404, description="Booking not found")
+     * )
      */
     public function getGuestBooking($bookingReference)
     {
@@ -321,7 +470,16 @@ class BookingController extends Controller
     }
     
     /**
-     * Get user bookings (authenticated)
+     * @OA\Get(
+     *     path="/bookings",
+     *     summary="Get all bookings for authenticated user",
+     *     tags={"Bookings"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(name="status", in="query", @OA\Schema(type="string", example="confirmed")),
+     *     @OA\Parameter(name="per_page", in="query", @OA\Schema(type="integer", example=10)),
+     *     @OA\Response(response=200, description="Paginated list of bookings"),
+     *     @OA\Response(response=401, description="Unauthorized")
+     * )
      */
     public function getUserBookings(Request $request)
     {
@@ -351,7 +509,16 @@ class BookingController extends Controller
     }
     
     /**
-     * Get single booking (authenticated)
+     * @OA\Get(
+     *     path="/bookings/{bookingReference}",
+     *     summary="Get single booking for authenticated user",
+     *     tags={"Bookings"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(name="bookingReference", in="path", required=true, @OA\Schema(type="string")),
+     *     @OA\Response(response=200, description="Booking details"),
+     *     @OA\Response(response=404, description="Booking not found"),
+     *     @OA\Response(response=401, description="Unauthorized")
+     * )
      */
     public function getBooking($bookingReference)
     {
@@ -385,7 +552,19 @@ class BookingController extends Controller
     }
     
     /**
-     * Cancel guest booking
+     * @OA\Post(
+     *     path="/bookings/guest/{bookingReference}/cancel",
+     *     summary="Cancel a guest booking",
+     *     tags={"Bookings"},
+     *     @OA\Parameter(name="bookingReference", in="path", required=true, @OA\Schema(type="string")),
+     *     @OA\RequestBody(required=true, @OA\JsonContent(
+     *         required={"email"},
+     *         @OA\Property(property="email", type="string", format="email"),
+     *         @OA\Property(property="reason", type="string")
+     *     )),
+     *     @OA\Response(response=200, description="Booking cancelled"),
+     *     @OA\Response(response=404, description="Booking not found")
+     * )
      */
     public function cancelGuestBooking(Request $request, $bookingReference)
     {
@@ -444,7 +623,17 @@ class BookingController extends Controller
     }
     
     /**
-     * Cancel user booking
+     * @OA\Post(
+     *     path="/bookings/{bookingReference}/cancel",
+     *     summary="Cancel an authenticated user booking",
+     *     tags={"Bookings"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(name="bookingReference", in="path", required=true, @OA\Schema(type="string")),
+     *     @OA\RequestBody(required=false, @OA\JsonContent(@OA\Property(property="reason", type="string"))),
+     *     @OA\Response(response=200, description="Booking cancelled"),
+     *     @OA\Response(response=404, description="Booking not found"),
+     *     @OA\Response(response=401, description="Unauthorized")
+     * )
      */
     public function cancelBooking(Request $request, $bookingReference)
     {
@@ -493,7 +682,14 @@ class BookingController extends Controller
     }
     
     /**
-     * Verify guest booking with email
+     * @OA\Get(
+     *     path="/bookings/guest/{bookingReference}/verify",
+     *     summary="Verify a guest booking",
+     *     tags={"Bookings"},
+     *     @OA\Parameter(name="bookingReference", in="path", required=true, @OA\Schema(type="string")),
+     *     @OA\Response(response=200, description="Booking verified"),
+     *     @OA\Response(response=404, description="Booking not found")
+     * )
      */
     public function verifyGuestBooking($bookingReference)
     {
