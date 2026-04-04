@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\GuestSession;
 use App\Services\OwnerRezService;
 use App\Services\PricingMarkupService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
@@ -721,11 +722,35 @@ class BookingController extends Controller
             
         } catch (\Exception $e) {
             Log::error('Verify guest booking error: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'An error occurred'
             ], 500);
         }
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/bookings/{bookingReference}/invoice",
+     *     summary="Download booking invoice as PDF",
+     *     tags={"Bookings"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(name="bookingReference", in="path", required=true, @OA\Schema(type="string")),
+     *     @OA\Response(response=200, description="PDF invoice file"),
+     *     @OA\Response(response=403, description="Forbidden — not your booking"),
+     *     @OA\Response(response=404, description="Not found")
+     * )
+     */
+    public function downloadInvoice($bookingReference)
+    {
+        $booking = Booking::where('booking_reference', $bookingReference)
+            ->where('user_id', auth()->id())
+            ->firstOrFail();
+
+        $pdf = Pdf::loadView('invoices.booking', ['booking' => $booking])
+            ->setPaper('a4', 'portrait');
+
+        return $pdf->download('invoice-' . $booking->booking_reference . '.pdf');
     }
 }

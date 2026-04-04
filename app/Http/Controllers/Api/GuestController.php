@@ -8,10 +8,29 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
+/**
+ * @OA\Tag(
+ *     name="Guest Session",
+ *     description="Anonymous guest session management for pre-auth browsing and booking"
+ * )
+ */
 class GuestController extends Controller
 {
     /**
-     * Create a new guest session
+     * @OA\Post(
+     *     path="/public/guest/session/create",
+     *     summary="Create a new guest session",
+     *     tags={"Guest Session"},
+     *     @OA\Response(response=201, description="Session created",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="session_id", type="string", example="guest_abc123"),
+     *                 @OA\Property(property="expires_at", type="string", format="datetime")
+     *             )
+     *         )
+     *     )
+     * )
      */
     public function createSession(Request $request)
     {
@@ -50,7 +69,22 @@ class GuestController extends Controller
     }
     
     /**
-     * Update guest session information
+     * @OA\Post(
+     *     path="/public/guest/session/update",
+     *     summary="Update guest session with contact info",
+     *     tags={"Guest Session"},
+     *     @OA\RequestBody(required=true, @OA\JsonContent(
+     *         required={"session_id"},
+     *         @OA\Property(property="session_id", type="string"),
+     *         @OA\Property(property="email", type="string", format="email"),
+     *         @OA\Property(property="first_name", type="string"),
+     *         @OA\Property(property="last_name", type="string"),
+     *         @OA\Property(property="phone", type="string"),
+     *         @OA\Property(property="country", type="string")
+     *     )),
+     *     @OA\Response(response=200, description="Session updated"),
+     *     @OA\Response(response=404, description="Session not found")
+     * )
      */
     public function updateSession(Request $request)
     {
@@ -104,7 +138,14 @@ class GuestController extends Controller
     }
     
     /**
-     * Get guest session details
+     * @OA\Get(
+     *     path="/public/guest/session/{sessionId}",
+     *     summary="Get guest session details",
+     *     tags={"Guest Session"},
+     *     @OA\Parameter(name="sessionId", in="path", required=true, @OA\Schema(type="string")),
+     *     @OA\Response(response=200, description="Session details"),
+     *     @OA\Response(response=404, description="Session not found")
+     * )
      */
     public function getSession($sessionId)
     {

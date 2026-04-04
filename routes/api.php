@@ -2,28 +2,38 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ContentController;
+use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Api\BookingController;
 use App\Http\Controllers\Api\PropertyController;
 use App\Http\Controllers\Api\GuestController;
 use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\ReviewController;
+use App\Http\Controllers\Api\WishlistController;
 use App\Http\Controllers\Api\Admin\AdminBookingController;
+use App\Http\Controllers\Api\Admin\AdminContentController;
 use App\Http\Controllers\Api\Admin\AdminPropertyController;
+use App\Http\Controllers\Api\Admin\AdminReviewController;
+use App\Http\Controllers\Api\Admin\AdminSettingsController;
+use App\Http\Controllers\Api\Admin\AdminUserController;
+use App\Http\Controllers\Api\Admin\DashboardController;
 use App\Http\Controllers\Api\Admin\PricingMarkupController;
 use App\Http\Controllers\Api\OwnerRezController;
 
 /*
 |--------------------------------------------------------------------------
-| API Routes - Website (Public & User)
+| API Routes
 |--------------------------------------------------------------------------
 */
 
 // Health check
-Route::get('health', function() {
+Route::get('health', function () {
     return response()->json([
-        'status' => 'ok',
+        'status'    => 'ok',
         'timestamp' => now(),
-        'service' => 'PikPakGo API v1'
+        'service'   => 'PikPakGo API v1',
     ]);
 });
 
@@ -32,16 +42,16 @@ Route::get('health', function() {
 // ============================================
 
 Route::prefix('public')->group(function () {
-    
-    // Search endpoints - COMPLETELY PUBLIC
+
+    // Search
     Route::prefix('search')->group(function () {
         Route::post('hotels', [SearchController::class, 'searchHotels']);
         Route::post('properties', [SearchController::class, 'searchProperties']);
         Route::get('destinations', [SearchController::class, 'getDestinations']);
         Route::get('popular-destinations', [SearchController::class, 'getPopularDestinations']);
     });
-    
-    // Property details - PUBLIC
+
+    // Property details
     Route::prefix('properties')->group(function () {
         Route::get('/', [PropertyController::class, 'index']);
         Route::get('{id}', [PropertyController::class, 'show']);
@@ -50,7 +60,7 @@ Route::prefix('public')->group(function () {
         Route::get('{id}/reviews', [PropertyController::class, 'getReviews']);
         Route::get('{id}/similar', [PropertyController::class, 'getSimilarProperties']);
     });
-    
+
     // Guest session management
     Route::prefix('guest')->group(function () {
         Route::post('session/create', [GuestController::class, 'createSession']);
@@ -58,7 +68,18 @@ Route::prefix('public')->group(function () {
         Route::get('session/{sessionId}', [GuestController::class, 'getSession']);
     });
 
+    // Public reviews
+    Route::get('reviews/{propertyCode}', [ReviewController::class, 'index']);
 
+    // Public content pages (CMS)
+    Route::prefix('content')->group(function () {
+        Route::get('pages/{slug}', [ContentController::class, 'getPage']);
+        Route::get('header', [ContentController::class, 'getHeader']);
+        Route::get('footer', [ContentController::class, 'getFooter']);
+    });
+
+    // Public settings (site name, currency, etc.)
+    Route::get('settings', [AdminSettingsController::class, 'publicSettings']);
 });
 
 // ============================================
@@ -66,15 +87,13 @@ Route::prefix('public')->group(function () {
 // ============================================
 
 Route::prefix('auth')->group(function () {
-    // Public auth routes
     Route::post('register', [AuthController::class, 'register']);
     Route::post('login', [AuthController::class, 'login']);
     Route::post('forgot-password', [AuthController::class, 'forgotPassword']);
     Route::post('reset-password', [AuthController::class, 'resetPassword']);
     Route::post('verify-email/{token}', [AuthController::class, 'verifyEmail']);
     Route::post('resend-verification', [AuthController::class, 'resendVerification']);
-    
-    // Protected auth routes
+
     Route::middleware('auth:api')->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
         Route::post('refresh', [AuthController::class, 'refresh']);
@@ -89,14 +108,13 @@ Route::prefix('auth')->group(function () {
 // ============================================
 
 Route::prefix('bookings')->group(function () {
-    
-    // Guest booking routes (no auth required)
+    // Guest booking routes (no auth)
     Route::post('guest/create', [BookingController::class, 'createGuestBooking']);
     Route::get('guest/{bookingReference}/verify', [BookingController::class, 'verifyGuestBooking']);
     Route::get('guest/{bookingReference}', [BookingController::class, 'getGuestBooking']);
     Route::post('guest/{bookingReference}/cancel', [BookingController::class, 'cancelGuestBooking']);
-    
-    // Authenticated user booking routes
+
+    // Authenticated booking routes
     Route::middleware('auth:api')->group(function () {
         Route::get('/', [BookingController::class, 'getUserBookings']);
         Route::post('/', [BookingController::class, 'createBooking']);
@@ -111,25 +129,70 @@ Route::prefix('bookings')->group(function () {
 // ============================================
 
 Route::prefix('payments')->group(function () {
-    
     // Guest payment routes
     Route::post('guest/process', [PaymentController::class, 'processGuestPayment']);
     Route::get('guest/{transactionId}/status', [PaymentController::class, 'getGuestPaymentStatus']);
-    
+
     // Authenticated payment routes
     Route::middleware('auth:api')->group(function () {
         Route::post('process', [PaymentController::class, 'processPayment']);
         Route::get('{transactionId}/status', [PaymentController::class, 'getPaymentStatus']);
         Route::get('history', [PaymentController::class, 'getPaymentHistory']);
     });
-    
-    // Webhooks (no auth, but verified by signature)
+
+    // Webhook (no auth, verified by signature)
     Route::post('webhook/authorize-net', [PaymentController::class, 'authorizeNetWebhook']);
+});
+
+// ============================================
+// PROFILE (Host / Agency)
+// ============================================
+
+Route::middleware('auth:api')->prefix('profile')->group(function () {
+    Route::get('host', [ProfileController::class, 'getHostProfile']);
+    Route::put('host', [ProfileController::class, 'updateHostProfile']);
+    Route::get('agency', [ProfileController::class, 'getAgencyProfile']);
+    Route::put('agency', [ProfileController::class, 'updateAgencyProfile']);
+});
+
+// ============================================
+// NOTIFICATIONS (Authenticated)
+// ============================================
+
+Route::middleware('auth:api')->prefix('notifications')->group(function () {
+    Route::get('/', [NotificationController::class, 'index']);
+    Route::put('read-all', [NotificationController::class, 'markAllRead']);
+    Route::delete('/', [NotificationController::class, 'destroyAll']);
+    Route::put('{id}/read', [NotificationController::class, 'markRead']);
+    Route::delete('{id}', [NotificationController::class, 'destroy']);
+});
+
+// ============================================
+// REVIEWS (Authenticated)
+// ============================================
+
+Route::middleware('auth:api')->prefix('reviews')->group(function () {
+    Route::get('my', [ReviewController::class, 'myReviews']);
+    Route::post('/', [ReviewController::class, 'store']);
+    Route::put('{id}', [ReviewController::class, 'update']);
+    Route::delete('{id}', [ReviewController::class, 'destroy']);
+});
+
+// ============================================
+// WISHLIST (Authenticated)
+// ============================================
+
+Route::middleware('auth:api')->prefix('wishlist')->group(function () {
+    Route::get('/', [WishlistController::class, 'index']);
+    Route::post('/', [WishlistController::class, 'store']);
+    Route::get('check/{propertyCode}', [WishlistController::class, 'check']);
+    Route::delete('{propertyCode}', [WishlistController::class, 'destroy']);
 });
 
 // ============================================
 // OWNERREZ ROUTES (Direct Channel API)
 // ============================================
+
 Route::prefix('ownerrez')->group(function () {
     Route::get('properties', [OwnerRezController::class, 'searchProperties']);
     Route::get('properties/{propertyId}', [OwnerRezController::class, 'getPropertyDetails']);
@@ -140,77 +203,89 @@ Route::prefix('ownerrez')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| API Routes - Admin Panel
+| ADMIN ROUTES
 |--------------------------------------------------------------------------
 */
 
-Route::prefix('admin')->middleware(['auth:api', 'admin'])->group(function () {
-    
-    // Dashboard & Analytics (Controllers missing in clean repo)
-    // Route::prefix('dashboard')->group(function () {
-    //     Route::get('stats', [DashboardController::class, 'getStats']);
-    //     Route::get('revenue', [DashboardController::class, 'getRevenueStats']);
-    //     Route::get('bookings/chart', [DashboardController::class, 'getBookingsChart']);
-    //     Route::get('recent-bookings', [DashboardController::class, 'getRecentBookings']);
-    //     Route::get('top-properties', [DashboardController::class, 'getTopProperties']);
-    // });
-    
+Route::prefix('admin')->middleware(['auth:api', 'user.type:admin'])->group(function () {
+
+    // Dashboard & Analytics
+    Route::prefix('dashboard')->group(function () {
+        Route::get('stats', [DashboardController::class, 'getStats']);
+        Route::get('revenue', [DashboardController::class, 'getRevenueStats']);
+        Route::get('bookings-chart', [DashboardController::class, 'getBookingsChart']);
+        Route::get('recent-bookings', [DashboardController::class, 'getRecentBookings']);
+        Route::get('top-properties', [DashboardController::class, 'getTopProperties']);
+        Route::get('user-growth', [DashboardController::class, 'getUserGrowth']);
+    });
+
     // Booking Management
     Route::prefix('bookings')->group(function () {
+        Route::get('export/csv', [AdminBookingController::class, 'exportCsv']);
         Route::get('/', [AdminBookingController::class, 'index']);
         Route::get('{id}', [AdminBookingController::class, 'show']);
         Route::put('{id}/status', [AdminBookingController::class, 'updateStatus']);
-        // Route::post('{id}/refund', [AdminBookingController::class, 'processRefund']);
-        // Route::put('{id}/notes', [AdminBookingController::class, 'updateNotes']);
-        // Route::get('export/csv', [AdminBookingController::class, 'exportCSV']);
-        // Route::get('export/pdf', [AdminBookingController::class, 'exportPDF']);
     });
-    
+
     // Property Management
     Route::prefix('properties')->group(function () {
         Route::get('/', [AdminPropertyController::class, 'index']);
-        Route::get('{id}', [AdminPropertyController::class, 'show']);
         Route::post('sync', [AdminPropertyController::class, 'syncFromAPIs']);
-        // Route::post('{id}/sync', [AdminPropertyController::class, 'syncSingle']);
+        Route::get('{id}', [AdminPropertyController::class, 'show']);
         Route::put('{id}/status', [AdminPropertyController::class, 'updateStatus']);
-        // Route::put('{id}/featured', [AdminPropertyController::class, 'toggleFeatured']);
-        // Route::delete('{id}', [AdminPropertyController::class, 'destroy']);
     });
-    
+
+    // User Management
+    Route::prefix('users')->group(function () {
+        Route::get('/', [AdminUserController::class, 'index']);
+        Route::get('{id}', [AdminUserController::class, 'show']);
+        Route::put('{id}', [AdminUserController::class, 'update']);
+        Route::put('{id}/status', [AdminUserController::class, 'updateStatus']);
+        Route::put('{id}/role', [AdminUserController::class, 'updateRole']);
+        Route::get('{id}/bookings', [AdminUserController::class, 'getUserBookings']);
+        Route::post('{id}/reset-password', [AdminUserController::class, 'resetPassword']);
+        Route::delete('{id}', [AdminUserController::class, 'destroy']);
+    });
+
     // Pricing Markup Management
     Route::prefix('pricing-markups')->group(function () {
         Route::get('/', [PricingMarkupController::class, 'index']);
         Route::post('/', [PricingMarkupController::class, 'store']);
+        Route::post('calculate', [PricingMarkupController::class, 'calculateMarkup']);
+        Route::post('set-default', [PricingMarkupController::class, 'setDefault']);
         Route::get('{id}', [PricingMarkupController::class, 'show']);
         Route::put('{id}', [PricingMarkupController::class, 'update']);
-        Route::delete('{id}', [PricingMarkupController::class, 'destroy']);
         Route::put('{id}/toggle-status', [PricingMarkupController::class, 'toggleStatus']);
-        Route::post('set-default', [PricingMarkupController::class, 'setDefault']);
-        Route::post('calculate', [PricingMarkupController::class, 'calculateMarkup']); // Test calculator
+        Route::delete('{id}', [PricingMarkupController::class, 'destroy']);
     });
-    
-    // User Management (Controllers missing)
-    // Route::prefix('users')->group(function () {
-    //     Route::get('/', [AdminBookingController::class, 'getUsers']);
-    //     Route::get('{id}', [AdminBookingController::class, 'getUser']);
-    //     Route::put('{id}/status', [AdminBookingController::class, 'updateUserStatus']);
-    //     Route::get('{id}/bookings', [AdminBookingController::class, 'getUserBookings']);
-    // });
-    
-    // Payment Management (Controllers missing)
-    // Route::prefix('payments')->group(function () {
-    //     Route::get('/', [AdminBookingController::class, 'getPayments']);
-    //     Route::get('{id}', [AdminBookingController::class, 'getPayment']);
-    //     Route::get('export/csv', [AdminBookingController::class, 'exportPaymentsCSV']);
-    // });
-    
-    // Settings (Controllers missing)
-    // Route::prefix('settings')->group(function () {
-    //     Route::get('/', [DashboardController::class, 'getSettings']);
-    //     Route::put('/', [DashboardController::class, 'updateSettings']);
-    //     Route::get('api-config', [DashboardController::class, 'getAPIConfig']);
-    //     Route::put('api-config', [DashboardController::class, 'updateAPIConfig']);
-    // });
 
+    // Settings Management
+    Route::prefix('settings')->group(function () {
+        Route::get('/', [AdminSettingsController::class, 'index']);
+        Route::put('/', [AdminSettingsController::class, 'update']);
+        Route::put('{key}', [AdminSettingsController::class, 'updateSingle']);
+    });
 
+    // Content Management (CMS)
+    Route::prefix('content')->group(function () {
+        Route::get('/', [AdminContentController::class, 'index']);
+        Route::post('/', [AdminContentController::class, 'store']);
+        Route::get('{id}', [AdminContentController::class, 'show']);
+        Route::put('{id}', [AdminContentController::class, 'update']);
+        Route::delete('{id}', [AdminContentController::class, 'destroy']);
+    });
+
+    // Host & Agency Management
+    Route::get('hosts', [ProfileController::class, 'adminListHosts']);
+    Route::put('hosts/{id}/verify', [ProfileController::class, 'adminVerifyHost']);
+    Route::get('agencies', [ProfileController::class, 'adminListAgencies']);
+
+    // Review Moderation
+    Route::prefix('reviews')->group(function () {
+        Route::get('/', [AdminReviewController::class, 'index']);
+        Route::put('{id}/approve', [AdminReviewController::class, 'approve']);
+        Route::put('{id}/reject', [AdminReviewController::class, 'reject']);
+        Route::put('{id}/reply', [AdminReviewController::class, 'reply']);
+        Route::delete('{id}', [AdminReviewController::class, 'destroy']);
+    });
 });

@@ -3,13 +3,23 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Mail\BookingConfirmationMail;
+use App\Mail\PaymentReceiptMail;
 use App\Models\Booking;
 use App\Models\PaymentTransaction;
+use App\Models\UserNotification;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
+/**
+ * @OA\Tag(
+ *     name="Payments",
+ *     description="Payment processing for guest and authenticated users"
+ * )
+ */
 class PaymentController extends Controller
 {
     protected $authorizeNetService;
@@ -18,8 +28,32 @@ class PaymentController extends Controller
     {
         $this->authorizeNetService = $authorizeNetService;
     }
+
     /**
-     * Process guest payment
+     * @OA\Post(
+     *     path="/payments/guest/process",
+     *     summary="Process payment for a guest booking",
+     *     tags={"Payments"},
+     *     @OA\RequestBody(required=true, @OA\JsonContent(
+     *         required={"booking_reference","payment_method","card_number","card_holder_name","card_expiry_month","card_expiry_year","card_cvv","billing_first_name","billing_last_name","billing_email","billing_address","billing_city","billing_country","billing_postal_code"},
+     *         @OA\Property(property="booking_reference", type="string", example="PKG-ABCD1234"),
+     *         @OA\Property(property="payment_method", type="string", enum={"credit_card","debit_card"}),
+     *         @OA\Property(property="card_number", type="string", example="4111111111111111"),
+     *         @OA\Property(property="card_holder_name", type="string", example="John Doe"),
+     *         @OA\Property(property="card_expiry_month", type="string", example="12"),
+     *         @OA\Property(property="card_expiry_year", type="string", example="2027"),
+     *         @OA\Property(property="card_cvv", type="string", example="123"),
+     *         @OA\Property(property="billing_first_name", type="string"),
+     *         @OA\Property(property="billing_last_name", type="string"),
+     *         @OA\Property(property="billing_email", type="string", format="email"),
+     *         @OA\Property(property="billing_address", type="string"),
+     *         @OA\Property(property="billing_city", type="string"),
+     *         @OA\Property(property="billing_country", type="string"),
+     *         @OA\Property(property="billing_postal_code", type="string")
+     *     )),
+     *     @OA\Response(response=200, description="Payment successful"),
+     *     @OA\Response(response=400, description="Payment failed or already paid")
+     * )
      */
     public function processGuestPayment(Request $request)
     {
@@ -116,7 +150,24 @@ class PaymentController extends Controller
                     'booking_status' => 'confirmed',
                     'confirmed_at' => now(),
                 ]);
-                
+
+                // Send confirmation + receipt emails + in-app notification
+                try {
+                    Mail::to($booking->holder_email)->queue(new BookingConfirmationMail($booking));
+                    Mail::to($booking->holder_email)->queue(new PaymentReceiptMail($booking, $transaction));
+                    if ($booking->user_id) {
+                        UserNotification::notify(
+                            $booking->user_id,
+                            'booking_confirmed',
+                            'Booking Confirmed!',
+                            "Your booking {$booking->booking_reference} for {$booking->property_name} is confirmed.",
+                            ['booking_reference' => $booking->booking_reference]
+                        );
+                    }
+                } catch (\Exception $mailEx) {
+                    Log::warning('Post-payment notification failed: ' . $mailEx->getMessage());
+                }
+
                 return response()->json([
                     'success' => true,
                     'message' => 'Payment processed successfully',
@@ -153,7 +204,25 @@ class PaymentController extends Controller
     }
     
     /**
-     * Process authenticated user payment
+     * @OA\Post(
+     *     path="/payments/process",
+     *     summary="Process payment for an authenticated user booking",
+     *     tags={"Payments"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(required=true, @OA\JsonContent(
+     *         required={"booking_reference","payment_method","card_number","card_holder_name","card_expiry_month","card_expiry_year","card_cvv"},
+     *         @OA\Property(property="booking_reference", type="string", example="PKG-ABCD1234"),
+     *         @OA\Property(property="payment_method", type="string", enum={"credit_card","debit_card"}),
+     *         @OA\Property(property="card_number", type="string", example="4111111111111111"),
+     *         @OA\Property(property="card_holder_name", type="string"),
+     *         @OA\Property(property="card_expiry_month", type="string", example="12"),
+     *         @OA\Property(property="card_expiry_year", type="string", example="2027"),
+     *         @OA\Property(property="card_cvv", type="string", example="123")
+     *     )),
+     *     @OA\Response(response=200, description="Payment successful"),
+     *     @OA\Response(response=400, description="Payment failed"),
+     *     @OA\Response(response=401, description="Unauthenticated")
+     * )
      */
     public function processPayment(Request $request)
     {
@@ -220,7 +289,14 @@ class PaymentController extends Controller
                     'booking_status' => 'confirmed',
                     'confirmed_at' => now(),
                 ]);
-                
+
+                try {
+                    Mail::to($booking->holder_email)->queue(new BookingConfirmationMail($booking));
+                    Mail::to($booking->holder_email)->queue(new PaymentReceiptMail($booking, $transaction));
+                } catch (\Exception $mailEx) {
+                    Log::warning('Confirmation email failed: ' . $mailEx->getMessage());
+                }
+
                 return response()->json([
                     'success' => true,
                     'message' => 'Payment successful',
@@ -247,7 +323,15 @@ class PaymentController extends Controller
     }
     
     /**
-     * Get payment status
+     * @OA\Get(
+     *     path="/payments/{transactionId}/status",
+     *     summary="Get payment transaction status",
+     *     tags={"Payments"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(name="transactionId", in="path", required=true, @OA\Schema(type="string")),
+     *     @OA\Response(response=200, description="Transaction status"),
+     *     @OA\Response(response=404, description="Not found")
+     * )
      */
     public function getPaymentStatus($transactionId)
     {
@@ -274,7 +358,14 @@ class PaymentController extends Controller
     }
     
     /**
-     * Get guest payment status
+     * @OA\Get(
+     *     path="/payments/guest/{transactionId}/status",
+     *     summary="Get guest payment transaction status",
+     *     tags={"Payments"},
+     *     @OA\Parameter(name="transactionId", in="path", required=true, @OA\Schema(type="string")),
+     *     @OA\Response(response=200, description="Transaction status"),
+     *     @OA\Response(response=404, description="Not found")
+     * )
      */
     public function getGuestPaymentStatus($transactionId)
     {
@@ -282,7 +373,14 @@ class PaymentController extends Controller
     }
     
     /**
-     * Get user payment history
+     * @OA\Get(
+     *     path="/payments/history",
+     *     summary="Get authenticated user's payment history",
+     *     tags={"Payments"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(response=200, description="Paginated payment history"),
+     *     @OA\Response(response=401, description="Unauthenticated")
+     * )
      */
     public function getPaymentHistory(Request $request)
     {
@@ -307,16 +405,98 @@ class PaymentController extends Controller
     }
     
     /**
-     * Authorize.Net webhook handler
+     * Authorize.Net webhook handler with HMAC-SHA512 signature verification
      */
     public function authorizeNetWebhook(Request $request)
     {
-        // TODO: Implement webhook signature verification
-        // TODO: Handle payment notifications from Authorize.Net
-        
-        Log::info('Authorize.Net webhook received', $request->all());
-        
+        // Verify Authorize.Net webhook signature
+        $signatureKey = config('services.authorize_net.webhook_secret', env('AUTHORIZE_NET_WEBHOOK_SECRET', ''));
+
+        if ($signatureKey) {
+            $receivedSig = $request->header('X-ANET-Signature');
+            if (!$receivedSig) {
+                Log::warning('Authorize.Net webhook: missing signature header');
+                return response()->json(['error' => 'Missing signature'], 401);
+            }
+
+            // Authorize.Net sends "sha512=<hex>"
+            $rawBody   = $request->getContent();
+            $computed  = 'sha512=' . strtoupper(hash_hmac('sha512', $rawBody, $signatureKey));
+
+            if (!hash_equals($computed, strtoupper($receivedSig))) {
+                Log::warning('Authorize.Net webhook: invalid signature');
+                return response()->json(['error' => 'Invalid signature'], 401);
+            }
+        }
+
+        $payload   = $request->json()->all();
+        $eventType = $payload['eventType'] ?? '';
+
+        Log::info('Authorize.Net webhook', ['event' => $eventType, 'payload' => $payload]);
+
+        // Handle payment events
+        match ($eventType) {
+            'net.authorize.payment.authcapture.created',
+            'net.authorize.payment.capture.created' => $this->handlePaymentCapture($payload),
+
+            'net.authorize.payment.void.created'    => $this->handlePaymentVoid($payload),
+
+            'net.authorize.payment.refund.created'  => $this->handlePaymentRefund($payload),
+
+            default => null,
+        };
+
         return response()->json(['success' => true]);
+    }
+
+    protected function handlePaymentCapture(array $payload): void
+    {
+        $transactionId = $payload['payload']['id'] ?? null;
+        if (!$transactionId) return;
+
+        $transaction = PaymentTransaction::where('gateway_transaction_id', $transactionId)->first();
+        if ($transaction && $transaction->status !== 'success') {
+            $transaction->update(['status' => 'success', 'processed_at' => now()]);
+            $booking = Booking::find($transaction->booking_id);
+            if ($booking) {
+                $booking->update([
+                    'payment_status' => 'paid',
+                    'paid_amount'    => $transaction->amount,
+                    'paid_at'        => now(),
+                    'booking_status' => 'confirmed',
+                    'confirmed_at'   => now(),
+                ]);
+            }
+        }
+    }
+
+    protected function handlePaymentVoid(array $payload): void
+    {
+        $transactionId = $payload['payload']['id'] ?? null;
+        if (!$transactionId) return;
+
+        $transaction = PaymentTransaction::where('gateway_transaction_id', $transactionId)->first();
+        if ($transaction) {
+            $transaction->update(['status' => 'voided']);
+        }
+    }
+
+    protected function handlePaymentRefund(array $payload): void
+    {
+        $transactionId = $payload['payload']['id'] ?? null;
+        if (!$transactionId) return;
+
+        $transaction = PaymentTransaction::where('gateway_transaction_id', $transactionId)->first();
+        if ($transaction) {
+            $transaction->update(['status' => 'refunded', 'transaction_type' => 'refund']);
+            $booking = Booking::find($transaction->booking_id);
+            if ($booking) {
+                $booking->update([
+                    'payment_status' => 'refunded',
+                    'refund_amount'  => $transaction->amount,
+                ]);
+            }
+        }
     }
     
     /**

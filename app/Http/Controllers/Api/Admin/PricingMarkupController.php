@@ -8,17 +8,32 @@ use App\Services\PricingMarkupService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
+/**
+ * @OA\Tag(
+ *     name="Admin - Pricing Markups",
+ *     description="Manage pricing markup rules applied to booking prices"
+ * )
+ */
 class PricingMarkupController extends Controller
 {
     protected $pricingService;
-    
+
     public function __construct(PricingMarkupService $pricingService)
     {
         $this->pricingService = $pricingService;
     }
-    
+
     /**
-     * Get all pricing markups
+     * @OA\Get(
+     *     path="/admin/pricing-markups",
+     *     summary="List all pricing markup rules",
+     *     tags={"Admin - Pricing Markups"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(name="is_active", in="query", @OA\Schema(type="boolean")),
+     *     @OA\Parameter(name="provider", in="query", @OA\Schema(type="string", enum={"ownerrez","hotelbeds","all"})),
+     *     @OA\Parameter(name="per_page", in="query", @OA\Schema(type="integer", example=20)),
+     *     @OA\Response(response=200, description="Paginated markup list")
+     * )
      */
     public function index(Request $request)
     {
@@ -43,7 +58,24 @@ class PricingMarkupController extends Controller
     }
     
     /**
-     * Store new pricing markup
+     * @OA\Post(
+     *     path="/admin/pricing-markups",
+     *     summary="Create a new pricing markup rule",
+     *     tags={"Admin - Pricing Markups"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(required=true, @OA\JsonContent(
+     *         required={"name","markup_type","provider"},
+     *         @OA\Property(property="name", type="string", example="Standard 10% Markup"),
+     *         @OA\Property(property="markup_type", type="string", enum={"percentage","fixed","tiered"}),
+     *         @OA\Property(property="markup_percentage", type="number", example=10),
+     *         @OA\Property(property="markup_fixed_amount", type="number", example=50),
+     *         @OA\Property(property="provider", type="string", enum={"ownerrez","hotelbeds","all"}),
+     *         @OA\Property(property="is_active", type="boolean", example=true),
+     *         @OA\Property(property="priority", type="integer", example=1)
+     *     )),
+     *     @OA\Response(response=201, description="Markup created"),
+     *     @OA\Response(response=400, description="Validation error")
+     * )
      */
     public function store(Request $request)
     {
@@ -102,7 +134,15 @@ class PricingMarkupController extends Controller
     }
     
     /**
-     * Show specific markup
+     * @OA\Get(
+     *     path="/admin/pricing-markups/{id}",
+     *     summary="Get a single pricing markup",
+     *     tags={"Admin - Pricing Markups"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Response(response=200, description="Markup details"),
+     *     @OA\Response(response=404, description="Not found")
+     * )
      */
     public function show($id)
     {
@@ -115,7 +155,20 @@ class PricingMarkupController extends Controller
     }
     
     /**
-     * Update pricing markup
+     * @OA\Put(
+     *     path="/admin/pricing-markups/{id}",
+     *     summary="Update a pricing markup rule",
+     *     tags={"Admin - Pricing Markups"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\RequestBody(required=true, @OA\JsonContent(
+     *         @OA\Property(property="name", type="string"),
+     *         @OA\Property(property="markup_percentage", type="number"),
+     *         @OA\Property(property="is_active", type="boolean")
+     *     )),
+     *     @OA\Response(response=200, description="Markup updated"),
+     *     @OA\Response(response=404, description="Not found")
+     * )
      */
     public function update(Request $request, $id)
     {
@@ -166,7 +219,15 @@ class PricingMarkupController extends Controller
     }
     
     /**
-     * Delete pricing markup
+     * @OA\Delete(
+     *     path="/admin/pricing-markups/{id}",
+     *     summary="Delete a pricing markup rule",
+     *     tags={"Admin - Pricing Markups"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Response(response=200, description="Deleted"),
+     *     @OA\Response(response=404, description="Not found")
+     * )
      */
     public function destroy($id)
     {
@@ -182,7 +243,14 @@ class PricingMarkupController extends Controller
     }
     
     /**
-     * Toggle markup status
+     * @OA\Put(
+     *     path="/admin/pricing-markups/{id}/toggle-status",
+     *     summary="Toggle markup active/inactive",
+     *     tags={"Admin - Pricing Markups"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Response(response=200, description="Status toggled")
+     * )
      */
     public function toggleStatus($id)
     {
@@ -202,7 +270,17 @@ class PricingMarkupController extends Controller
     }
     
     /**
-     * Set as default markup
+     * @OA\Post(
+     *     path="/admin/pricing-markups/set-default",
+     *     summary="Set a markup rule as the default",
+     *     tags={"Admin - Pricing Markups"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(required=true, @OA\JsonContent(
+     *         required={"markup_id"},
+     *         @OA\Property(property="markup_id", type="integer", example=1)
+     *     )),
+     *     @OA\Response(response=200, description="Default set")
+     * )
      */
     public function setDefault(Request $request)
     {
@@ -234,7 +312,19 @@ class PricingMarkupController extends Controller
     }
     
     /**
-     * Calculate markup (test calculator)
+     * @OA\Post(
+     *     path="/admin/pricing-markups/calculate",
+     *     summary="Test markup calculator with a given base price",
+     *     tags={"Admin - Pricing Markups"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(required=true, @OA\JsonContent(
+     *         required={"base_price"},
+     *         @OA\Property(property="base_price", type="number", example=500.00),
+     *         @OA\Property(property="provider", type="string", example="ownerrez"),
+     *         @OA\Property(property="check_in_date", type="string", format="date", example="2027-06-01")
+     *     )),
+     *     @OA\Response(response=200, description="Markup calculation result")
+     * )
      */
     public function calculateMarkup(Request $request)
     {

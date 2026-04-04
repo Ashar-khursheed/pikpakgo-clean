@@ -7,7 +7,31 @@
       "Bash(php -l app/Http/Controllers/Api/PropertyController.php)",
       "Bash(php -l app/Http/Controllers/Api/BookingController.php)",
       "Bash(php -l app/Http/Controllers/Api/Admin/AdminPropertyController.php)",
-      "Bash(php -l app/Services/OwnerRezService.php)"
+      "Bash(php -l app/Services/OwnerRezService.php)",
+      "Bash(curl -s http://127.0.0.1:8000/api/health)",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('OK:', d.get\\('status'\\)\\)\")",
+      "Bash(curl -s http://127.0.0.1:8000/api/ownerrez/properties)",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('success:', d.get\\('success'\\), '| items:', len\\(d.get\\('data',{}\\).get\\('items',[]\\)\\)\\)\")",
+      "Bash(curl -s http://127.0.0.1:8000/api/ownerrez/properties/orp5b27f9x)",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('success:', d.get\\('success'\\)\\)\")",
+      "Bash(curl -s -X POST http://127.0.0.1:8000/api/ownerrez/properties/orp5b27f9x/availability -H 'Content-Type: application/json' -d '{\"checkin\":\"2026-06-01\",\"checkout\":\"2026-06-07\",\"guests\":2}')",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('success:', d.get\\('success'\\), '| available:', d.get\\('data',{}\\).get\\('available'\\)\\)\")",
+      "Bash(curl -s -X POST http://127.0.0.1:8000/api/ownerrez/properties/orp5b27f9x/pricing -H 'Content-Type: application/json' -d '{\"checkin\":\"2026-06-01\",\"checkout\":\"2026-06-07\",\"guests\":2}')",
+      "Bash(curl -s -X POST http://127.0.0.1:8000/api/ownerrez/bookings -H 'Content-Type: application/json' -d '{\"propertyId\":\"orp5b27f9x\",\"checkin\":\"2026-08-01\",\"checkout\":\"2026-08-07\",\"guests\":2,\"guest\":{\"firstName\":\"Test\",\"lastName\":\"User\",\"email\":\"test@example.com\",\"phone\":\"+12125551234\"}}')",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('success:', d.get\\('success'\\), '| status:', d.get\\('data',{}\\).get\\('reservationStatus'\\), '| id:', d.get\\('data',{}\\).get\\('externalId'\\)\\)\")",
+      "Bash(curl -s -X POST http://127.0.0.1:8000/api/public/search/properties -H 'Content-Type: application/json' -d '{\"checkIn\":\"2027-06-01\",\"checkOut\":\"2027-06-07\",\"guests\":2}')",
+      "Bash(curl -s -X POST http://127.0.0.1:8000/api/public/search/hotels -H 'Content-Type: application/json' -d '{\"checkIn\":\"2027-06-01\",\"checkOut\":\"2027-06-07\",\"guests\":2}')",
+      "Bash(curl -s -X POST http://127.0.0.1:8000/api/auth/register -H 'Content-Type: application/json' -d '{\"name\":\"Test Admin\",\"email\":\"admin_test_qa@example.com\",\"password\":\"Password123!\",\"password_confirmation\":\"Password123!\"}')",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('success:', d.get\\('success'\\), '| token_exists:', bool\\(d.get\\('data',{}\\).get\\('token'\\)\\)\\)\")",
+      "Bash(curl -s -X POST http://127.0.0.1:8000/api/auth/login -H 'Content-Type: application/json' -d '{\"email\":\"admin_test_qa@example.com\",\"password\":\"Password123!\"}')",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('success:', d.get\\('success'\\)\\); open\\('/tmp/token.txt','w'\\).write\\(d.get\\('data',{}\\).get\\('token',''\\)\\)\")",
+      "Bash(curl -s -X POST http://127.0.0.1:8000/api/ownerrez/bookings -H 'Content-Type: application/json' -d '{\"propertyId\":\"orp5b27f9x\",\"checkin\":\"2026-09-01\",\"checkout\":\"2026-09-07\",\"guests\":2,\"guest\":{\"firstName\":\"Test\",\"lastName\":\"User\",\"email\":\"test@example.com\",\"phone\":\"+12125551234\"}}')",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d,indent=2\\)[:600]\\)\")",
+      "Bash(curl -s -X POST http://127.0.0.1:8000/api/auth/register -H 'Content-Type: application/json' -d '{\"name\":\"Test Admin\",\"email\":\"admin_test_qa2@example.com\",\"password\":\"Password123!\",\"password_confirmation\":\"Password123!\"}')",
+      "Bash(curl -s -X POST http://127.0.0.1:8000/api/auth/register -H 'Content-Type: application/json' -d '{\"first_name\":\"Admin\",\"last_name\":\"User\",\"email\":\"admin_qa_v2@example.com\",\"password\":\"Password123!\",\"password_confirmation\":\"Password123!\",\"user_type\":\"admin\"}')",
+      "Bash(curl -s -X POST http://127.0.0.1:8000/api/auth/login -H 'Content-Type: application/json' -d '{\"email\":\"admin@pikpakgo.com\",\"password\":\"Admin123!\"}')",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('Login success:', d.get\\('success'\\), '| token_exists:', bool\\(d.get\\('data',{}\\).get\\('token'\\)\\)\\)\")",
+      "Bash(bash qa_test.sh)"
     ]
   }
 }

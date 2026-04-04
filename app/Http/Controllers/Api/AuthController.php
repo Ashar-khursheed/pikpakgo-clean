@@ -3,11 +3,14 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Mail\EmailVerificationMail;
+use App\Mail\PasswordResetMail;
 use App\Models\User;
 use App\Models\HostProfile;
 use App\Models\AgencyProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Tymon\JWTAuth\Facades\JWTAuth;
@@ -351,5 +354,257 @@ class AuthController extends Controller
                 'message' => 'Failed to retrieve user'
             ], 500);
         }
+    }
+
+    /**
+     * @OA\Put(
+     *     path="/auth/profile",
+     *     tags={"Authentication"},
+     *     summary="Update user profile",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             @OA\Property(property="first_name", type="string"),
+     *             @OA\Property(property="last_name", type="string"),
+     *             @OA\Property(property="phone", type="string"),
+     *             @OA\Property(property="country", type="string"),
+     *             @OA\Property(property="city", type="string"),
+     *             @OA\Property(property="state", type="string"),
+     *             @OA\Property(property="address", type="string"),
+     *             @OA\Property(property="date_of_birth", type="string", format="date"),
+     *             @OA\Property(property="gender", type="string", enum={"male","female","other","prefer_not_to_say"}),
+     *             @OA\Property(property="preferred_currency", type="string", example="USD"),
+     *             @OA\Property(property="preferred_language", type="string", example="en")
+     *         )
+     *     ),
+     *     @OA\Response(response=200, description="Profile updated"),
+     *     @OA\Response(response=401, description="Unauthenticated")
+     * )
+     */
+    public function updateProfile(Request $request)
+    {
+        $user = auth()->user();
+
+        $validated = $request->validate([
+            'first_name'         => 'sometimes|string|max:255',
+            'last_name'          => 'sometimes|string|max:255',
+            'phone'              => 'sometimes|string|max:20',
+            'country'            => 'sometimes|string|max:100',
+            'city'               => 'sometimes|string|max:100',
+            'state'              => 'sometimes|string|max:100',
+            'zip_code'           => 'sometimes|string|max:20',
+            'address'            => 'sometimes|string|max:500',
+            'date_of_birth'      => 'sometimes|date|before:today',
+            'gender'             => 'sometimes|in:male,female,other,prefer_not_to_say',
+            'preferred_currency' => 'sometimes|string|size:3',
+            'preferred_language' => 'sometimes|string|max:5',
+        ]);
+
+        $user->update($validated);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Profile updated successfully',
+            'data'    => $user->fresh(),
+        ]);
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/auth/change-password",
+     *     tags={"Authentication"},
+     *     summary="Change current user password",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"current_password","password","password_confirmation"},
+     *             @OA\Property(property="current_password", type="string"),
+     *             @OA\Property(property="password", type="string", minLength=8),
+     *             @OA\Property(property="password_confirmation", type="string")
+     *         )
+     *     ),
+     *     @OA\Response(response=200, description="Password changed"),
+     *     @OA\Response(response=422, description="Current password incorrect")
+     * )
+     */
+    public function changePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => 'required|string',
+            'password'         => 'required|string|min:8|confirmed',
+        ]);
+
+        $user = auth()->user();
+
+        if (!Hash::check($request->current_password, $user->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Current password is incorrect',
+            ], 422);
+        }
+
+        $user->update(['password' => Hash::make($request->password)]);
+
+        return response()->json(['success' => true, 'message' => 'Password changed successfully']);
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/auth/forgot-password",
+     *     tags={"Authentication"},
+     *     summary="Request a password reset link",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"email"},
+     *             @OA\Property(property="email", type="string", format="email")
+     *         )
+     *     ),
+     *     @OA\Response(response=200, description="Reset link sent (if email exists)"),
+     *     @OA\Response(response=422, description="Validation error")
+     * )
+     */
+    public function forgotPassword(Request $request)
+    {
+        $request->validate(['email' => 'required|email']);
+
+        $user = User::where('email', $request->email)->first();
+
+        // Always return success to avoid user enumeration
+        if ($user) {
+            $token = Str::random(64);
+            $user->update([
+                'reset_token'            => $token,
+                'reset_token_expires_at' => now()->addHour(),
+            ]);
+            Mail::to($user->email)->queue(new PasswordResetMail($user, $token));
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'If that email exists, a reset link has been sent.',
+        ]);
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/auth/reset-password",
+     *     tags={"Authentication"},
+     *     summary="Reset password using token",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"token","email","password","password_confirmation"},
+     *             @OA\Property(property="token", type="string"),
+     *             @OA\Property(property="email", type="string", format="email"),
+     *             @OA\Property(property="password", type="string", minLength=8),
+     *             @OA\Property(property="password_confirmation", type="string")
+     *         )
+     *     ),
+     *     @OA\Response(response=200, description="Password reset successful"),
+     *     @OA\Response(response=422, description="Invalid or expired token")
+     * )
+     */
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'token'    => 'required|string',
+            'email'    => 'required|email',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $user = User::where('email', $request->email)
+            ->where('reset_token', $request->token)
+            ->where('reset_token_expires_at', '>', now())
+            ->first();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid or expired reset token.',
+            ], 422);
+        }
+
+        $user->update([
+            'password'               => Hash::make($request->password),
+            'reset_token'            => null,
+            'reset_token_expires_at' => null,
+            'status'                 => 'active',
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Password reset successfully. You can now log in.']);
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/auth/verify-email/{token}",
+     *     tags={"Authentication"},
+     *     summary="Verify email address using token",
+     *     @OA\Parameter(name="token", in="path", required=true, @OA\Schema(type="string")),
+     *     @OA\Response(response=200, description="Email verified"),
+     *     @OA\Response(response=422, description="Invalid token")
+     * )
+     */
+    public function verifyEmail($token)
+    {
+        $user = User::where('verification_token', $token)->first();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid verification token.',
+            ], 422);
+        }
+
+        if ($user->email_verified_at) {
+            return response()->json(['success' => true, 'message' => 'Email already verified.']);
+        }
+
+        $user->update([
+            'email_verified_at'  => now(),
+            'verification_token' => null,
+            'status'             => 'active',
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Email verified successfully.']);
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/auth/resend-verification",
+     *     tags={"Authentication"},
+     *     summary="Resend email verification link",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"email"},
+     *             @OA\Property(property="email", type="string", format="email")
+     *         )
+     *     ),
+     *     @OA\Response(response=200, description="Verification email sent"),
+     *     @OA\Response(response=422, description="Already verified or not found")
+     * )
+     */
+    public function resendVerification(Request $request)
+    {
+        $request->validate(['email' => 'required|email']);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+            return response()->json(['success' => true, 'message' => 'If that email exists, a verification link has been sent.']);
+        }
+
+        if ($user->email_verified_at) {
+            return response()->json(['success' => false, 'message' => 'Email is already verified.'], 422);
+        }
+
+        $token = Str::random(64);
+        $user->update(['verification_token' => $token]);
+        Mail::to($user->email)->queue(new EmailVerificationMail($user, $token));
+
+        return response()->json(['success' => true, 'message' => 'Verification email sent.']);
     }
 }

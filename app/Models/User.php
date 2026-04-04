@@ -69,6 +69,21 @@ public function getJWTCustomClaims()
     return [];
 }
     // Relationships
+    public function bookings()
+    {
+        return $this->hasMany(\App\Models\Booking::class);
+    }
+
+    public function reviews()
+    {
+        return $this->hasMany(\App\Models\Review::class);
+    }
+
+    public function wishlist()
+    {
+        return $this->hasMany(\App\Models\Wishlist::class);
+    }
+
     public function hostProfile()
     {
         return $this->hasOne(HostProfile::class);

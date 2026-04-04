@@ -23,6 +23,314 @@
         }
     ],
     "paths": {
+        "/admin/bookings": {
+            "get": {
+                "tags": [
+                    "Admin - Bookings"
+                ],
+                "summary": "List all bookings",
+                "operationId": "d8e17ccac75d6d6f8353e69998998637",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "pending",
+                                "confirmed",
+                                "cancelled",
+                                "completed",
+                                "no_show",
+                                "rejected"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "payment_status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "pending",
+                                "processing",
+                                "paid",
+                                "failed",
+                                "refunded"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "provider",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "ownerrez",
+                                "hotelbeds"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search by reference, email, or last name",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "date_from",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2027-01-01"
+                        }
+                    },
+                    {
+                        "name": "date_to",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2027-12-31"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "example": 20
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated booking list"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/bookings/{id}": {
+            "get": {
+                "tags": [
+                    "Admin - Bookings"
+                ],
+                "summary": "Get single booking details",
+                "operationId": "be3fdbcbe30f024b5eacbc625eb5d265",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Booking details"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/bookings/{id}/status": {
+            "put": {
+                "tags": [
+                    "Admin - Bookings"
+                ],
+                "summary": "Update booking status and/or add internal notes",
+                "operationId": "d46a31647561ba0073a18b6a36af5469",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "booking_status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "pending",
+                                            "confirmed",
+                                            "cancelled",
+                                            "completed",
+                                            "no_show",
+                                            "rejected"
+                                        ]
+                                    },
+                                    "payment_status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "pending",
+                                            "processing",
+                                            "paid",
+                                            "failed",
+                                            "refunded",
+                                            "partially_refunded"
+                                        ]
+                                    },
+                                    "internal_notes": {
+                                        "type": "string",
+                                        "example": "Called guest to confirm."
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Booking updated"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/bookings/export/csv": {
+            "get": {
+                "tags": [
+                    "Admin - Bookings"
+                ],
+                "summary": "Export bookings as CSV",
+                "operationId": "b9a5e7f38e039cf57730277ac40173b4",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "date_from",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "date_to",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "CSV file download"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/content": {
+            "get": {
+                "tags": [
+                    "Admin Content"
+                ],
+                "summary": "List content pages",
+                "operationId": "3a99006b71d55d396640b8de7ecc793f",
+                "responses": {
+                    "200": {
+                        "description": "List of content pages"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Admin Content"
+                ],
+                "summary": "Create content page",
+                "operationId": "cd45feb68be6258942a924867775b36e",
+                "responses": {
+                    "201": {
+                        "description": "Content created"
+                    }
+                }
+            }
+        },
+        "/admin/content/{id}": {
+            "get": {
+                "tags": [
+                    "Admin Content"
+                ],
+                "summary": "Get content page",
+                "operationId": "5532ac733cc6ffdef4452821283a6358",
+                "responses": {
+                    "200": {
+                        "description": "Content details"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Admin Content"
+                ],
+                "summary": "Update content page",
+                "operationId": "bdec4a68bfe2e2f9b43ca94927a2b19a",
+                "responses": {
+                    "200": {
+                        "description": "Content updated"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Admin Content"
+                ],
+                "summary": "Delete content page",
+                "operationId": "7ab44417844b5f5f0ba9f29b320f2810",
+                "responses": {
+                    "200": {
+                        "description": "Content deleted"
+                    }
+                }
+            }
+        },
         "/admin/properties": {
             "get": {
                 "tags": [
@@ -181,6 +489,1225 @@
                     },
                     "404": {
                         "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/reviews": {
+            "get": {
+                "tags": [
+                    "Admin - Reviews"
+                ],
+                "summary": "List all reviews with optional status filter",
+                "operationId": "a19a7fb0cfdac5ee96bf98e0a4a3da30",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "pending",
+                                "approved",
+                                "rejected"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "property_code",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "example": 20
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated review list"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/reviews/{id}/approve": {
+            "put": {
+                "tags": [
+                    "Admin - Reviews"
+                ],
+                "summary": "Approve a review",
+                "operationId": "f60a52e395df1c108bde7544d771a5b1",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Review approved"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/reviews/{id}/reject": {
+            "put": {
+                "tags": [
+                    "Admin - Reviews"
+                ],
+                "summary": "Reject a review",
+                "operationId": "333ed1aae2083c97e6c95ebef2c628d4",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Review rejected"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/reviews/{id}/reply": {
+            "put": {
+                "tags": [
+                    "Admin - Reviews"
+                ],
+                "summary": "Add admin reply to a review",
+                "operationId": "4c971b27209cfc5306c2f370b9d548ed",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "reply"
+                                ],
+                                "properties": {
+                                    "reply": {
+                                        "type": "string",
+                                        "example": "Thank you for your feedback!"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Reply added"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/reviews/{id}": {
+            "delete": {
+                "tags": [
+                    "Admin - Reviews"
+                ],
+                "summary": "Delete a review",
+                "operationId": "ee3474b866ed4d2ea9cb6ae71c9bc468",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Review deleted"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/settings": {
+            "get": {
+                "tags": [
+                    "Admin - Settings"
+                ],
+                "summary": "Get all settings grouped by category",
+                "operationId": "32efd4c9bdc48567c1ea09931fb1020d",
+                "parameters": [
+                    {
+                        "name": "group",
+                        "in": "query",
+                        "description": "Filter by group: general|booking|email|payment|api",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Settings list"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Admin - Settings"
+                ],
+                "summary": "Update multiple settings at once",
+                "operationId": "07d7848a44c573c0bbe281dafb194bed",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "settings": {
+                                        "type": "object",
+                                        "example": {
+                                            "site_name": "PikPakGo",
+                                            "default_currency": "USD"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Settings updated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/settings/{key}": {
+            "put": {
+                "tags": [
+                    "Admin - Settings"
+                ],
+                "summary": "Update a single setting",
+                "operationId": "9f4b870405e101b10cde69b3fa69eb52",
+                "parameters": [
+                    {
+                        "name": "key",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "site_name"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "value"
+                                ],
+                                "properties": {
+                                    "value": {
+                                        "type": "string",
+                                        "example": "MyApp"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Setting updated"
+                    },
+                    "404": {
+                        "description": "Setting not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/settings/public": {
+            "get": {
+                "tags": [
+                    "Admin - Settings"
+                ],
+                "summary": "Get all public settings (also accessible without auth)",
+                "operationId": "b83db8c2d0ffbc82b9eb28db9e19dcfc",
+                "responses": {
+                    "200": {
+                        "description": "Public settings"
+                    }
+                }
+            }
+        },
+        "/admin/users": {
+            "get": {
+                "tags": [
+                    "Admin - Users"
+                ],
+                "summary": "List all users",
+                "operationId": "fd10354697a04e026734f45e617020a9",
+                "parameters": [
+                    {
+                        "name": "user_type",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "customer",
+                                "host",
+                                "agency",
+                                "admin"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "active",
+                                "inactive",
+                                "suspended",
+                                "pending"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "example": 20
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated user list"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/users/{id}": {
+            "get": {
+                "tags": [
+                    "Admin - Users"
+                ],
+                "summary": "Get user details",
+                "operationId": "6848570979547f9de8f11c663d51f7a4",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User details with booking stats"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Admin - Users"
+                ],
+                "summary": "Update user details",
+                "operationId": "1019d66223082ae4de393b739f269550",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "first_name": {
+                                        "type": "string"
+                                    },
+                                    "last_name": {
+                                        "type": "string"
+                                    },
+                                    "phone": {
+                                        "type": "string"
+                                    },
+                                    "country": {
+                                        "type": "string"
+                                    },
+                                    "city": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "User updated"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Admin - Users"
+                ],
+                "summary": "Soft delete a user",
+                "operationId": "54704976b5c99b33a0e1607d83c267f4",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User deleted"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/users/{id}/status": {
+            "put": {
+                "tags": [
+                    "Admin - Users"
+                ],
+                "summary": "Update user status",
+                "operationId": "ed1c340b0ded29222efda8293de58ffe",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "status"
+                                ],
+                                "properties": {
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "active",
+                                            "inactive",
+                                            "suspended",
+                                            "pending"
+                                        ],
+                                        "example": "active"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Status updated"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/users/{id}/role": {
+            "put": {
+                "tags": [
+                    "Admin - Users"
+                ],
+                "summary": "Update user role/type",
+                "operationId": "682ebe6dc42f868ad05a1a06f9635a81",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "user_type"
+                                ],
+                                "properties": {
+                                    "user_type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "customer",
+                                            "host",
+                                            "agency",
+                                            "admin"
+                                        ],
+                                        "example": "admin"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Role updated"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/users/{id}/bookings": {
+            "get": {
+                "tags": [
+                    "Admin - Users"
+                ],
+                "summary": "Get bookings for a specific user",
+                "operationId": "f9a1a21593bb3404ec9b893b897745b7",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User bookings"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/users/{id}/reset-password": {
+            "post": {
+                "tags": [
+                    "Admin - Users"
+                ],
+                "summary": "Admin reset a user's password",
+                "operationId": "a8e1e98e349f63633b32b891ed90dd61",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "password"
+                                ],
+                                "properties": {
+                                    "password": {
+                                        "type": "string",
+                                        "example": "NewPass123!"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Password reset"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/dashboard/stats": {
+            "get": {
+                "tags": [
+                    "Admin - Dashboard"
+                ],
+                "summary": "Get dashboard overview stats",
+                "operationId": "db10d406073eeeca359824caa4c558af",
+                "responses": {
+                    "200": {
+                        "description": "Overview stats"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/dashboard/revenue": {
+            "get": {
+                "tags": [
+                    "Admin - Dashboard"
+                ],
+                "summary": "Get revenue statistics over time",
+                "operationId": "0e89539a382157b3be1d59e93e0354b4",
+                "parameters": [
+                    {
+                        "name": "period",
+                        "in": "query",
+                        "description": "daily|weekly|monthly",
+                        "schema": {
+                            "type": "string",
+                            "example": "monthly"
+                        }
+                    },
+                    {
+                        "name": "months",
+                        "in": "query",
+                        "description": "Number of months (default 6)",
+                        "schema": {
+                            "type": "integer",
+                            "example": 6
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Revenue chart data"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/dashboard/bookings-chart": {
+            "get": {
+                "tags": [
+                    "Admin - Dashboard"
+                ],
+                "summary": "Get booking status breakdown for chart",
+                "operationId": "6023168995ab9a49dc8b79ae2e1287a0",
+                "responses": {
+                    "200": {
+                        "description": "Booking chart data"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/dashboard/recent-bookings": {
+            "get": {
+                "tags": [
+                    "Admin - Dashboard"
+                ],
+                "summary": "Get recent bookings for dashboard feed",
+                "operationId": "a2ade8468b2f49ee8703947b2d1e8a40",
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Recent bookings"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/dashboard/top-properties": {
+            "get": {
+                "tags": [
+                    "Admin - Dashboard"
+                ],
+                "summary": "Get top properties by bookings and revenue",
+                "operationId": "97be3e8c093a0f307bb19780ca70cb97",
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Top properties"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/dashboard/user-growth": {
+            "get": {
+                "tags": [
+                    "Admin - Dashboard"
+                ],
+                "summary": "Get user registration growth over time",
+                "operationId": "9d1a5188bbe8cadd55fe9bf09961a76d",
+                "parameters": [
+                    {
+                        "name": "months",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "example": 6
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User growth data"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/pricing-markups": {
+            "get": {
+                "tags": [
+                    "Admin - Pricing Markups"
+                ],
+                "summary": "List all pricing markup rules",
+                "operationId": "31eac7d3827af648d3b2d2610cdcbece",
+                "parameters": [
+                    {
+                        "name": "is_active",
+                        "in": "query",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "provider",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "ownerrez",
+                                "hotelbeds",
+                                "all"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "example": 20
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated markup list"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Admin - Pricing Markups"
+                ],
+                "summary": "Create a new pricing markup rule",
+                "operationId": "9ecdad1f1756a27ef76ff053e2257912",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "markup_type",
+                                    "provider"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Standard 10% Markup"
+                                    },
+                                    "markup_type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "percentage",
+                                            "fixed",
+                                            "tiered"
+                                        ]
+                                    },
+                                    "markup_percentage": {
+                                        "type": "number",
+                                        "example": 10
+                                    },
+                                    "markup_fixed_amount": {
+                                        "type": "number",
+                                        "example": 50
+                                    },
+                                    "provider": {
+                                        "type": "string",
+                                        "enum": [
+                                            "ownerrez",
+                                            "hotelbeds",
+                                            "all"
+                                        ]
+                                    },
+                                    "is_active": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "priority": {
+                                        "type": "integer",
+                                        "example": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Markup created"
+                    },
+                    "400": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/pricing-markups/{id}": {
+            "get": {
+                "tags": [
+                    "Admin - Pricing Markups"
+                ],
+                "summary": "Get a single pricing markup",
+                "operationId": "e9e36ff239e5e9c837699eb54436f20a",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Markup details"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Admin - Pricing Markups"
+                ],
+                "summary": "Update a pricing markup rule",
+                "operationId": "52d0e5c6b7634f446ee7f41c5e0fc935",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "markup_percentage": {
+                                        "type": "number"
+                                    },
+                                    "is_active": {
+                                        "type": "boolean"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Markup updated"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Admin - Pricing Markups"
+                ],
+                "summary": "Delete a pricing markup rule",
+                "operationId": "99f57f03085cfda54fdc6e9f26c11ceb",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Deleted"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/pricing-markups/{id}/toggle-status": {
+            "put": {
+                "tags": [
+                    "Admin - Pricing Markups"
+                ],
+                "summary": "Toggle markup active/inactive",
+                "operationId": "3bfb05b0a38e409f02d9a2110e3ba579",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Status toggled"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/pricing-markups/set-default": {
+            "post": {
+                "tags": [
+                    "Admin - Pricing Markups"
+                ],
+                "summary": "Set a markup rule as the default",
+                "operationId": "645d6bf75eb8ffc5889304c721552bc3",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "markup_id"
+                                ],
+                                "properties": {
+                                    "markup_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default set"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/pricing-markups/calculate": {
+            "post": {
+                "tags": [
+                    "Admin - Pricing Markups"
+                ],
+                "summary": "Test markup calculator with a given base price",
+                "operationId": "eb3a05cd9d4e45355616215757d676a9",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "base_price"
+                                ],
+                                "properties": {
+                                    "base_price": {
+                                        "type": "number",
+                                        "example": 500
+                                    },
+                                    "provider": {
+                                        "type": "string",
+                                        "example": "ownerrez"
+                                    },
+                                    "check_in_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2027-06-01"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Markup calculation result"
                     }
                 },
                 "security": [
@@ -495,6 +2022,279 @@
                         "bearerAuth": []
                     }
                 ]
+            }
+        },
+        "/auth/profile": {
+            "put": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Update user profile",
+                "operationId": "1b6f918eb3f3cd3b4d27be8eb1979861",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "first_name": {
+                                        "type": "string"
+                                    },
+                                    "last_name": {
+                                        "type": "string"
+                                    },
+                                    "phone": {
+                                        "type": "string"
+                                    },
+                                    "country": {
+                                        "type": "string"
+                                    },
+                                    "city": {
+                                        "type": "string"
+                                    },
+                                    "state": {
+                                        "type": "string"
+                                    },
+                                    "address": {
+                                        "type": "string"
+                                    },
+                                    "date_of_birth": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "gender": {
+                                        "type": "string",
+                                        "enum": [
+                                            "male",
+                                            "female",
+                                            "other",
+                                            "prefer_not_to_say"
+                                        ]
+                                    },
+                                    "preferred_currency": {
+                                        "type": "string",
+                                        "example": "USD"
+                                    },
+                                    "preferred_language": {
+                                        "type": "string",
+                                        "example": "en"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Profile updated"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/auth/change-password": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Change current user password",
+                "operationId": "392f5b8efb38f64f049872d18d481cf1",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "current_password",
+                                    "password",
+                                    "password_confirmation"
+                                ],
+                                "properties": {
+                                    "current_password": {
+                                        "type": "string"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "minLength": 8
+                                    },
+                                    "password_confirmation": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Password changed"
+                    },
+                    "422": {
+                        "description": "Current password incorrect"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/auth/forgot-password": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Request a password reset link",
+                "operationId": "fea89d2766defe4ad877001920e3f289",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Reset link sent (if email exists)"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                }
+            }
+        },
+        "/auth/reset-password": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Reset password using token",
+                "operationId": "b8d03d5b689dcb65d3771f62d4f90a24",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "token",
+                                    "email",
+                                    "password",
+                                    "password_confirmation"
+                                ],
+                                "properties": {
+                                    "token": {
+                                        "type": "string"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "minLength": 8
+                                    },
+                                    "password_confirmation": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Password reset successful"
+                    },
+                    "422": {
+                        "description": "Invalid or expired token"
+                    }
+                }
+            }
+        },
+        "/auth/verify-email/{token}": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Verify email address using token",
+                "operationId": "203cb3de2c0c46a01cc43143d571e6d0",
+                "parameters": [
+                    {
+                        "name": "token",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Email verified"
+                    },
+                    "422": {
+                        "description": "Invalid token"
+                    }
+                }
+            }
+        },
+        "/auth/resend-verification": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Resend email verification link",
+                "operationId": "88d73f851fd131a5f71db6e90f2baf71",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Verification email sent"
+                    },
+                    "422": {
+                        "description": "Already verified or not found"
+                    }
+                }
             }
         },
         "/bookings/guest/create": {
@@ -830,6 +2630,338 @@
                         "description": "Booking not found"
                     }
                 }
+            }
+        },
+        "/bookings/{bookingReference}/invoice": {
+            "get": {
+                "tags": [
+                    "Bookings"
+                ],
+                "summary": "Download booking invoice as PDF",
+                "operationId": "652ebf022ce8426fc80a2a69e28be7d4",
+                "parameters": [
+                    {
+                        "name": "bookingReference",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "PDF invoice file"
+                    },
+                    "403": {
+                        "description": "Forbidden — not your booking"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/public/content/pages/{slug}": {
+            "get": {
+                "tags": [
+                    "Content"
+                ],
+                "summary": "Get public page content",
+                "operationId": "e081dd2434504f6474634c977f94e968",
+                "responses": {
+                    "200": {
+                        "description": "Page content"
+                    }
+                }
+            }
+        },
+        "/public/content/header": {
+            "get": {
+                "tags": [
+                    "Content"
+                ],
+                "summary": "Get header content",
+                "operationId": "0779b689bc4171be6a774328cc74c2be",
+                "responses": {
+                    "200": {
+                        "description": "Header content"
+                    }
+                }
+            }
+        },
+        "/public/content/footer": {
+            "get": {
+                "tags": [
+                    "Content"
+                ],
+                "summary": "Get footer content",
+                "operationId": "d6e3ff70748f0a7bceb19dffac9ed08f",
+                "responses": {
+                    "200": {
+                        "description": "Footer content"
+                    }
+                }
+            }
+        },
+        "/public/guest/session/create": {
+            "post": {
+                "tags": [
+                    "Guest Session"
+                ],
+                "summary": "Create a new guest session",
+                "operationId": "755843161b71e02d3387ae8ce3bf95bf",
+                "responses": {
+                    "201": {
+                        "description": "Session created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "session_id": {
+                                                    "type": "string",
+                                                    "example": "guest_abc123"
+                                                },
+                                                "expires_at": {
+                                                    "type": "string",
+                                                    "format": "datetime"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/public/guest/session/update": {
+            "post": {
+                "tags": [
+                    "Guest Session"
+                ],
+                "summary": "Update guest session with contact info",
+                "operationId": "aceff3073ff856566b94aca5dcd73ce5",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "session_id"
+                                ],
+                                "properties": {
+                                    "session_id": {
+                                        "type": "string"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    },
+                                    "first_name": {
+                                        "type": "string"
+                                    },
+                                    "last_name": {
+                                        "type": "string"
+                                    },
+                                    "phone": {
+                                        "type": "string"
+                                    },
+                                    "country": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Session updated"
+                    },
+                    "404": {
+                        "description": "Session not found"
+                    }
+                }
+            }
+        },
+        "/public/guest/session/{sessionId}": {
+            "get": {
+                "tags": [
+                    "Guest Session"
+                ],
+                "summary": "Get guest session details",
+                "operationId": "4b5b6020f137b9834c963300a50d7546",
+                "parameters": [
+                    {
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Session details"
+                    },
+                    "404": {
+                        "description": "Session not found"
+                    }
+                }
+            }
+        },
+        "/notifications": {
+            "get": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Get current user's notifications",
+                "operationId": "b1274a2aaae8a4295a7e1925e8d8090f",
+                "parameters": [
+                    {
+                        "name": "unread_only",
+                        "in": "query",
+                        "schema": {
+                            "type": "boolean",
+                            "example": false
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "example": 20
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Notifications list with unread count"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Delete all notifications for current user",
+                "operationId": "83cb9e29aa2e091e93c6b2fc4a689921",
+                "responses": {
+                    "200": {
+                        "description": "All deleted"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/notifications/{id}/read": {
+            "put": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Mark a notification as read",
+                "operationId": "a28a3f705edbab5a620d9b567f97d739",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Marked as read"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/notifications/read-all": {
+            "put": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Mark all notifications as read",
+                "operationId": "f437754b3bf6df932c41738206b4e101",
+                "responses": {
+                    "200": {
+                        "description": "All marked as read"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/notifications/{id}": {
+            "delete": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Delete a notification",
+                "operationId": "0f28a0400610f81f01e2d25ce4e0edff",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Deleted"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/ownerrez/properties": {
@@ -1275,6 +3407,261 @@
                 ]
             }
         },
+        "/payments/guest/process": {
+            "post": {
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Process payment for a guest booking",
+                "operationId": "4e0c02a0a13ffde4d5073403bdadfdeb",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "booking_reference",
+                                    "payment_method",
+                                    "card_number",
+                                    "card_holder_name",
+                                    "card_expiry_month",
+                                    "card_expiry_year",
+                                    "card_cvv",
+                                    "billing_first_name",
+                                    "billing_last_name",
+                                    "billing_email",
+                                    "billing_address",
+                                    "billing_city",
+                                    "billing_country",
+                                    "billing_postal_code"
+                                ],
+                                "properties": {
+                                    "booking_reference": {
+                                        "type": "string",
+                                        "example": "PKG-ABCD1234"
+                                    },
+                                    "payment_method": {
+                                        "type": "string",
+                                        "enum": [
+                                            "credit_card",
+                                            "debit_card"
+                                        ]
+                                    },
+                                    "card_number": {
+                                        "type": "string",
+                                        "example": "4111111111111111"
+                                    },
+                                    "card_holder_name": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "card_expiry_month": {
+                                        "type": "string",
+                                        "example": "12"
+                                    },
+                                    "card_expiry_year": {
+                                        "type": "string",
+                                        "example": "2027"
+                                    },
+                                    "card_cvv": {
+                                        "type": "string",
+                                        "example": "123"
+                                    },
+                                    "billing_first_name": {
+                                        "type": "string"
+                                    },
+                                    "billing_last_name": {
+                                        "type": "string"
+                                    },
+                                    "billing_email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    },
+                                    "billing_address": {
+                                        "type": "string"
+                                    },
+                                    "billing_city": {
+                                        "type": "string"
+                                    },
+                                    "billing_country": {
+                                        "type": "string"
+                                    },
+                                    "billing_postal_code": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Payment successful"
+                    },
+                    "400": {
+                        "description": "Payment failed or already paid"
+                    }
+                }
+            }
+        },
+        "/payments/process": {
+            "post": {
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Process payment for an authenticated user booking",
+                "operationId": "332caf4b9a74a62bf52c2a4b2aa19659",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "booking_reference",
+                                    "payment_method",
+                                    "card_number",
+                                    "card_holder_name",
+                                    "card_expiry_month",
+                                    "card_expiry_year",
+                                    "card_cvv"
+                                ],
+                                "properties": {
+                                    "booking_reference": {
+                                        "type": "string",
+                                        "example": "PKG-ABCD1234"
+                                    },
+                                    "payment_method": {
+                                        "type": "string",
+                                        "enum": [
+                                            "credit_card",
+                                            "debit_card"
+                                        ]
+                                    },
+                                    "card_number": {
+                                        "type": "string",
+                                        "example": "4111111111111111"
+                                    },
+                                    "card_holder_name": {
+                                        "type": "string"
+                                    },
+                                    "card_expiry_month": {
+                                        "type": "string",
+                                        "example": "12"
+                                    },
+                                    "card_expiry_year": {
+                                        "type": "string",
+                                        "example": "2027"
+                                    },
+                                    "card_cvv": {
+                                        "type": "string",
+                                        "example": "123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Payment successful"
+                    },
+                    "400": {
+                        "description": "Payment failed"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/payments/{transactionId}/status": {
+            "get": {
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Get payment transaction status",
+                "operationId": "1b76b1e740091eecb60ebd27a9695db0",
+                "parameters": [
+                    {
+                        "name": "transactionId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Transaction status"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/payments/guest/{transactionId}/status": {
+            "get": {
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Get guest payment transaction status",
+                "operationId": "d800fadd9dc3f3a77bdb9fe72a0b979c",
+                "parameters": [
+                    {
+                        "name": "transactionId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Transaction status"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                }
+            }
+        },
+        "/payments/history": {
+            "get": {
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Get authenticated user's payment history",
+                "operationId": "0f3bba38e2567507c8841330f3a539ac",
+                "responses": {
+                    "200": {
+                        "description": "Paginated payment history"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/performance/database-stats": {
             "get": {
                 "tags": [
@@ -1329,6 +3716,272 @@
                     },
                     "403": {
                         "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/profile/host": {
+            "get": {
+                "tags": [
+                    "Profile"
+                ],
+                "summary": "Get current user's host profile",
+                "operationId": "0cbfac5891b07d791195f8bf97c81734",
+                "responses": {
+                    "200": {
+                        "description": "Host profile"
+                    },
+                    "403": {
+                        "description": "Not a host account"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Profile"
+                ],
+                "summary": "Update host profile",
+                "operationId": "590f9a0cb75317b3eeda25f081c5ddbe",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "business_name": {
+                                        "type": "string"
+                                    },
+                                    "business_registration_number": {
+                                        "type": "string"
+                                    },
+                                    "tax_id": {
+                                        "type": "string"
+                                    },
+                                    "bio": {
+                                        "type": "string"
+                                    },
+                                    "languages_spoken": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Profile updated"
+                    },
+                    "403": {
+                        "description": "Not a host account"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/profile/agency": {
+            "get": {
+                "tags": [
+                    "Profile"
+                ],
+                "summary": "Get current user's agency profile",
+                "operationId": "6e6797c85d6134266e3dd73927a7e136",
+                "responses": {
+                    "200": {
+                        "description": "Agency profile"
+                    },
+                    "403": {
+                        "description": "Not an agency account"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Profile"
+                ],
+                "summary": "Update agency profile",
+                "operationId": "4d3ca48a40e041ccdbc77af57b2a2d22",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "agency_name": {
+                                        "type": "string"
+                                    },
+                                    "tax_id": {
+                                        "type": "string"
+                                    },
+                                    "website": {
+                                        "type": "string"
+                                    },
+                                    "business_description": {
+                                        "type": "string"
+                                    },
+                                    "years_in_business": {
+                                        "type": "integer"
+                                    },
+                                    "billing_contact_email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    },
+                                    "billing_contact_phone": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Profile updated"
+                    },
+                    "403": {
+                        "description": "Not an agency account"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/hosts": {
+            "get": {
+                "tags": [
+                    "Admin - Users"
+                ],
+                "summary": "List all host profiles (Admin)",
+                "operationId": "0f30b299b0ccdb87755d8a60aacd9656",
+                "parameters": [
+                    {
+                        "name": "verification_status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "pending",
+                                "approved",
+                                "rejected"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Host list"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/hosts/{id}/verify": {
+            "put": {
+                "tags": [
+                    "Admin - Users"
+                ],
+                "summary": "Approve or reject a host verification (Admin)",
+                "operationId": "a09cdb844afb98d54f98c5222a31afc8",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "status"
+                                ],
+                                "properties": {
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "approved",
+                                            "rejected"
+                                        ]
+                                    },
+                                    "rejection_reason": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Verification updated"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/agencies": {
+            "get": {
+                "tags": [
+                    "Admin - Users"
+                ],
+                "summary": "List all agency profiles (Admin)",
+                "operationId": "afb00b1799d00ae8c4a72fb95c1102f6",
+                "parameters": [
+                    {
+                        "name": "verification_status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Agency list"
                     }
                 },
                 "security": [
@@ -1588,6 +4241,241 @@
                 }
             }
         },
+        "/public/reviews/{propertyCode}": {
+            "get": {
+                "tags": [
+                    "Reviews"
+                ],
+                "summary": "Get approved reviews for a property",
+                "operationId": "386e56e7a16028eb9bae4f50f265bc5f",
+                "parameters": [
+                    {
+                        "name": "propertyCode",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Reviews list with average rating"
+                    }
+                }
+            }
+        },
+        "/reviews": {
+            "post": {
+                "tags": [
+                    "Reviews"
+                ],
+                "summary": "Submit a review for a property",
+                "operationId": "1a9ed3737615a28b60c78a0d05d0eb35",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "property_code",
+                                    "property_name",
+                                    "rating"
+                                ],
+                                "properties": {
+                                    "property_code": {
+                                        "type": "string",
+                                        "example": "orp5b27f9x"
+                                    },
+                                    "property_name": {
+                                        "type": "string",
+                                        "example": "Beach House"
+                                    },
+                                    "provider": {
+                                        "type": "string",
+                                        "example": "ownerrez"
+                                    },
+                                    "booking_reference": {
+                                        "type": "string"
+                                    },
+                                    "rating": {
+                                        "type": "integer",
+                                        "maximum": 5,
+                                        "minimum": 1,
+                                        "example": 5
+                                    },
+                                    "title": {
+                                        "type": "string",
+                                        "example": "Amazing stay!"
+                                    },
+                                    "body": {
+                                        "type": "string",
+                                        "example": "We had a great time."
+                                    },
+                                    "cleanliness_rating": {
+                                        "type": "integer",
+                                        "maximum": 5,
+                                        "minimum": 1
+                                    },
+                                    "accuracy_rating": {
+                                        "type": "integer",
+                                        "maximum": 5,
+                                        "minimum": 1
+                                    },
+                                    "communication_rating": {
+                                        "type": "integer",
+                                        "maximum": 5,
+                                        "minimum": 1
+                                    },
+                                    "location_rating": {
+                                        "type": "integer",
+                                        "maximum": 5,
+                                        "minimum": 1
+                                    },
+                                    "value_rating": {
+                                        "type": "integer",
+                                        "maximum": 5,
+                                        "minimum": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Review submitted for approval"
+                    },
+                    "422": {
+                        "description": "Validation error or duplicate review"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/reviews/{id}": {
+            "put": {
+                "tags": [
+                    "Reviews"
+                ],
+                "summary": "Update own review (before approval)",
+                "operationId": "7975450987e8c86c41616386aea7575a",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "rating": {
+                                        "type": "integer",
+                                        "maximum": 5,
+                                        "minimum": 1
+                                    },
+                                    "title": {
+                                        "type": "string"
+                                    },
+                                    "body": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Review updated"
+                    },
+                    "403": {
+                        "description": "Not your review or already approved"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Reviews"
+                ],
+                "summary": "Delete own review",
+                "operationId": "c6da8f2af574635e95538fb5b99a0c90",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Review deleted"
+                    },
+                    "403": {
+                        "description": "Not your review"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/reviews/my": {
+            "get": {
+                "tags": [
+                    "Reviews"
+                ],
+                "summary": "Get current user's reviews",
+                "operationId": "6169a1879a6cfba17cdad678c021cd4f",
+                "responses": {
+                    "200": {
+                        "description": "User's reviews"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/public/search/hotels": {
             "post": {
                 "tags": [
@@ -1775,6 +4663,160 @@
                     }
                 }
             }
+        },
+        "/wishlist": {
+            "get": {
+                "tags": [
+                    "Wishlist"
+                ],
+                "summary": "Get current user's wishlist",
+                "operationId": "3623a3b40a4fb4addae4953160ec84dc",
+                "responses": {
+                    "200": {
+                        "description": "Wishlist items"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Wishlist"
+                ],
+                "summary": "Add a property to wishlist",
+                "operationId": "d632b05deecee49d31504522e14560d4",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "property_code",
+                                    "property_name"
+                                ],
+                                "properties": {
+                                    "property_code": {
+                                        "type": "string",
+                                        "example": "orp5b27f9x"
+                                    },
+                                    "property_name": {
+                                        "type": "string",
+                                        "example": "Beach House"
+                                    },
+                                    "provider": {
+                                        "type": "string",
+                                        "example": "ownerrez"
+                                    },
+                                    "property_city": {
+                                        "type": "string",
+                                        "example": "Miami"
+                                    },
+                                    "property_country": {
+                                        "type": "string",
+                                        "example": "US"
+                                    },
+                                    "featured_image": {
+                                        "type": "string",
+                                        "example": "https://..."
+                                    },
+                                    "price_from": {
+                                        "type": "number",
+                                        "example": 150
+                                    },
+                                    "currency": {
+                                        "type": "string",
+                                        "example": "USD"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Added to wishlist"
+                    },
+                    "200": {
+                        "description": "Already in wishlist"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/wishlist/{propertyCode}": {
+            "delete": {
+                "tags": [
+                    "Wishlist"
+                ],
+                "summary": "Remove a property from wishlist",
+                "operationId": "c369fa145c6c57437f942431957c5823",
+                "parameters": [
+                    {
+                        "name": "propertyCode",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Removed from wishlist"
+                    },
+                    "404": {
+                        "description": "Not in wishlist"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/wishlist/check/{propertyCode}": {
+            "get": {
+                "tags": [
+                    "Wishlist"
+                ],
+                "summary": "Check if a property is in the user's wishlist",
+                "operationId": "b62d99f2f6693db059573daf3e40ecc0",
+                "parameters": [
+                    {
+                        "name": "propertyCode",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Saved status"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
         }
     },
     "components": {
@@ -1844,8 +4886,36 @@
     },
     "tags": [
         {
+            "name": "Admin - Bookings",
+            "description": "Admin booking management endpoints"
+        },
+        {
+            "name": "Admin Content",
+            "description": "Content management endpoints"
+        },
+        {
             "name": "Admin - Properties",
             "description": "Admin property management endpoints"
+        },
+        {
+            "name": "Admin - Reviews",
+            "description": "Admin review moderation endpoints"
+        },
+        {
+            "name": "Admin - Settings",
+            "description": "Admin application settings management"
+        },
+        {
+            "name": "Admin - Users",
+            "description": "Admin user management endpoints"
+        },
+        {
+            "name": "Admin - Dashboard",
+            "description": "Admin dashboard statistics and analytics"
+        },
+        {
+            "name": "Admin - Pricing Markups",
+            "description": "Manage pricing markup rules applied to booking prices"
         },
         {
             "name": "Authentication",
@@ -1856,20 +4926,48 @@
             "description": "Booking management — guest and authenticated user flows"
         },
         {
+            "name": "Content",
+            "description": "Public content endpoints"
+        },
+        {
+            "name": "Guest Session",
+            "description": "Anonymous guest session management for pre-auth browsing and booking"
+        },
+        {
+            "name": "Notifications",
+            "description": "In-app user notifications"
+        },
+        {
             "name": "OwnerRez",
             "description": "Vacation rental property search and booking via OwnerRez API"
+        },
+        {
+            "name": "Payments",
+            "description": "Payment processing for guest and authenticated users"
         },
         {
             "name": "Performance",
             "description": "Performance monitoring and system health"
         },
         {
+            "name": "Profile",
+            "description": "Host and agency profile management"
+        },
+        {
             "name": "Properties",
             "description": "Property details and availability"
         },
         {
+            "name": "Reviews",
+            "description": "Property reviews and ratings"
+        },
+        {
             "name": "Public Search",
             "description": "Public search endpoints — no authentication required"
+        },
+        {
+            "name": "Wishlist",
+            "description": "User saved/favourite properties"
         }
     ],
     "security": [

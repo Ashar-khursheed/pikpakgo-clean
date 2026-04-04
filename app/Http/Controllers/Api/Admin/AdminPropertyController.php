@@ -102,21 +102,27 @@ class AdminPropertyController extends Controller
 
         try {
             if ($provider === 'ownerrez') {
-                // Fetch properties from OwnerRez
-                $response = $this->ownerrezService->searchProperties([]); 
-                
-                if ($response['success']) {
-                    // OwnerRez API structure typically returns a list directly or inside 'items'
-                    // Based on OwnerRezService::getMockProperties, it returns ['data' => ['properties' => [...]]]
-                    // We need to handle both mock and real API responses if they differ
-                    // Real OwnerRez V2 /properties usually returns an array of property objects
-                    
-                    $data = $response['data'];
-                    $items = $data['items'] ?? $data['properties'] ?? ($data[0] ? $data : []);
+                // Step 1: Get listing index (IDs only)
+                $indexResponse = $this->ownerrezService->getListingIndex();
+
+                if ($indexResponse['success']) {
+                    $items = $indexResponse['data']['items'] ?? [];
 
                     foreach ($items as $item) {
-                        $this->updateOrCreateProperty($item, 'ownerrez');
-                        $count++;
+                        $listingId = $item['listingExternalId'] ?? null;
+                        if (!$listingId) continue;
+
+                        // Step 2: Fetch full listing details for each ID
+                        $detail = $this->ownerrezService->getPropertyDetails($listingId);
+
+                        if ($detail['success'] && !empty($detail['data'])) {
+                            $raw = $detail['data'];
+                            // Merge index meta (active status) into detail data
+                            $raw['listingExternalId'] = $listingId;
+                            $raw['active']            = $item['active'] ?? true;
+                            $this->updateOrCreateProperty($raw, 'ownerrez');
+                            $count++;
+                        }
                     }
                 }
             }
@@ -168,35 +174,76 @@ class AdminPropertyController extends Controller
     }
 
     /**
-     * Helper to save property to DB
+     * Helper to save property to DB from OwnerRez listing index item.
+     * Real OwnerRez items use listingExternalId (not id/property_id).
      */
     protected function updateOrCreateProperty(array $data, string $provider)
     {
-        $propertyId = $data['id'] ?? $data['property_id'] ?? null;
-        
+        // Support both real OwnerRez (listingExternalId) and legacy mock (id/property_id)
+        $propertyId = $data['listingExternalId'] ?? $data['id'] ?? $data['property_id'] ?? null;
+
         if (!$propertyId) return;
+
+        // OwnerRez XML detail structure (converted to array via simplexml)
+        $address  = $data['location']['address'] ?? [];
+        $geoCode  = $data['location']['geoCode']['latLng'] ?? [];
+        $unit     = $data['units']['unit'] ?? [];
+        // Normalize: single unit is assoc array, multiple would be indexed
+        if (isset($unit[0])) $unit = $unit[0];
+
+        // Property name — sandbox textValue is empty array; fall back to externalId
+        $nameVal  = $data['adContent']['propertyName']['texts']['text']['textValue'] ?? '';
+        $name     = (is_string($nameVal) && $nameVal !== '') ? $nameVal : $propertyId;
+
+        $descVal  = $data['adContent']['description']['texts']['text']['textValue'] ?? '';
+        $desc     = is_string($descVal) && $descVal !== '' ? $descVal : null;
+
+        // Images — images.image[].uri
+        $imgData  = $data['images']['image'] ?? [];
+        if (isset($imgData['uri'])) $imgData = [$imgData]; // single image
+        $images   = array_values(array_filter(array_column($imgData, 'uri')));
+
+        // Amenities from unit featureValues
+        $fvItems  = $unit['featureValues']['featureValue'] ?? [];
+        if (isset($fvItems['unitFeatureName'])) $fvItems = [$fvItems];
+        $amenities = array_values(array_filter(array_column($fvItems, 'unitFeatureName')));
+
+        // Property type from unit
+        $propType = strtolower(str_replace('PROPERTY_TYPE_', '', $unit['propertyType'] ?? 'vacation_rental'));
+
+        // Bedroom/bathroom count
+        $bedroomList  = $unit['bedrooms']['bedroom']  ?? [];
+        $bathroomList = $unit['bathrooms']['bathroom'] ?? [];
+        $bedrooms     = count(isset($bedroomList[0])  ? $bedroomList  : ($bedroomList  ? [$bedroomList]  : []));
+        $bathrooms    = count(isset($bathroomList[0]) ? $bathroomList : ($bathroomList ? [$bathroomList] : []));
+
+        // Currency
+        $currency = $unit['unitMonetaryInformation']['currency'] ?? 'USD';
 
         PropertyListing::updateOrCreate(
             [
-                'provider' => $provider,
-                'provider_property_id' => $propertyId
+                'provider'             => $provider,
+                'provider_property_id' => $propertyId,
             ],
             [
-                'name' => $data['name'] ?? 'Unknown Property',
-                'description' => $data['description'] ?? null,
-                'property_type' => $data['property_type'] ?? 'vacation_rental',
-                'city' => $data['address']['city'] ?? $data['city'] ?? null,
-                'country' => $data['address']['country'] ?? $data['country'] ?? null,
-                'latitude' => $data['latitude'] ?? null,
-                'longitude' => $data['longitude'] ?? null,
-                'images' => $data['images'] ?? [],
-                'featured_image' => $data['thumbnail_url'] ?? ($data['images'][0] ?? null),
-                'amenities' => $data['amenities'] ?? [],
-                'price_from' => $data['rate'] ?? 0, // Base rate if available
-                'price_currency' => $data['currency_code'] ?? 'USD',
-                'api_data' => $data,
+                'provider_code'  => $propertyId,
+                'name'           => $name,
+                'description'    => $desc,
+                'property_type'  => $propType,
+                'city'           => (string)($address['city']            ?? 'Unknown'),
+                'state'          => (string)($address['stateOrProvince'] ?? '') ?: null,
+                'country'        => (string)($address['country']         ?? '') ?: null,
+                'postal_code'    => (string)($address['postalCode']      ?? '') ?: null,
+                'latitude'       => !empty($geoCode['latitude'])  ? (float)$geoCode['latitude']  : null,
+                'longitude'      => !empty($geoCode['longitude']) ? (float)$geoCode['longitude'] : null,
+                'images'         => $images,
+                'featured_image' => $images[0] ?? null,
+                'amenities'      => $amenities,
+                'price_from'     => null, // Pricing comes from quote endpoint, not listing detail
+                'price_currency' => $currency,
+                'api_data'       => $data,
                 'last_synced_at' => now(),
-                'is_active' => true
+                'is_active'      => ($data['active'] ?? 'true') === 'true',
             ]
         );
     }
