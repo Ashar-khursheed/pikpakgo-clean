@@ -58,10 +58,13 @@ return [
         ],
 
         'redis' => [
-            'driver' => 'redis',
-            'connection' => 'cache',
+            'driver'          => 'redis',
+            'connection'      => 'cache',
             'lock_connection' => 'default',
         ],
+
+        // Alias so env('CACHE_STORE') works in Laravel 11+
+        'default' => env('CACHE_DRIVER', 'file'),
 
         'dynamodb' => [
             'driver' => 'dynamodb',

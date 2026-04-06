@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\ConfirmBookingWithProvider;
 use App\Mail\BookingConfirmationMail;
 use App\Mail\PaymentReceiptMail;
 use App\Models\Booking;
@@ -143,13 +144,20 @@ class PaymentController extends Controller
                 
                 // Update booking
                 $booking->update([
-                    'payment_status' => 'paid',
+                    'payment_status'         => 'paid',
                     'payment_transaction_id' => $transactionId,
-                    'paid_amount' => $booking->total_price,
-                    'paid_at' => now(),
-                    'booking_status' => 'confirmed',
-                    'confirmed_at' => now(),
+                    'paid_amount'            => $booking->total_price,
+                    'paid_at'                => now(),
+                    'booking_status'         => 'confirmed',
+                    'confirmed_at'           => now(),
+                    'net_profit'             => $booking->markup_amount,
                 ]);
+
+                // ── Dispatch provider booking job ───────────────────────────────
+                // Payment is now in our pocket. The job will forward the booking
+                // to OwnerRez (or skip for 'direct' properties) and update
+                // provider_payout_status accordingly.
+                ConfirmBookingWithProvider::dispatch($booking->id);
 
                 // Send confirmation + receipt emails + in-app notification
                 try {
@@ -172,10 +180,15 @@ class PaymentController extends Controller
                     'success' => true,
                     'message' => 'Payment processed successfully',
                     'data' => [
-                        'transaction_id' => $transactionId,
+                        'transaction_id'    => $transactionId,
                         'booking_reference' => $booking->booking_reference,
-                        'amount' => $booking->total_price,
-                        'currency' => $booking->currency,
+                        'amount_charged'    => $booking->total_price,
+                        'currency'          => $booking->currency,
+                        'breakdown'         => [
+                            'base_price'    => $booking->base_price,
+                            'platform_fee'  => $booking->markup_amount,
+                            'total'         => $booking->total_price,
+                        ],
                     ]
                 ]);
                 
@@ -282,13 +295,16 @@ class PaymentController extends Controller
                 ]);
                 
                 $booking->update([
-                    'payment_status' => 'paid',
+                    'payment_status'         => 'paid',
                     'payment_transaction_id' => $transactionId,
-                    'paid_amount' => $booking->total_price,
-                    'paid_at' => now(),
-                    'booking_status' => 'confirmed',
-                    'confirmed_at' => now(),
+                    'paid_amount'            => $booking->total_price,
+                    'paid_at'                => now(),
+                    'booking_status'         => 'confirmed',
+                    'confirmed_at'           => now(),
+                    'net_profit'             => $booking->markup_amount,
                 ]);
+
+                ConfirmBookingWithProvider::dispatch($booking->id);
 
                 try {
                     Mail::to($booking->holder_email)->queue(new BookingConfirmationMail($booking));
@@ -301,8 +317,13 @@ class PaymentController extends Controller
                     'success' => true,
                     'message' => 'Payment successful',
                     'data' => [
-                        'transaction_id' => $transactionId,
+                        'transaction_id'    => $transactionId,
                         'booking_reference' => $booking->booking_reference,
+                        'breakdown'         => [
+                            'base_price'   => $booking->base_price,
+                            'platform_fee' => $booking->markup_amount,
+                            'total'        => $booking->total_price,
+                        ],
                     ]
                 ]);
             }
@@ -465,7 +486,9 @@ class PaymentController extends Controller
                     'paid_at'        => now(),
                     'booking_status' => 'confirmed',
                     'confirmed_at'   => now(),
+                    'net_profit'     => $booking->markup_amount,
                 ]);
+                ConfirmBookingWithProvider::dispatch($booking->id);
             }
         }
     }

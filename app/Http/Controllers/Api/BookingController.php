@@ -4,9 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
-use App\Models\User;
 use App\Models\GuestSession;
-use App\Services\OwnerRezService;
 use App\Services\PricingMarkupService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -23,14 +21,10 @@ use Illuminate\Support\Str;
  */
 class BookingController extends Controller
 {
-    protected $ownerrezService;
     protected $pricingService;
-    
-    public function __construct(
-        OwnerRezService $ownerrezService,
-        PricingMarkupService $pricingService
-    ) {
-        $this->ownerrezService = $ownerrezService;
+
+    public function __construct(PricingMarkupService $pricingService)
+    {
         $this->pricingService = $pricingService;
     }
     
@@ -148,70 +142,11 @@ class BookingController extends Controller
                 
                 'special_requests' => $request->special_requests,
                 'booking_status' => 'pending',
-                'payment_status' => 'pending'
-            ]);
-            
-            // Fetch quote to obtain orderItems + paymentSchedule (required by OwnerRez createbooking)
-            $quote = $this->ownerrezService->getPricing($request->property_code, [
-                'checkin'  => $request->check_in_date,
-                'checkout' => $request->check_out_date,
-                'guests'   => $request->total_adults ?? 2,
+                'payment_status' => 'pending',
+                // Provider submission happens AFTER payment is captured
+                'provider_payout_status' => 'pending',
             ]);
 
-            if (!$quote['success']) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Failed to get pricing quote: ' . ($quote['message'] ?? 'Unknown error'),
-                ], 500);
-            }
-
-            $currency  = $quote['data']['quoteResponseDetails']['orderList']['order']['currency'] ?? ($request->currency ?? 'USD');
-            $rawItems  = $quote['data']['quoteResponseDetails']['orderList']['order']['orderItemList']['orderItem'] ?? [];
-            if (isset($rawItems['feeType'])) $rawItems = [$rawItems];
-            $orderItems = array_map(fn($i) => array_merge($i, ['currency' => $currency]), $rawItems);
-
-            $rawSched = $quote['data']['quoteResponseDetails']['orderList']['order']['paymentSchedule']['paymentScheduleItemList']['paymentScheduleItem'] ?? [];
-            if (isset($rawSched['amount'])) $rawSched = [$rawSched];
-            $scheduleItems = array_map(fn($s) => [
-                'amount'   => $s['amount'],
-                'dueDate'  => $s['dueDate'],
-                'currency' => $currency,
-            ], $rawSched);
-
-            // Call API
-            $channelPayload = [
-                'listingExternalId'    => $request->property_code,
-                'unitExternalId'       => $request->property_code,
-                'arrivalDate'          => $request->check_in_date,
-                'departureDate'        => $request->check_out_date,
-                'traveler'             => [
-                    'firstName'    => $request->holder_first_name,
-                    'lastName'     => $request->holder_last_name,
-                    'emailAddress' => $request->holder_email,
-                    'phoneNumbers' => [$request->holder_phone],
-                ],
-                'travelers'            => ['adults' => (int)($request->total_adults ?? 2), 'children' => 0, 'pets' => 0],
-                'orderItems'           => $orderItems,
-                'paymentScheduleItems' => $scheduleItems,
-            ];
-
-            $apiResult = $this->ownerrezService->createBooking($channelPayload);
-            
-            if (!$apiResult['success']) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Failed to confirm booking with OwnerRez',
-                    'error' => $apiResult['error'] ?? null
-                ], 500);
-            }
-            
-            // Save the external ID from OwnerRez to our local booking reference
-            if (isset($apiResult['data']['externalId'])) {
-                $booking->update([
-                    'provider_booking_id' => $apiResult['data']['externalId']
-                ]);
-            }
-            
             // Update guest session
             $guestSession->increment('booking_count');
             $guestSession->update([
@@ -345,72 +280,11 @@ class BookingController extends Controller
                 
                 'special_requests' => $request->special_requests,
                 'booking_status' => 'pending',
-                'payment_status' => 'pending'
+                'payment_status' => 'pending',
+                // Provider submission happens AFTER payment is captured
+                'provider_payout_status' => 'pending',
             ]);
-            
-            // Call Provider API if ownerrez
-            if ($request->provider === 'ownerrez') {
-                // Fetch quote to obtain orderItems + paymentSchedule (required by OwnerRez createbooking)
-                $quote = $this->ownerrezService->getPricing($request->property_code, [
-                    'checkin'  => $request->check_in_date,
-                    'checkout' => $request->check_out_date,
-                    'guests'   => $request->total_adults ?? 2,
-                ]);
 
-                if (!$quote['success']) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Failed to get pricing quote: ' . ($quote['message'] ?? 'Unknown error'),
-                    ], 500);
-                }
-
-                $currency  = $quote['data']['quoteResponseDetails']['orderList']['order']['currency'] ?? ($request->currency ?? 'USD');
-                $rawItems  = $quote['data']['quoteResponseDetails']['orderList']['order']['orderItemList']['orderItem'] ?? [];
-                if (isset($rawItems['feeType'])) $rawItems = [$rawItems];
-                $orderItems = array_map(fn($i) => array_merge($i, ['currency' => $currency]), $rawItems);
-
-                $rawSched = $quote['data']['quoteResponseDetails']['orderList']['order']['paymentSchedule']['paymentScheduleItemList']['paymentScheduleItem'] ?? [];
-                if (isset($rawSched['amount'])) $rawSched = [$rawSched];
-                $scheduleItems = array_map(fn($s) => [
-                    'amount'   => $s['amount'],
-                    'dueDate'  => $s['dueDate'],
-                    'currency' => $currency,
-                ], $rawSched);
-
-                $channelPayload = [
-                    'listingExternalId'    => $request->property_code,
-                    'unitExternalId'       => $request->property_code,
-                    'arrivalDate'          => $request->check_in_date,
-                    'departureDate'        => $request->check_out_date,
-                    'traveler'             => [
-                        'firstName'    => $user->first_name,
-                        'lastName'     => $user->last_name,
-                        'emailAddress' => $user->email,
-                        'phoneNumbers' => [$user->phone ?? $request->holder_phone],
-                    ],
-                    'travelers'            => ['adults' => (int)($request->total_adults ?? 2), 'children' => 0, 'pets' => 0],
-                    'orderItems'           => $orderItems,
-                    'paymentScheduleItems' => $scheduleItems,
-                ];
-
-                $apiResult = $this->ownerrezService->createBooking($channelPayload);
-                
-                if (!$apiResult['success']) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Failed to confirm booking with OwnerRez',
-                        'error' => $apiResult['error'] ?? null
-                    ], 500);
-                }
-
-                // Save the external ID from OwnerRez to our local booking reference
-                if (isset($apiResult['data']['externalId'])) {
-                    $booking->update([
-                        'provider_booking_id' => $apiResult['data']['externalId']
-                    ]);
-                }
-            }
-            
             return response()->json([
                 'success' => true,
                 'message' => 'Booking created successfully',

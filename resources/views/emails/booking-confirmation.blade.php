@@ -1,72 +1,120 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<style>
-  body { font-family: Arial, sans-serif; color: #333; background: #f4f4f4; margin: 0; padding: 0; }
-  .container { max-width: 600px; margin: 30px auto; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
-  .header { background: #1a73e8; color: #fff; padding: 30px; text-align: center; }
-  .header h1 { margin: 0; font-size: 24px; }
-  .body { padding: 30px; }
-  .detail-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
-  .detail-label { color: #666; font-size: 14px; }
-  .detail-value { font-weight: bold; font-size: 14px; }
-  .total { background: #f9f9f9; padding: 15px; border-radius: 6px; margin-top: 20px; }
-  .total .amount { font-size: 22px; color: #1a73e8; font-weight: bold; }
-  .footer { background: #f4f4f4; padding: 20px; text-align: center; font-size: 12px; color: #999; }
-  .badge { display: inline-block; background: #34a853; color: #fff; padding: 4px 12px; border-radius: 20px; font-size: 13px; }
-</style>
-</head>
-<body>
-<div class="container">
-  <div class="header">
-    <h1>Booking Confirmed!</h1>
-    <p style="margin:8px 0 0; opacity:.9;">Reference: {{ $booking->booking_reference }}</p>
+@extends('emails.layout')
+@php $recipientEmail = $booking->holder_email; @endphp
+
+@section('email_title', 'Booking Confirmed — ' . $booking->booking_reference)
+
+@section('body')
+<div class="greeting">Booking Confirmed! 🎉</div>
+<p class="intro-text">
+  Hi <strong>{{ $booking->holder_first_name }}</strong>, great news! Your booking has been confirmed.
+  Get ready for an amazing stay. Here are your booking details:
+</p>
+
+<span class="status-badge confirmed">✓ Confirmed</span>
+
+<!-- Dates -->
+<div class="dates-strip">
+  <div class="date-box">
+    <div class="date-label">Check-In</div>
+    <div class="date-val">{{ \Carbon\Carbon::parse($booking->check_in_date)->format('d M Y') }}</div>
+    <div class="date-day">{{ \Carbon\Carbon::parse($booking->check_in_date)->format('l') }}</div>
   </div>
-  <div class="body">
-    <p>Dear {{ $booking->holder_first_name }},</p>
-    <p>Your booking is confirmed. Here are your details:</p>
-
-    <div class="detail-row">
-      <span class="detail-label">Property</span>
-      <span class="detail-value">{{ $booking->property_name }}</span>
-    </div>
-    <div class="detail-row">
-      <span class="detail-label">Location</span>
-      <span class="detail-value">{{ $booking->property_city }}{{ $booking->property_country ? ', '.$booking->property_country : '' }}</span>
-    </div>
-    <div class="detail-row">
-      <span class="detail-label">Check-in</span>
-      <span class="detail-value">{{ \Carbon\Carbon::parse($booking->check_in_date)->format('D, M d, Y') }}</span>
-    </div>
-    <div class="detail-row">
-      <span class="detail-label">Check-out</span>
-      <span class="detail-value">{{ \Carbon\Carbon::parse($booking->check_out_date)->format('D, M d, Y') }}</span>
-    </div>
-    <div class="detail-row">
-      <span class="detail-label">Nights</span>
-      <span class="detail-value">{{ $booking->nights }}</span>
-    </div>
-    <div class="detail-row">
-      <span class="detail-label">Guests</span>
-      <span class="detail-value">{{ $booking->total_adults }} adults{{ $booking->total_children ? ', '.$booking->total_children.' children' : '' }}</span>
-    </div>
-    <div class="detail-row">
-      <span class="detail-label">Status</span>
-      <span class="detail-value"><span class="badge">Confirmed</span></span>
-    </div>
-
-    <div class="total">
-      <div class="detail-label">Total Paid</div>
-      <div class="amount">{{ $booking->currency }} {{ number_format($booking->total_price, 2) }}</div>
-    </div>
-
-    <p style="margin-top:25px;">If you have any questions, reply to this email or contact our support team.</p>
-    <p>Thank you for choosing PikPakGo!</p>
+  <div class="date-box">
+    <div class="date-label">Check-Out</div>
+    <div class="date-val">{{ \Carbon\Carbon::parse($booking->check_out_date)->format('d M Y') }}</div>
+    <div class="date-day">{{ \Carbon\Carbon::parse($booking->check_out_date)->format('l') }}</div>
   </div>
-  <div class="footer">
-    &copy; {{ date('Y') }} PikPakGo. All rights reserved.
+  <div class="date-box">
+    <div class="date-label">Duration</div>
+    <div class="date-val">{{ $booking->nights }}</div>
+    <div class="date-day">Night{{ $booking->nights > 1 ? 's' : '' }}</div>
   </div>
 </div>
-</body>
-</html>
+
+<!-- Property Info -->
+<div class="info-card">
+  <h3>🏡 Property Details</h3>
+  <div class="info-row">
+    <span class="info-label">Property</span>
+    <span class="info-value">{{ $booking->property_name }}</span>
+  </div>
+  <div class="info-row">
+    <span class="info-label">Location</span>
+    <span class="info-value">{{ $booking->property_city }}{{ $booking->property_country ? ', ' . $booking->property_country : '' }}</span>
+  </div>
+  @if($booking->property_address)
+  <div class="info-row">
+    <span class="info-label">Address</span>
+    <span class="info-value">{{ $booking->property_address }}</span>
+  </div>
+  @endif
+  <div class="info-row">
+    <span class="info-label">Guests</span>
+    <span class="info-value">{{ $booking->total_adults }} adult{{ $booking->total_adults > 1 ? 's' : '' }}{{ $booking->total_children ? ', ' . $booking->total_children . ' child' . ($booking->total_children > 1 ? 'ren' : '') : '' }}</span>
+  </div>
+</div>
+
+<!-- Booking Info -->
+<div class="info-card">
+  <h3>📋 Booking Summary</h3>
+  <div class="info-row">
+    <span class="info-label">Booking Reference</span>
+    <span class="info-value" style="color:#1a73e8;font-size:16px;">{{ $booking->booking_reference }}</span>
+  </div>
+  <div class="info-row">
+    <span class="info-label">Guest Name</span>
+    <span class="info-value">{{ $booking->holder_first_name }} {{ $booking->holder_last_name }}</span>
+  </div>
+  <div class="info-row">
+    <span class="info-label">Contact Email</span>
+    <span class="info-value">{{ $booking->holder_email }}</span>
+  </div>
+  <div class="info-row">
+    <span class="info-label">Contact Phone</span>
+    <span class="info-value">{{ $booking->holder_phone }}</span>
+  </div>
+  <div class="info-row">
+    <span class="info-label">Confirmed On</span>
+    <span class="info-value">{{ now()->format('d M Y, h:i A') }}</span>
+  </div>
+</div>
+
+<!-- Total -->
+<div class="total-box">
+  <div>
+    <div class="total-label">Total Paid</div>
+    <div class="total-sub">{{ $booking->nights }} nights &bull; All taxes included</div>
+  </div>
+  <div>
+    <div class="total-amount">{{ $booking->currency }} {{ number_format($booking->total_price, 2) }}</div>
+  </div>
+</div>
+
+@if($booking->special_requests)
+<div class="alert-box info">
+  <strong>Your Special Requests:</strong><br>
+  {{ $booking->special_requests }}
+</div>
+@endif
+
+@if($booking->free_cancellation_until)
+<div class="alert-box success">
+  <strong>Free Cancellation:</strong> You can cancel for free until
+  <strong>{{ \Carbon\Carbon::parse($booking->free_cancellation_until)->format('d M Y') }}</strong>.
+</div>
+@endif
+
+<div class="cta-wrap">
+  <a href="{{ config('app.url') }}/bookings/{{ $booking->booking_reference }}" class="cta-btn">
+    View Booking Details
+  </a>
+</div>
+
+<hr class="divider">
+
+<div class="alert-box warning">
+  <strong>Need help?</strong> Contact our support team anytime at
+  <a href="mailto:support@pikpakgo.com">support@pikpakgo.com</a> and reference your booking
+  number <strong>{{ $booking->booking_reference }}</strong>.
+</div>
+@endsection

@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ContentController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\PublicController;
 use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Api\BookingController;
 use App\Http\Controllers\Api\PropertyController;
@@ -13,6 +14,7 @@ use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\WishlistController;
 use App\Http\Controllers\Api\Admin\AdminBookingController;
+use App\Http\Controllers\Api\Admin\FinancialController;
 use App\Http\Controllers\Api\Admin\AdminContentController;
 use App\Http\Controllers\Api\Admin\AdminPropertyController;
 use App\Http\Controllers\Api\Admin\AdminReviewController;
@@ -49,16 +51,25 @@ Route::prefix('public')->group(function () {
         Route::post('properties', [SearchController::class, 'searchProperties']);
         Route::get('destinations', [SearchController::class, 'getDestinations']);
         Route::get('popular-destinations', [SearchController::class, 'getPopularDestinations']);
+        Route::get('autocomplete', [SearchController::class, 'autocomplete']);
     });
 
-    // Property details
+    // Property details & discovery
     Route::prefix('properties')->group(function () {
+        // Static list-type routes BEFORE {id} to prevent routing conflicts
+        Route::get('featured',     [PropertyController::class, 'featured']);
+        Route::get('new-arrivals', [PropertyController::class, 'newArrivals']);
+        Route::get('top-rated',    [PropertyController::class, 'topRated']);
+        Route::get('amenities',    [PropertyController::class, 'amenities']);
+        Route::get('types',        [PropertyController::class, 'types']);
+
         Route::get('/', [PropertyController::class, 'index']);
         Route::get('{id}', [PropertyController::class, 'show']);
         Route::post('{id}/check-availability', [PropertyController::class, 'checkAvailability']);
         Route::post('{id}/get-pricing', [PropertyController::class, 'getPricing']);
         Route::get('{id}/reviews', [PropertyController::class, 'getReviews']);
         Route::get('{id}/similar', [PropertyController::class, 'getSimilarProperties']);
+        Route::get('{id}/calendar', [PropertyController::class, 'calendar']);
     });
 
     // Guest session management
@@ -74,12 +85,27 @@ Route::prefix('public')->group(function () {
     // Public content pages (CMS)
     Route::prefix('content')->group(function () {
         Route::get('pages/{slug}', [ContentController::class, 'getPage']);
-        Route::get('header', [ContentController::class, 'getHeader']);
-        Route::get('footer', [ContentController::class, 'getFooter']);
+        Route::get('header',       [ContentController::class, 'getHeader']);
+        Route::get('footer',       [ContentController::class, 'getFooter']);
+        Route::get('nav',          [ContentController::class, 'getNav']);
     });
 
     // Public settings (site name, currency, etc.)
     Route::get('settings', [AdminSettingsController::class, 'publicSettings']);
+
+    // Site meta (currencies, languages, property types, sort options)
+    Route::get('site-info', [PublicController::class, 'siteInfo']);
+
+    // Contact & Newsletter
+    Route::post('contact', [PublicController::class, 'contact']);
+    Route::post('newsletter/subscribe', [PublicController::class, 'newsletterSubscribe']);
+    Route::get('newsletter/unsubscribe/{token}', [PublicController::class, 'newsletterUnsubscribe']);
+
+    // FAQ
+    Route::get('faqs', [PublicController::class, 'faqs']);
+
+    // Booking tracker (no auth — for confirmation/status page)
+    Route::get('bookings/{bookingReference}/track', [PublicController::class, 'trackBooking']);
 });
 
 // ============================================
@@ -160,11 +186,12 @@ Route::middleware('auth:api')->prefix('profile')->group(function () {
 // ============================================
 
 Route::middleware('auth:api')->prefix('notifications')->group(function () {
-    Route::get('/', [NotificationController::class, 'index']);
+    Route::get('/',        [NotificationController::class, 'index']);
+    Route::get('badge',    [NotificationController::class, 'badge']);
     Route::put('read-all', [NotificationController::class, 'markAllRead']);
-    Route::delete('/', [NotificationController::class, 'destroyAll']);
+    Route::delete('/',     [NotificationController::class, 'destroyAll']);
     Route::put('{id}/read', [NotificationController::class, 'markRead']);
-    Route::delete('{id}', [NotificationController::class, 'destroy']);
+    Route::delete('{id}',   [NotificationController::class, 'destroy']);
 });
 
 // ============================================
@@ -266,19 +293,35 @@ Route::prefix('admin')->middleware(['auth:api', 'user.type:admin'])->group(funct
         Route::put('{key}', [AdminSettingsController::class, 'updateSingle']);
     });
 
-    // Content Management (CMS)
+    // Content Management (CMS + Page Builder)
     Route::prefix('content')->group(function () {
-        Route::get('/', [AdminContentController::class, 'index']);
-        Route::post('/', [AdminContentController::class, 'store']);
-        Route::get('{id}', [AdminContentController::class, 'show']);
-        Route::put('{id}', [AdminContentController::class, 'update']);
-        Route::delete('{id}', [AdminContentController::class, 'destroy']);
+        Route::get('/',              [AdminContentController::class, 'index']);
+        Route::post('/',             [AdminContentController::class, 'store']);
+        Route::post('reorder',       [AdminContentController::class, 'reorder']);
+        Route::get('{id}',           [AdminContentController::class, 'show']);
+        Route::put('{id}',           [AdminContentController::class, 'update']);
+        Route::delete('{id}',        [AdminContentController::class, 'destroy']);
+        Route::put('{id}/restore',   [AdminContentController::class, 'restore']);
     });
+
+    // Contact Forms & Newsletter (Admin)
+    Route::get('contact-forms', [PublicController::class, 'adminListContacts']);
+    Route::put('contact-forms/{id}/reply', [PublicController::class, 'adminReplyContact']);
+    Route::get('newsletter-subscribers', [PublicController::class, 'adminListSubscribers']);
 
     // Host & Agency Management
     Route::get('hosts', [ProfileController::class, 'adminListHosts']);
     Route::put('hosts/{id}/verify', [ProfileController::class, 'adminVerifyHost']);
     Route::get('agencies', [ProfileController::class, 'adminListAgencies']);
+
+    // Financial Reports & Provider Payout Management
+    Route::prefix('financial')->group(function () {
+        Route::get('overview',              [FinancialController::class, 'overview']);
+        Route::get('payouts',               [FinancialController::class, 'payouts']);
+        Route::get('profit-by-property',    [FinancialController::class, 'profitByProperty']);
+        Route::post('payouts/{id}/retry',   [FinancialController::class, 'retryPayout']);
+        Route::post('payouts/retry-all-failed', [FinancialController::class, 'retryAllFailed']);
+    });
 
     // Review Moderation
     Route::prefix('reviews')->group(function () {

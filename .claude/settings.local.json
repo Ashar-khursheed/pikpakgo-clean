@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s -o /dev/null -w '%{http_code}' 'http://localhost:8000/api/public/properties/23/calendar?year=2025&month=6')",
+      "Bash(curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:8000/api/public/search/properties -H 'Content-Type: application/json' -d '{\"destination\":\"Miami\",\"check_in\":\"2026-06-01\",\"check_out\":\"2026-06-07\",\"adults\":2}')",
+      "Bash(curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:8000/api/public/properties/23/check-availability -H 'Content-Type: application/json' -d '{\"check_in_date\":\"2026-06-01\",\"check_out_date\":\"2026-06-07\",\"adults\":2}')",
+      "Bash(curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:8000/api/public/properties/23/get-pricing -H 'Content-Type: application/json' -d '{\"check_in_date\":\"2026-06-01\",\"check_out_date\":\"2026-06-07\",\"adults\":2}')",
+      "Bash(curl -s 'http://localhost:8000/api/public/properties/23/calendar?year=2025&month=6')",
+      "Bash(php -r '$d=json_decode\\(stream_get_contents\\(STDIN\\),true\\); foreach\\($d as $c\\) echo $c['\\\\''Field'\\\\''].'\\\\'' \\('\\\\''.$c['\\\\''Type'\\\\''].'\\\\''\\)'\\\\''.PHP_EOL;')",
+      "Bash(php -m)",
+      "Bash(php -r \"echo extension_loaded\\('redis'\\) ? 'redis extension OK' : 'no redis ext'; echo PHP_EOL;\")",
+      "Bash(php -r 'try { $r = new Redis\\(\\); $r->connect\\('\\\\''127.0.0.1'\\\\'',6379\\); echo '\\\\''Redis connected OK'\\\\''; } catch\\(Exception $e\\) { echo '\\\\''Redis not available: '\\\\''.$e->getMessage\\(\\); }')",
+      "Bash(php /c/composer/composer.phar require predis/predis --no-interaction)",
+      "Bash(curl -s -X POST http://localhost:8000/api/public/guest/session/create -H 'Content-Type: application/json' -d '{\"device_type\":\"web\"}')"
+    ]
+  }
+}

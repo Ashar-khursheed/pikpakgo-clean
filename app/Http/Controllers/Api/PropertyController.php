@@ -33,62 +33,84 @@ class PropertyController extends Controller
     /**
      * @OA\Get(
      *     path="/public/properties",
-     *     summary="List all properties with pagination",
+     *     summary="List properties with filters and sorting",
      *     tags={"Properties"},
-     *     @OA\Parameter(
-     *         name="page",
-     *         in="query",
-     *         description="Page number",
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Parameter(
-     *         name="per_page",
-     *         in="query",
-     *         description="Items per page (default 20, max 100)",
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Paginated list of properties with pricing markup applied",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="data", type="object")
-     *         )
-     *     )
+     *     @OA\Parameter(name="location", in="query", description="Free text search (name, city, address)", @OA\Schema(type="string", example="Miami")),
+     *     @OA\Parameter(name="city", in="query", @OA\Schema(type="string", example="Miami")),
+     *     @OA\Parameter(name="country", in="query", @OA\Schema(type="string", example="US")),
+     *     @OA\Parameter(name="property_type", in="query", @OA\Schema(type="string", example="villa")),
+     *     @OA\Parameter(name="provider", in="query", @OA\Schema(type="string", enum={"ownerrez","hotelbeds"})),
+     *     @OA\Parameter(name="min_price", in="query", @OA\Schema(type="number", example=100)),
+     *     @OA\Parameter(name="max_price", in="query", @OA\Schema(type="number", example=500)),
+     *     @OA\Parameter(name="star_rating[]", in="query", @OA\Schema(type="array", @OA\Items(type="integer")), description="Filter by one or more star ratings"),
+     *     @OA\Parameter(name="min_rating", in="query", @OA\Schema(type="number", example=4.0)),
+     *     @OA\Parameter(name="bedrooms", in="query", @OA\Schema(type="integer", example=2)),
+     *     @OA\Parameter(name="amenities[]", in="query", @OA\Schema(type="array", @OA\Items(type="string")), description="Filter by amenities (all must match)"),
+     *     @OA\Parameter(name="is_featured", in="query", @OA\Schema(type="boolean")),
+     *     @OA\Parameter(name="sort_by", in="query", @OA\Schema(type="string", enum={"newest","price_asc","price_desc","rating","popular","most_viewed"})),
+     *     @OA\Parameter(name="per_page", in="query", @OA\Schema(type="integer", example=20)),
+     *     @OA\Response(response=200, description="Paginated list of properties with markup pricing applied")
      * )
      */
     public function index(Request $request)
     {
         try {
             $perPage = min($request->input('per_page', 20), 100);
-            
+
             $query = PropertyListing::where('is_active', true);
-            
-            // Filter by location (city/address/name)
-            if ($request->has('location')) {
+
+            // Text search
+            if ($request->filled('location')) {
                 $query->search($request->location);
             }
-            
-            // Filter by specific city
-            if ($request->has('city')) {
-                $query->city($request->city);
-            }
-            
-            if ($request->has('country')) {
-                $query->where('country', 'like', "%{$request->country}%");
+
+            // Filters
+            if ($request->filled('city'))         $query->city($request->city);
+            if ($request->filled('country'))      $query->where('country', 'like', "%{$request->country}%");
+            if ($request->filled('property_type')) $query->where('property_type', $request->property_type);
+            if ($request->filled('is_featured'))  $query->where('is_featured', (bool) $request->is_featured);
+            if ($request->filled('provider'))     $query->where('provider', $request->provider);
+
+            // Price range
+            if ($request->filled('min_price') || $request->filled('max_price')) {
+                $query->priceRange($request->min_price, $request->max_price);
             }
 
-            // Filter by Price Range
-            if ($request->has('minPrice') || $request->has('maxPrice')) {
-                $query->priceRange($request->minPrice, $request->maxPrice);
+            // Star rating (single or array: ?star_rating[]=4&star_rating[]=5)
+            if ($request->filled('star_rating')) {
+                $ratings = is_array($request->star_rating) ? $request->star_rating : [$request->star_rating];
+                $query->whereIn('star_rating', $ratings);
             }
-            
-            // Filter by Guests (if mapping allows, currently naive max filter or ignore)
-            // if ($request->has('guests')) { ... }
 
-            // Standard sorting
-            $query->orderBy('created_at', 'desc');
-            
+            // Min rating
+            if ($request->filled('min_rating')) {
+                $query->where('rating_average', '>=', $request->min_rating);
+            }
+
+            // Bedrooms filter (stored in api_data — try provider_code prefix match)
+            if ($request->filled('bedrooms')) {
+                $query->whereRaw("JSON_EXTRACT(api_data, '$.bedrooms') >= ?", [(int) $request->bedrooms]);
+            }
+
+            // Amenities filter (all requested amenities must be in the JSON array)
+            if ($request->filled('amenities')) {
+                $amenities = is_array($request->amenities) ? $request->amenities : explode(',', $request->amenities);
+                foreach ($amenities as $amenity) {
+                    $query->whereJsonContains('amenities', $amenity);
+                }
+            }
+
+            // Sorting
+            $sortBy = $request->input('sort_by', 'newest');
+            match ($sortBy) {
+                'price_asc'   => $query->orderBy('price_from', 'asc'),
+                'price_desc'  => $query->orderBy('price_from', 'desc'),
+                'rating'      => $query->orderBy('rating_average', 'desc'),
+                'popular'     => $query->orderBy('booking_count', 'desc'),
+                'most_viewed' => $query->orderBy('view_count', 'desc'),
+                default       => $query->orderBy('created_at', 'desc'),
+            };
+
             $properties = $query->paginate($perPage);
             
             // Apply markup to each property in the collection
@@ -206,45 +228,57 @@ class PropertyController extends Controller
      */
     public function checkAvailability(Request $request, $id)
     {
+        // Accept both check_in / check_in_date
+        $merged = [];
+        if ($request->has('check_in_date') && !$request->has('check_in')) $merged['check_in']  = $request->check_in_date;
+        if ($request->has('check_out_date') && !$request->has('check_out')) $merged['check_out'] = $request->check_out_date;
+        if (!empty($merged)) $request->merge($merged);
+
         $validator = \Validator::make($request->all(), [
-            'check_in' => 'required|date|after_or_equal:today',
+            'check_in'  => 'required|date|after_or_equal:today',
             'check_out' => 'required|date|after:check_in',
-            'adults' => 'required|integer|min:1',
-            'children' => 'nullable|integer|min:0',
-            'rooms' => 'nullable|integer|min:1',
+            'adults'    => 'nullable|integer|min:1',
+            'children'  => 'nullable|integer|min:0',
         ]);
-        
+
         if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'errors' => $validator->errors()
-            ], 400);
+            return response()->json(['success' => false, 'errors' => $validator->errors()], 400);
         }
-        
+
         try {
             $property = PropertyListing::findOrFail($id);
-            
-            $availabilityData = [
-                'property_id' => $property->provider_property_id,
-                'check_in' => $request->check_in,
-                'check_out' => $request->check_out,
-                'adults' => $request->adults,
-                'children' => $request->children ?? 0,
-                'rooms' => $request->rooms ?? 1,
-            ];
-            
-            // Call OwnerRez channel API
-            $result = $this->ownerrezService->checkAvailability($availabilityData);
-            
+
+            // For direct properties, check against our local bookings
+            if ($property->provider === 'direct') {
+                $conflict = \App\Models\Booking::where('property_code', $property->provider_code)
+                    ->whereIn('booking_status', ['confirmed', 'pending'])
+                    ->where('check_in_date', '<', $request->check_out)
+                    ->where('check_out_date', '>', $request->check_in)
+                    ->exists();
+
+                return response()->json([
+                    'success'   => true,
+                    'available' => !$conflict,
+                    'message'   => $conflict ? 'Property not available for selected dates' : 'Property is available',
+                ]);
+            }
+
+            // For OwnerRez properties
+            $result = $this->ownerrezService->checkAvailability(
+                $property->provider_property_id,
+                [
+                    'checkin'  => $request->check_in,
+                    'checkout' => $request->check_out,
+                    'adults'   => (int)($request->adults ?? 2),
+                    'children' => (int)($request->children ?? 0),
+                ]
+            );
+
             return response()->json($result);
-            
+
         } catch (\Exception $e) {
             Log::error('Check availability error: ' . $e->getMessage());
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to check availability'
-            ], 500);
+            return response()->json(['success' => false, 'message' => 'Failed to check availability'], 500);
         }
     }
     
@@ -266,18 +300,21 @@ class PropertyController extends Controller
      */
     public function getPricing(Request $request, $id)
     {
+        // Accept both check_in / check_in_date
+        $merged = [];
+        if ($request->has('check_in_date') && !$request->has('check_in')) $merged['check_in']  = $request->check_in_date;
+        if ($request->has('check_out_date') && !$request->has('check_out')) $merged['check_out'] = $request->check_out_date;
+        if (!empty($merged)) $request->merge($merged);
+
         $validator = \Validator::make($request->all(), [
-            'check_in' => 'required|date',
+            'check_in'  => 'required|date',
             'check_out' => 'required|date|after:check_in',
-            'adults' => 'required|integer|min:1',
-            'children' => 'nullable|integer|min:0',
+            'adults'    => 'nullable|integer|min:1',
+            'children'  => 'nullable|integer|min:0',
         ]);
-        
+
         if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'errors' => $validator->errors()
-            ], 400);
+            return response()->json(['success' => false, 'errors' => $validator->errors()], 400);
         }
         
         try {
@@ -402,6 +439,201 @@ class PropertyController extends Controller
         }
     }
     
+    /**
+     * @OA\Get(
+     *     path="/public/properties/featured",
+     *     summary="Get featured properties for homepage",
+     *     tags={"Properties"},
+     *     @OA\Parameter(name="limit", in="query", @OA\Schema(type="integer", example=8)),
+     *     @OA\Response(response=200, description="Featured properties list")
+     * )
+     */
+    public function featured(Request $request)
+    {
+        $limit = min((int) $request->get('limit', 8), 24);
+
+        $properties = Cache::remember("featured_properties_{$limit}", 600, function () use ($limit) {
+            return PropertyListing::where('is_active', true)
+                ->where('is_featured', true)
+                ->orderBy('booking_count', 'desc')
+                ->limit($limit)
+                ->get();
+        });
+
+        return response()->json(['success' => true, 'data' => $properties]);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/public/properties/new-arrivals",
+     *     summary="Get recently added properties",
+     *     tags={"Properties"},
+     *     @OA\Parameter(name="limit", in="query", @OA\Schema(type="integer", example=8)),
+     *     @OA\Response(response=200, description="New properties list")
+     * )
+     */
+    public function newArrivals(Request $request)
+    {
+        $limit = min((int) $request->get('limit', 8), 24);
+
+        $properties = PropertyListing::where('is_active', true)
+            ->orderBy('created_at', 'desc')
+            ->limit($limit)
+            ->get();
+
+        return response()->json(['success' => true, 'data' => $properties]);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/public/properties/top-rated",
+     *     summary="Get top-rated properties",
+     *     tags={"Properties"},
+     *     @OA\Parameter(name="limit", in="query", @OA\Schema(type="integer", example=8)),
+     *     @OA\Response(response=200, description="Top-rated properties list")
+     * )
+     */
+    public function topRated(Request $request)
+    {
+        $limit = min((int) $request->get('limit', 8), 24);
+
+        $properties = PropertyListing::where('is_active', true)
+            ->whereNotNull('rating_average')
+            ->orderBy('rating_average', 'desc')
+            ->orderBy('rating_count', 'desc')
+            ->limit($limit)
+            ->get();
+
+        return response()->json(['success' => true, 'data' => $properties]);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/public/properties/{id}/calendar",
+     *     summary="Get availability calendar for a property (monthly view)",
+     *     tags={"Properties"},
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="string")),
+     *     @OA\Parameter(name="year", in="query", @OA\Schema(type="integer", example=2027)),
+     *     @OA\Parameter(name="month", in="query", @OA\Schema(type="integer", example=6)),
+     *     @OA\Response(response=200, description="Monthly availability calendar"),
+     *     @OA\Response(response=404, description="Property not found")
+     * )
+     */
+    public function calendar(Request $request, $id)
+    {
+        $property = PropertyListing::where('id', $id)
+            ->orWhere('provider_property_id', $id)
+            ->firstOrFail();
+
+        $year  = (int) $request->get('year', now()->year);
+        $month = (int) $request->get('month', now()->month);
+
+        // Clamp month
+        $month = max(1, min(12, $month));
+        $year  = max(now()->year, min(now()->year + 2, $year));
+
+        $cacheKey = "property_calendar_{$property->provider_property_id}_{$year}_{$month}";
+
+        $calendar = Cache::remember($cacheKey, 1800, function () use ($property, $year, $month) {
+            $start = \Carbon\Carbon::create($year, $month, 1);
+            $end   = $start->copy()->endOfMonth();
+
+            // Build blocked dates from our local bookings DB (works for all providers)
+            $bookedDates = \App\Models\Booking::where(function ($q) use ($property) {
+                    $q->where('property_code', $property->provider_code)
+                      ->orWhere('property_code', $property->provider_property_id);
+                })
+                ->whereIn('booking_status', ['confirmed', 'pending'])
+                ->where('check_out_date', '>=', $start->toDateString())
+                ->where('check_in_date',  '<=', $end->toDateString())
+                ->get(['check_in_date', 'check_out_date']);
+
+            $blocked = [];
+            foreach ($bookedDates as $b) {
+                $d = \Carbon\Carbon::parse($b->check_in_date);
+                while ($d->lt(\Carbon\Carbon::parse($b->check_out_date))) {
+                    $blocked[$d->toDateString()] = 'booked';
+                    $d->addDay();
+                }
+            }
+
+            // Build calendar days
+            $days = [];
+            $day  = $start->copy();
+            while ($day->lte($end)) {
+                $date   = $day->toDateString();
+                $isPast = $day->lt(now()->startOfDay());
+                $days[] = [
+                    'date'      => $date,
+                    'available' => !$isPast && !isset($blocked[$date]),
+                    'status'    => $isPast ? 'past' : ($blocked[$date] ?? 'available'),
+                ];
+                $day->addDay();
+            }
+
+            return [
+                'property_id' => $property->provider_code ?? $property->provider_property_id,
+                'year'        => $year,
+                'month'       => $month,
+                'month_name'  => $start->format('F Y'),
+                'days'        => $days,
+            ];
+        });
+
+        return response()->json(['success' => true, 'data' => $calendar]);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/public/properties/amenities",
+     *     summary="Get all distinct amenities available (for filter UI)",
+     *     tags={"Properties"},
+     *     @OA\Response(response=200, description="Amenities list")
+     * )
+     */
+    public function amenities()
+    {
+        $amenities = Cache::remember('all_amenities', 3600, function () {
+            $rows = PropertyListing::where('is_active', true)
+                ->whereNotNull('amenities')
+                ->pluck('amenities');
+
+            $all = [];
+            foreach ($rows as $list) {
+                if (is_array($list)) {
+                    $all = array_merge($all, $list);
+                }
+            }
+
+            return array_values(array_unique(array_filter($all)));
+        });
+
+        sort($amenities);
+        return response()->json(['success' => true, 'data' => $amenities]);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/public/properties/types",
+     *     summary="Get all distinct property types (for filter UI)",
+     *     tags={"Properties"},
+     *     @OA\Response(response=200, description="Property types list")
+     * )
+     */
+    public function types()
+    {
+        $types = Cache::remember('all_property_types', 3600, function () {
+            return PropertyListing::where('is_active', true)
+                ->whereNotNull('property_type')
+                ->distinct()
+                ->pluck('property_type')
+                ->filter()
+                ->values();
+        });
+
+        return response()->json(['success' => true, 'data' => $types]);
+    }
+
     /**
      * Sync property data from API
      */

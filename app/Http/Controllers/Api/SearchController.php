@@ -80,6 +80,14 @@ class SearchController extends Controller
      */
     public function searchProperties(Request $request)
     {
+        // Accept both snake_case and camelCase field names
+        $input = $request->all();
+        if (isset($input['check_in']) && !isset($input['checkIn']))     $input['checkIn']  = $input['check_in'];
+        if (isset($input['check_out']) && !isset($input['checkOut']))   $input['checkOut'] = $input['check_out'];
+        if (isset($input['destination']) && !isset($input['location'])) $input['location'] = $input['destination'];
+        if (isset($input['adults']) && !isset($input['guests']))        $input['guests']   = $input['adults'];
+        $request->merge($input);
+
         $validator = Validator::make($request->all(), [
             'checkIn' => 'required|date|after_or_equal:today',
             'checkOut' => 'required|date|after:checkIn',
@@ -92,7 +100,7 @@ class SearchController extends Controller
             'maxPrice' => 'nullable|numeric|min:0',
             'amenities' => 'nullable|array'
         ]);
-        
+
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
@@ -100,45 +108,32 @@ class SearchController extends Controller
                 'errors' => $validator->errors()
             ], 400);
         }
-        
-        try {
-            $cacheKey = 'property_search_' . md5(json_encode($request->all()));
-            
-            $result = Cache::remember($cacheKey, 300, function () use ($request) {
-                // Call OwnerRez API
-                $apiResponse = $this->ownerrezService->searchProperties($request->all());
-                
-                if (!$apiResponse['success']) {
-                    return $apiResponse;
-                }
-                
-                // Apply pricing markup to all properties
-                if (isset($apiResponse['data']['properties'])) {
-                    $apiResponse['data']['properties'] = array_map(function ($property) {
-                        return $this->applyPricingMarkup($property, 'ownerrez');
-                    }, $apiResponse['data']['properties']);
-                }
-                
-                return $apiResponse;
-            });
-            
-            // Cache property listings
-            if ($result['success'] && isset($result['data']['properties'])) {
-                $this->cachePropertyListings($result['data']['properties'], 'ownerrez');
-            }
-            
-            return response()->json($result, $result['success'] ? 200 : 500);
-            
-        } catch (\Exception $e) {
-            Log::error('Property search error: ' . $e->getMessage());
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred while searching properties',
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ], 500);
-        }
+
+        // For direct properties: search our local DB
+        $location   = $request->location;
+        $checkIn    = $request->checkIn;
+        $checkOut   = $request->checkOut;
+        $guests     = (int)($request->guests ?? 1);
+        $minPrice   = $request->minPrice;
+        $maxPrice   = $request->maxPrice;
+
+        $query = \App\Models\PropertyListing::where('is_active', true)
+            ->when($location, fn($q) => $q->where(fn($q2) => $q2
+                ->where('city', 'like', "%{$location}%")
+                ->orWhere('state', 'like', "%{$location}%")
+                ->orWhere('country', 'like', "%{$location}%")
+                ->orWhere('name', 'like', "%{$location}%")
+            ))
+            ->when($minPrice, fn($q) => $q->where('price_from', '>=', $minPrice))
+            ->when($maxPrice, fn($q) => $q->where('price_from', '<=', $maxPrice))
+            ->when($request->propertyType, fn($q) => $q->where('property_type', $request->propertyType))
+            ->when($guests, fn($q) => $q->where('total_rooms', '>=', 1));
+
+        $properties = $query->orderBy('is_featured', 'desc')
+            ->orderByDesc('rating_average')
+            ->paginate(12);
+
+        return response()->json(['success' => true, 'data' => $properties]);
     }
     
     /**
@@ -246,6 +241,70 @@ class SearchController extends Controller
         }
     }
     
+    /**
+     * @OA\Get(
+     *     path="/public/search/autocomplete",
+     *     summary="Location/property autocomplete for search box",
+     *     tags={"Public Search"},
+     *     @OA\Parameter(name="q", in="query", required=true, description="Search query (min 2 chars)", @OA\Schema(type="string", example="mia")),
+     *     @OA\Parameter(name="limit", in="query", @OA\Schema(type="integer", example=10)),
+     *     @OA\Response(response=200, description="Autocomplete suggestions grouped by type")
+     * )
+     */
+    public function autocomplete(Request $request)
+    {
+        $q = trim($request->get('q', ''));
+
+        if (mb_strlen($q) < 2) {
+            return response()->json(['success' => true, 'data' => []]);
+        }
+
+        $limit = min((int) $request->get('limit', 10), 20);
+
+        $results = Cache::remember('autocomplete_' . md5($q), 300, function () use ($q, $limit) {
+            // Cities
+            $cities = PropertyListing::where('is_active', true)
+                ->where(function ($qb) use ($q) {
+                    $qb->where('city', 'like', "{$q}%")
+                       ->orWhere('city', 'like', "%{$q}%");
+                })
+                ->select('city', 'country', 'country_code')
+                ->selectRaw('COUNT(*) as property_count')
+                ->groupBy('city', 'country', 'country_code')
+                ->orderByRaw('COUNT(*) DESC')
+                ->limit((int) ceil($limit * 0.5))
+                ->get()
+                ->map(fn ($r) => [
+                    'type'           => 'city',
+                    'label'          => $r->city . ($r->country ? ', ' . $r->country : ''),
+                    'value'          => $r->city,
+                    'property_count' => $r->property_count,
+                    'country_code'   => $r->country_code,
+                ]);
+
+            // Properties by name
+            $properties = PropertyListing::where('is_active', true)
+                ->where('name', 'like', "%{$q}%")
+                ->select('id', 'name', 'city', 'country', 'provider_property_id', 'featured_image', 'price_from', 'price_currency')
+                ->orderBy('booking_count', 'desc')
+                ->limit((int) ceil($limit * 0.5))
+                ->get()
+                ->map(fn ($p) => [
+                    'type'          => 'property',
+                    'label'         => $p->name,
+                    'value'         => $p->provider_property_id,
+                    'subtitle'      => $p->city . ($p->country ? ', ' . $p->country : ''),
+                    'image'         => $p->featured_image,
+                    'price_from'    => $p->price_from,
+                    'currency'      => $p->price_currency,
+                ]);
+
+            return array_values(array_merge($cities->toArray(), $properties->toArray()));
+        });
+
+        return response()->json(['success' => true, 'data' => $results]);
+    }
+
     /**
      * Apply pricing markup to a property/hotel
      */

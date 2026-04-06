@@ -243,7 +243,7 @@ class AdminPropertyController extends Controller
                 'price_currency' => $currency,
                 'api_data'       => $data,
                 'last_synced_at' => now(),
-                'is_active'      => ($data['active'] ?? 'true') === 'true',
+                'is_active'      => (bool)($data['active'] ?? true),
             ]
         );
     }

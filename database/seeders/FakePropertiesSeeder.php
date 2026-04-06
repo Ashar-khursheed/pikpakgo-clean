@@ -1,0 +1,238 @@
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\PropertyListing;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
+
+class FakePropertiesSeeder extends Seeder
+{
+    public function run(): void
+    {
+        $cities = [
+            ['city' => 'Miami',      'state' => 'Florida',        'country' => 'United States', 'cc' => 'US', 'lat' => 25.7617,  'lng' => -80.1918],
+            ['city' => 'New York',   'state' => 'New York',        'country' => 'United States', 'cc' => 'US', 'lat' => 40.7128,  'lng' => -74.0060],
+            ['city' => 'Los Angeles','state' => 'California',      'country' => 'United States', 'cc' => 'US', 'lat' => 34.0522,  'lng' => -118.2437],
+            ['city' => 'Orlando',    'state' => 'Florida',         'country' => 'United States', 'cc' => 'US', 'lat' => 28.5383,  'lng' => -81.3792],
+            ['city' => 'Las Vegas',  'state' => 'Nevada',          'country' => 'United States', 'cc' => 'US', 'lat' => 36.1699,  'lng' => -115.1398],
+            ['city' => 'Nashville',  'state' => 'Tennessee',       'country' => 'United States', 'cc' => 'US', 'lat' => 36.1627,  'lng' => -86.7816],
+            ['city' => 'Scottsdale', 'state' => 'Arizona',         'country' => 'United States', 'cc' => 'US', 'lat' => 33.4942,  'lng' => -111.9261],
+            ['city' => 'Charleston', 'state' => 'South Carolina',  'country' => 'United States', 'cc' => 'US', 'lat' => 32.7765,  'lng' => -79.9311],
+            ['city' => 'Aspen',      'state' => 'Colorado',        'country' => 'United States', 'cc' => 'US', 'lat' => 39.1911,  'lng' => -106.8175],
+            ['city' => 'Malibu',     'state' => 'California',      'country' => 'United States', 'cc' => 'US', 'lat' => 34.0259,  'lng' => -118.7798],
+        ];
+
+        $properties = [
+            [
+                'name'      => 'Oceanfront Villa with Private Pool',
+                'type'      => 'villa',
+                'city_i'    => 0,
+                'beds'      => 5, 'baths' => 4, 'price' => 450,
+                'rating'    => 4.9, 'count' => 87,
+                'featured'  => true,
+                'amenities' => ['WiFi','Pool','Air Conditioning','Kitchen','Parking','BBQ Grill','Hot Tub','Ocean View'],
+                'desc'      => 'Stunning oceanfront villa with panoramic views of the Atlantic. Features a private infinity pool, gourmet kitchen, and direct beach access.',
+                'seed'      => 101,
+            ],
+            [
+                'name'      => 'Luxury Manhattan Penthouse',
+                'type'      => 'loft',
+                'city_i'    => 1,
+                'beds'      => 3, 'baths' => 2, 'price' => 380,
+                'rating'    => 4.8, 'count' => 142,
+                'featured'  => true,
+                'amenities' => ['WiFi','Air Conditioning','Kitchen','Gym','Doorman','City View','Rooftop Access'],
+                'desc'      => 'Breathtaking penthouse in the heart of Manhattan with floor-to-ceiling windows overlooking Central Park. Modern design meets luxury comfort.',
+                'seed'      => 102,
+            ],
+            [
+                'name'      => 'Hollywood Hills Modern Home',
+                'type'      => 'house',
+                'city_i'    => 2,
+                'beds'      => 4, 'baths' => 3, 'price' => 320,
+                'rating'    => 4.7, 'count' => 63,
+                'featured'  => true,
+                'amenities' => ['WiFi','Pool','Air Conditioning','Kitchen','Parking','Hot Tub','City View','Home Theater'],
+                'desc'      => 'Contemporary home perched in the Hollywood Hills with sweeping views of LA. Infinity pool, home theater, and designer furnishings throughout.',
+                'seed'      => 103,
+            ],
+            [
+                'name'      => 'Disney Area Family Resort Home',
+                'type'      => 'house',
+                'city_i'    => 3,
+                'beds'      => 6, 'baths' => 4, 'price' => 280,
+                'rating'    => 4.8, 'count' => 210,
+                'featured'  => true,
+                'amenities' => ['WiFi','Pool','Air Conditioning','Kitchen','Parking','Game Room','Kids Play Area','BBQ Grill'],
+                'desc'      => 'Perfect family vacation home just minutes from Disney World. Private pool, game room, and all the space your family needs.',
+                'seed'      => 104,
+            ],
+            [
+                'name'      => 'The Strip View High-Rise Suite',
+                'type'      => 'condo',
+                'city_i'    => 4,
+                'beds'      => 2, 'baths' => 2, 'price' => 195,
+                'rating'    => 4.6, 'count' => 156,
+                'featured'  => false,
+                'amenities' => ['WiFi','Pool','Air Conditioning','Kitchen','Parking','Casino View','Concierge','Gym'],
+                'desc'      => 'Spectacular high-rise suite with iconic Las Vegas Strip views. Walk to world-class entertainment, dining, and casinos.',
+                'seed'      => 105,
+            ],
+            [
+                'name'      => 'Music Row Artist Cottage',
+                'type'      => 'cottage',
+                'city_i'    => 5,
+                'beds'      => 2, 'baths' => 1, 'price' => 145,
+                'rating'    => 4.9, 'count' => 94,
+                'featured'  => false,
+                'amenities' => ['WiFi','Air Conditioning','Kitchen','Parking','Recording Studio','Guitar Collection','Fire Pit'],
+                'desc'      => 'Charming cottage steps from Music Row with private recording studio — perfect for music lovers visiting Nashville.',
+                'seed'      => 106,
+            ],
+            [
+                'name'      => 'Desert Luxury Villa with Mountain Views',
+                'type'      => 'villa',
+                'city_i'    => 6,
+                'beds'      => 4, 'baths' => 3, 'price' => 350,
+                'rating'    => 4.7, 'count' => 78,
+                'featured'  => false,
+                'amenities' => ['WiFi','Pool','Air Conditioning','Kitchen','Parking','Hot Tub','Mountain View','Outdoor Kitchen'],
+                'desc'      => 'Exquisite desert villa with stunning McDowell Mountain views. Heated pool, outdoor kitchen, and breathtaking Arizona sunsets.',
+                'seed'      => 107,
+            ],
+            [
+                'name'      => 'Historic District Carriage House',
+                'type'      => 'cottage',
+                'city_i'    => 7,
+                'beds'      => 2, 'baths' => 2, 'price' => 175,
+                'rating'    => 4.9, 'count' => 118,
+                'featured'  => false,
+                'amenities' => ['WiFi','Air Conditioning','Kitchen','Porch','Garden','Bike Rental','Historic District'],
+                'desc'      => 'Beautifully restored 19th-century carriage house in the heart of Charleston. Southern charm meets modern comfort.',
+                'seed'      => 108,
+            ],
+            [
+                'name'      => 'Ski-In Ski-Out Mountain Chalet',
+                'type'      => 'cabin',
+                'city_i'    => 8,
+                'beds'      => 5, 'baths' => 4, 'price' => 620,
+                'rating'    => 4.9, 'count' => 52,
+                'featured'  => true,
+                'amenities' => ['WiFi','Hot Tub','Fireplace','Kitchen','Ski Storage','Mountain View','Sauna','Fire Pit'],
+                'desc'      => 'Luxurious ski-in ski-out chalet on the slopes of Aspen Mountain. World-class skiing, private hot tub, and stunning alpine views.',
+                'seed'      => 109,
+            ],
+            [
+                'name'      => 'Beachfront Malibu Retreat',
+                'type'      => 'house',
+                'city_i'    => 9,
+                'beds'      => 4, 'baths' => 3, 'price' => 540,
+                'rating'    => 4.8, 'count' => 71,
+                'featured'  => true,
+                'amenities' => ['WiFi','Air Conditioning','Kitchen','Direct Beach Access','Fire Pit','Ocean View','Outdoor Shower','Surfboard Storage'],
+                'desc'      => 'Wake up to the sound of waves in this stunning beachfront Malibu home. Direct Pacific Ocean access and breathtaking sunsets.',
+                'seed'      => 110,
+            ],
+            [
+                'name'      => 'South Beach Art Deco Suite',
+                'type'      => 'apartment',
+                'city_i'    => 0,
+                'beds'      => 1, 'baths' => 1, 'price' => 165,
+                'rating'    => 4.7, 'count' => 203,
+                'featured'  => false,
+                'amenities' => ['WiFi','Pool','Air Conditioning','Kitchen','Beach Access','Rooftop Bar','Concierge'],
+                'desc'      => 'Iconic Art Deco suite steps from South Beach. Pool, rooftop bar, and the best of Miami nightlife right at your door.',
+                'seed'      => 111,
+            ],
+            [
+                'name'      => 'Brooklyn Brownstone Apartment',
+                'type'      => 'apartment',
+                'city_i'    => 1,
+                'beds'      => 2, 'baths' => 1, 'price' => 160,
+                'rating'    => 4.6, 'count' => 189,
+                'featured'  => false,
+                'amenities' => ['WiFi','Air Conditioning','Kitchen','Washer','Dryer','Garden','Bike Storage'],
+                'desc'      => 'Beautifully renovated Brooklyn brownstone with private garden. Steps from the best restaurants and boutiques in Williamsburg.',
+                'seed'      => 112,
+            ],
+            [
+                'name'      => 'Venice Beach Bohemian Bungalow',
+                'type'      => 'bungalow',
+                'city_i'    => 2,
+                'beds'      => 2, 'baths' => 1, 'price' => 185,
+                'rating'    => 4.8, 'count' => 134,
+                'featured'  => false,
+                'amenities' => ['WiFi','Air Conditioning','Kitchen','Patio','Beach Cruisers','Steps to Beach','Outdoor Shower'],
+                'desc'      => 'Laid-back beach bungalow in the heart of Venice. Grab a bike, explore the boardwalk, relax with ocean breezes.',
+                'seed'      => 113,
+            ],
+            [
+                'name'      => 'Smoky Mountain Log Cabin',
+                'type'      => 'cabin',
+                'city_i'    => 5,
+                'beds'      => 3, 'baths' => 2, 'price' => 210,
+                'rating'    => 4.9, 'count' => 167,
+                'featured'  => false,
+                'amenities' => ['WiFi','Hot Tub','Fireplace','Kitchen','Parking','Mountain View','Fire Pit','Game Room'],
+                'desc'      => 'Cozy log cabin nestled in the Smoky Mountains. Private hot tub, stone fireplace, and total seclusion from city life.',
+                'seed'      => 114,
+            ],
+            [
+                'name'      => 'Scottsdale Golf Resort Casita',
+                'type'      => 'studio',
+                'city_i'    => 6,
+                'beds'      => 1, 'baths' => 1, 'price' => 130,
+                'rating'    => 4.5, 'count' => 98,
+                'featured'  => false,
+                'amenities' => ['WiFi','Pool','Air Conditioning','Kitchen','Golf Course Access','Tennis Court','Spa Access'],
+                'desc'      => 'Elegant casita in a premier Scottsdale golf resort. Unlimited golf, spa, and the best Arizona desert lifestyle.',
+                'seed'      => 115,
+            ],
+        ];
+
+        $streets = ['Ocean Dr', 'Sunset Blvd', 'Palm Ave', 'Beach Rd', 'Main St'];
+
+        foreach ($properties as $p) {
+            $loc = $cities[$p['city_i']];
+
+            PropertyListing::create([
+                'provider'             => 'direct',
+                'provider_property_id' => 'demo_' . Str::random(8),
+                'provider_code'        => 'demo_' . $p['seed'],
+                'name'                 => $p['name'],
+                'description'          => $p['desc'],
+                'property_type'        => $p['type'],
+                'city'                 => $loc['city'],
+                'state'                => $loc['state'],
+                'country'              => $loc['country'],
+                'country_code'         => $loc['cc'],
+                'latitude'             => $loc['lat'] + (rand(-50, 50) / 1000),
+                'longitude'            => $loc['lng'] + (rand(-50, 50) / 1000),
+                'address'              => rand(100, 9999) . ' ' . $streets[array_rand($streets)] . ', ' . $loc['city'],
+                'images'               => [
+                    'https://picsum.photos/seed/' . $p['seed'] . '/800/500',
+                    'https://picsum.photos/seed/' . ($p['seed'] + 200) . '/800/500',
+                    'https://picsum.photos/seed/' . ($p['seed'] + 400) . '/800/500',
+                ],
+                'featured_image'       => 'https://picsum.photos/seed/' . $p['seed'] . '/800/500',
+                'amenities'            => $p['amenities'],
+                'total_rooms'          => $p['beds'],
+                'price_from'           => $p['price'],
+                'price_currency'       => 'USD',
+                'star_rating'          => $p['rating'] >= 4.8 ? 5 : ($p['rating'] >= 4.5 ? 4 : 3),
+                'rating_average'       => $p['rating'],
+                'rating_count'         => $p['count'],
+                'is_active'            => true,
+                'is_featured'          => $p['featured'],
+                'view_count'           => rand(100, 2000),
+                'booking_count'        => $p['count'],
+                'api_data'             => ['bedrooms' => $p['beds'], 'bathrooms' => $p['baths']],
+                'last_synced_at'       => now(),
+            ]);
+        }
+
+        echo 'Seeded ' . count($properties) . ' properties.' . PHP_EOL;
+        echo 'Total active: ' . PropertyListing::where('is_active', true)->count() . PHP_EOL;
+    }
+}

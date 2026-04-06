@@ -3996,45 +3996,141 @@
                 "tags": [
                     "Properties"
                 ],
-                "summary": "List all properties with pagination",
+                "summary": "List properties with filters and sorting",
                 "operationId": "e380602fa5468b0ac3792c1126014730",
                 "parameters": [
                     {
-                        "name": "page",
+                        "name": "location",
                         "in": "query",
-                        "description": "Page number",
+                        "description": "Free text search (name, city, address)",
                         "schema": {
-                            "type": "integer"
+                            "type": "string",
+                            "example": "Miami"
+                        }
+                    },
+                    {
+                        "name": "city",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "example": "Miami"
+                        }
+                    },
+                    {
+                        "name": "country",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "example": "US"
+                        }
+                    },
+                    {
+                        "name": "property_type",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "example": "villa"
+                        }
+                    },
+                    {
+                        "name": "provider",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "ownerrez",
+                                "hotelbeds"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "min_price",
+                        "in": "query",
+                        "schema": {
+                            "type": "number",
+                            "example": 100
+                        }
+                    },
+                    {
+                        "name": "max_price",
+                        "in": "query",
+                        "schema": {
+                            "type": "number",
+                            "example": 500
+                        }
+                    },
+                    {
+                        "name": "star_rating[]",
+                        "in": "query",
+                        "description": "Filter by one or more star ratings",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "integer"
+                            }
+                        }
+                    },
+                    {
+                        "name": "min_rating",
+                        "in": "query",
+                        "schema": {
+                            "type": "number",
+                            "example": 4
+                        }
+                    },
+                    {
+                        "name": "bedrooms",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "example": 2
+                        }
+                    },
+                    {
+                        "name": "amenities[]",
+                        "in": "query",
+                        "description": "Filter by amenities (all must match)",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    {
+                        "name": "is_featured",
+                        "in": "query",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "newest",
+                                "price_asc",
+                                "price_desc",
+                                "rating",
+                                "popular",
+                                "most_viewed"
+                            ]
                         }
                     },
                     {
                         "name": "per_page",
                         "in": "query",
-                        "description": "Items per page (default 20, max 100)",
                         "schema": {
-                            "type": "integer"
+                            "type": "integer",
+                            "example": 20
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Paginated list of properties with pricing markup applied",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": true
-                                        },
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
+                        "description": "Paginated list of properties with markup pricing applied"
                     }
                 }
             }
@@ -4239,6 +4335,489 @@
                         "description": "Property not found"
                     }
                 }
+            }
+        },
+        "/public/properties/featured": {
+            "get": {
+                "tags": [
+                    "Properties"
+                ],
+                "summary": "Get featured properties for homepage",
+                "operationId": "ec045ebeec3ce0db8d0b323bb23d5240",
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "example": 8
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Featured properties list"
+                    }
+                }
+            }
+        },
+        "/public/properties/new-arrivals": {
+            "get": {
+                "tags": [
+                    "Properties"
+                ],
+                "summary": "Get recently added properties",
+                "operationId": "c43607660215638991441c151d103661",
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "example": 8
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "New properties list"
+                    }
+                }
+            }
+        },
+        "/public/properties/top-rated": {
+            "get": {
+                "tags": [
+                    "Properties"
+                ],
+                "summary": "Get top-rated properties",
+                "operationId": "d1eb7858244fb849dfa4ed6b6e32c618",
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "example": 8
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Top-rated properties list"
+                    }
+                }
+            }
+        },
+        "/public/properties/{id}/calendar": {
+            "get": {
+                "tags": [
+                    "Properties"
+                ],
+                "summary": "Get availability calendar for a property (monthly view)",
+                "operationId": "5e4fb124afc6e43c6bd4d9fd390f9628",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "year",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "example": 2027
+                        }
+                    },
+                    {
+                        "name": "month",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "example": 6
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Monthly availability calendar"
+                    },
+                    "404": {
+                        "description": "Property not found"
+                    }
+                }
+            }
+        },
+        "/public/properties/amenities": {
+            "get": {
+                "tags": [
+                    "Properties"
+                ],
+                "summary": "Get all distinct amenities available (for filter UI)",
+                "operationId": "064e4a6bddb87e1e7c5bdc19d1b1cb83",
+                "responses": {
+                    "200": {
+                        "description": "Amenities list"
+                    }
+                }
+            }
+        },
+        "/public/properties/types": {
+            "get": {
+                "tags": [
+                    "Properties"
+                ],
+                "summary": "Get all distinct property types (for filter UI)",
+                "operationId": "a847c5225c6dbaa134c52b2f3b794e3e",
+                "responses": {
+                    "200": {
+                        "description": "Property types list"
+                    }
+                }
+            }
+        },
+        "/public/contact": {
+            "post": {
+                "tags": [
+                    "Public"
+                ],
+                "summary": "Submit a contact form",
+                "operationId": "aea4cf19d6f9fcf8aad007bf1795c75d",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "email",
+                                    "message"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "john@example.com"
+                                    },
+                                    "phone": {
+                                        "type": "string",
+                                        "example": "+1234567890"
+                                    },
+                                    "subject": {
+                                        "type": "string",
+                                        "example": "Question about my booking"
+                                    },
+                                    "message": {
+                                        "type": "string",
+                                        "example": "I need help with my reservation."
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "general",
+                                            "booking_support",
+                                            "property_issue",
+                                            "billing",
+                                            "other"
+                                        ],
+                                        "example": "general"
+                                    },
+                                    "booking_reference": {
+                                        "type": "string",
+                                        "example": "PKG-ABCD1234"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Message received"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    },
+                    "429": {
+                        "description": "Too many requests"
+                    }
+                }
+            }
+        },
+        "/public/newsletter/subscribe": {
+            "post": {
+                "tags": [
+                    "Public"
+                ],
+                "summary": "Subscribe to the newsletter",
+                "operationId": "5cc1f8b48c1d6f51bc231411113a5023",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "john@example.com"
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "John"
+                                    },
+                                    "source": {
+                                        "type": "string",
+                                        "example": "footer"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Subscribed successfully"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                }
+            }
+        },
+        "/public/newsletter/unsubscribe/{token}": {
+            "get": {
+                "tags": [
+                    "Public"
+                ],
+                "summary": "Unsubscribe from newsletter using token",
+                "operationId": "601610a4e15a343bb5e2baaf2bb84693",
+                "parameters": [
+                    {
+                        "name": "token",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Unsubscribed"
+                    },
+                    "404": {
+                        "description": "Invalid token"
+                    }
+                }
+            }
+        },
+        "/public/bookings/{bookingReference}/track": {
+            "get": {
+                "tags": [
+                    "Public"
+                ],
+                "summary": "Track a booking status (no auth required — for confirmation page)",
+                "operationId": "b200265003394bd7918fb8f95c576d94",
+                "parameters": [
+                    {
+                        "name": "bookingReference",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "PKG-ABCD1234"
+                        }
+                    },
+                    {
+                        "name": "email",
+                        "in": "query",
+                        "description": "Email used for booking",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "email"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Booking status"
+                    },
+                    "404": {
+                        "description": "Booking not found"
+                    }
+                }
+            }
+        },
+        "/public/faqs": {
+            "get": {
+                "tags": [
+                    "Public"
+                ],
+                "summary": "Get FAQ list",
+                "operationId": "0dde554a3d2c85ea73c6de4eb1267cb9",
+                "parameters": [
+                    {
+                        "name": "category",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "example": "booking"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "FAQ list"
+                    }
+                }
+            }
+        },
+        "/public/site-info": {
+            "get": {
+                "tags": [
+                    "Public"
+                ],
+                "summary": "Get site meta info — currency list, languages, property types",
+                "operationId": "04123c49bf90cf4ec96a0eb959937ea3",
+                "responses": {
+                    "200": {
+                        "description": "Site meta information"
+                    }
+                }
+            }
+        },
+        "/admin/contact-forms": {
+            "get": {
+                "tags": [
+                    "Admin - Settings"
+                ],
+                "summary": "List all contact form submissions",
+                "operationId": "c6a814aed736bbe5eb1df18fdb6ea7f9",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "new",
+                                "in_progress",
+                                "resolved"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Contact form list"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/contact-forms/{id}/reply": {
+            "put": {
+                "tags": [
+                    "Admin - Settings"
+                ],
+                "summary": "Reply to a contact form submission",
+                "operationId": "8b698ca27d3db2937767e21b4abe7741",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "reply"
+                                ],
+                                "properties": {
+                                    "reply": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Reply sent"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/newsletter-subscribers": {
+            "get": {
+                "tags": [
+                    "Admin - Settings"
+                ],
+                "summary": "List newsletter subscribers",
+                "operationId": "1d7b5c67a1d422926490f766779edf2f",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "active",
+                                "unsubscribed"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Subscriber list"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/public/reviews/{propertyCode}": {
@@ -4664,6 +5243,40 @@
                 }
             }
         },
+        "/public/search/autocomplete": {
+            "get": {
+                "tags": [
+                    "Public Search"
+                ],
+                "summary": "Location/property autocomplete for search box",
+                "operationId": "f0ec181a10f355a4b6c885e330ec9e87",
+                "parameters": [
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "description": "Search query (min 2 chars)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "mia"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Autocomplete suggestions grouped by type"
+                    }
+                }
+            }
+        },
         "/wishlist": {
             "get": {
                 "tags": [
@@ -4956,6 +5569,10 @@
         {
             "name": "Properties",
             "description": "Property details and availability"
+        },
+        {
+            "name": "Public",
+            "description": "Public website utility endpoints — contact, newsletter, booking tracker, FAQs"
         },
         {
             "name": "Reviews",
