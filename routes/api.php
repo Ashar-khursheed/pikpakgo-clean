@@ -23,6 +23,7 @@ use App\Http\Controllers\Api\Admin\AdminSettingsController;
 use App\Http\Controllers\Api\Admin\AdminBlogController;
 use App\Http\Controllers\Api\Admin\AdminSeoController;
 use App\Http\Controllers\Api\Admin\AdminUserController;
+use App\Http\Controllers\Api\Admin\AdminPropertyFeesController;
 use App\Http\Controllers\Api\Admin\DashboardController;
 use App\Http\Controllers\Api\Admin\PricingMarkupController;
 use App\Http\Controllers\Api\OwnerRezController;
@@ -284,6 +285,14 @@ Route::prefix('admin')->middleware(['auth:api', 'user.type:admin'])->group(funct
         Route::put('{id}', [AdminPropertyController::class, 'update']);
         Route::put('{id}/status', [AdminPropertyController::class, 'updateStatus']);
         Route::delete('{id}', [AdminPropertyController::class, 'destroy']);
+
+        // Property Fees (nested under properties)
+        Route::get('{propertyId}/fees', [AdminPropertyFeesController::class, 'index']);
+        Route::post('{propertyId}/fees', [AdminPropertyFeesController::class, 'store']);
+        Route::post('{propertyId}/fees/bulk', [AdminPropertyFeesController::class, 'bulkReplace']);
+        Route::get('{propertyId}/fees/preview', [AdminPropertyFeesController::class, 'preview']);
+        Route::put('{propertyId}/fees/{feeId}', [AdminPropertyFeesController::class, 'update']);
+        Route::delete('{propertyId}/fees/{feeId}', [AdminPropertyFeesController::class, 'destroy']);
     });
 
     // User Management

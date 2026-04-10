@@ -3,11 +3,16 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Mail\BookingCancellationMail;
+use App\Mail\BookingConfirmationMail;
 use App\Models\Booking;
 use App\Models\GuestSession;
+use App\Models\PropertyFee;
+use App\Models\PropertyListing;
 use App\Services\PricingMarkupService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -139,12 +144,28 @@ class BookingController extends Controller
                 'markup_percentage' => $markupData['markup_percentage'],
                 'total_price' => $markupData['final_price'],
                 'currency' => $request->currency ?? 'USD',
-                
+
                 'special_requests' => $request->special_requests,
                 'booking_status' => 'pending',
                 'payment_status' => 'pending',
                 // Provider submission happens AFTER payment is captured
                 'provider_payout_status' => 'pending',
+            ]);
+
+            // Apply property fees
+            $feeData = $this->calculatePropertyFees(
+                $request->property_code,
+                $request->base_price,
+                $nights,
+                ($request->total_adults ?? 1) + ($request->total_children ?? 0)
+            );
+            $booking->update([
+                'cleaning_fee' => $feeData['cleaning_fee'],
+                'service_fee' => $feeData['service_fee'],
+                'damage_deposit' => $feeData['damage_deposit'],
+                'other_fees' => $feeData['other_fees'],
+                'fees_breakdown' => $feeData['fees_breakdown'],
+                'total_price' => $markupData['final_price'] + $feeData['total_fees'],
             ]);
 
             // Update guest session
@@ -156,14 +177,22 @@ class BookingController extends Controller
                 'phone' => $request->holder_phone,
                 'last_activity_at' => now()
             ]);
-            
+
+            // Send confirmation email
+            try {
+                Mail::to($booking->holder_email)->queue(new BookingConfirmationMail($booking->fresh()));
+            } catch (\Exception $e) {
+                Log::warning('Failed to send guest booking confirmation email: ' . $e->getMessage());
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Booking created successfully',
                 'data' => [
                     'booking' => $booking->fresh(),
                     'booking_reference' => $bookingReference,
-                    'verification_email_sent' => true
+                    'fees_breakdown' => $feeData['fees_breakdown'],
+                    'confirmation_email_sent' => true
                 ]
             ], 201);
             
@@ -277,7 +306,7 @@ class BookingController extends Controller
                 'markup_percentage' => $markupData['markup_percentage'],
                 'total_price' => $markupData['final_price'],
                 'currency' => $request->currency ?? 'USD',
-                
+
                 'special_requests' => $request->special_requests,
                 'booking_status' => 'pending',
                 'payment_status' => 'pending',
@@ -285,12 +314,36 @@ class BookingController extends Controller
                 'provider_payout_status' => 'pending',
             ]);
 
+            // Apply property fees
+            $feeData = $this->calculatePropertyFees(
+                $request->property_code,
+                $request->base_price,
+                $nights,
+                ($request->total_adults ?? 1) + ($request->total_children ?? 0)
+            );
+            $booking->update([
+                'cleaning_fee' => $feeData['cleaning_fee'],
+                'service_fee' => $feeData['service_fee'],
+                'damage_deposit' => $feeData['damage_deposit'],
+                'other_fees' => $feeData['other_fees'],
+                'fees_breakdown' => $feeData['fees_breakdown'],
+                'total_price' => $markupData['final_price'] + $feeData['total_fees'],
+            ]);
+
+            // Send confirmation email
+            try {
+                Mail::to($user->email)->queue(new BookingConfirmationMail($booking->fresh()));
+            } catch (\Exception $e) {
+                Log::warning('Failed to send booking confirmation email: ' . $e->getMessage());
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Booking created successfully',
                 'data' => [
                     'booking' => $booking->fresh(),
-                    'booking_reference' => $bookingReference
+                    'booking_reference' => $bookingReference,
+                    'fees_breakdown' => $feeData['fees_breakdown'],
                 ]
             ], 201);
             
@@ -480,13 +533,20 @@ class BookingController extends Controller
                 'cancelled_by' => 'guest',
                 'cancellation_reason' => $request->reason
             ]);
-            
+
+            $refundAmount = $booking->is_refundable ? (float) $booking->paid_amount : 0;
+            try {
+                Mail::to($booking->holder_email)->queue(new BookingCancellationMail($booking->fresh(), $refundAmount));
+            } catch (\Exception $e) {
+                Log::warning('Failed to send guest cancellation email: ' . $e->getMessage());
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Booking cancelled successfully',
                 'data' => $booking
             ]);
-            
+
         } catch (\Exception $e) {
             Log::error('Cancel guest booking error: ' . $e->getMessage());
             
@@ -539,13 +599,20 @@ class BookingController extends Controller
                 'cancelled_by' => 'user',
                 'cancellation_reason' => $request->reason
             ]);
-            
+
+            $refundAmount = $booking->is_refundable ? (float) $booking->paid_amount : 0;
+            try {
+                Mail::to($booking->holder_email)->queue(new BookingCancellationMail($booking->fresh(), $refundAmount));
+            } catch (\Exception $e) {
+                Log::warning('Failed to send cancellation email: ' . $e->getMessage());
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Booking cancelled successfully',
                 'data' => $booking
             ]);
-            
+
         } catch (\Exception $e) {
             Log::error('Cancel booking error: ' . $e->getMessage());
             
@@ -602,6 +669,55 @@ class BookingController extends Controller
                 'message' => 'An error occurred'
             ], 500);
         }
+    }
+
+    /**
+     * Calculate fees for a property listing
+     */
+    private function calculatePropertyFees(string $propertyCode, float $basePrice, int $nights, int $guests): array
+    {
+        $listing = PropertyListing::where('provider_property_id', $propertyCode)->first();
+        if (!$listing) {
+            return ['cleaning_fee' => 0, 'service_fee' => 0, 'damage_deposit' => 0, 'other_fees' => [], 'fees_breakdown' => [], 'total_fees' => 0];
+        }
+
+        $fees = PropertyFee::where('property_listing_id', $listing->id)->active()->get();
+
+        $cleaningFee = 0;
+        $serviceFee = 0;
+        $damageDeposit = 0;
+        $otherFees = [];
+        $breakdown = [];
+
+        foreach ($fees as $fee) {
+            $amount = $fee->calculate($basePrice, $nights, $guests);
+            $breakdown[] = [
+                'fee_type' => $fee->fee_type,
+                'fee_name' => $fee->fee_name,
+                'amount' => $amount,
+                'amount_type' => $fee->amount_type,
+                'applies_to' => $fee->applies_to,
+                'is_mandatory' => $fee->is_mandatory,
+            ];
+
+            match ($fee->fee_type) {
+                'cleaning_fee' => $cleaningFee += $amount,
+                'service_fee' => $serviceFee += $amount,
+                'damage_deposit' => $damageDeposit += $amount,
+                default => $otherFees[] = ['name' => $fee->fee_name, 'amount' => $amount, 'type' => $fee->fee_type],
+            };
+        }
+
+        $otherTotal = array_sum(array_column($otherFees, 'amount'));
+
+        return [
+            'cleaning_fee' => $cleaningFee,
+            'service_fee' => $serviceFee,
+            'damage_deposit' => $damageDeposit,
+            'other_fees' => $otherFees,
+            'fees_breakdown' => $breakdown,
+            'total_fees' => $cleaningFee + $serviceFee + $otherTotal,
+        ];
     }
 
     /**

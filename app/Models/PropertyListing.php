@@ -83,6 +83,11 @@ class PropertyListing extends Model
         return $this->hasMany(Booking::class, 'property_code', 'provider_property_id');
     }
 
+    public function fees()
+    {
+        return $this->hasMany(PropertyFee::class);
+    }
+
     /**
      * Scope for active properties
      */

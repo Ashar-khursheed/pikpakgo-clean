@@ -2043,6 +2043,376 @@
                 ]
             }
         },
+        "/admin/properties/{propertyId}/fees": {
+            "get": {
+                "tags": [
+                    "Admin Property Fees"
+                ],
+                "summary": "List all fees for a property",
+                "operationId": "f4527eb8edfe8da844d2195d3e20937c",
+                "parameters": [
+                    {
+                        "name": "propertyId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Property fees list"
+                    },
+                    "404": {
+                        "description": "Property not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Admin Property Fees"
+                ],
+                "summary": "Add a fee to a property",
+                "operationId": "127df41df7763e849e6e78700bec76a4",
+                "parameters": [
+                    {
+                        "name": "propertyId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "fee_type",
+                                    "fee_name",
+                                    "amount"
+                                ],
+                                "properties": {
+                                    "fee_type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "cleaning_fee",
+                                            "service_fee",
+                                            "city_tax",
+                                            "damage_deposit",
+                                            "other"
+                                        ],
+                                        "example": "cleaning_fee"
+                                    },
+                                    "fee_name": {
+                                        "type": "string",
+                                        "example": "Cleaning Fee"
+                                    },
+                                    "amount": {
+                                        "type": "number",
+                                        "example": 75
+                                    },
+                                    "amount_type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "fixed",
+                                            "percentage"
+                                        ],
+                                        "example": "fixed"
+                                    },
+                                    "applies_to": {
+                                        "type": "string",
+                                        "enum": [
+                                            "per_stay",
+                                            "per_night",
+                                            "per_guest"
+                                        ],
+                                        "example": "per_stay"
+                                    },
+                                    "is_mandatory": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "is_taxable": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "is_active": {
+                                        "type": "boolean",
+                                        "example": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Fee created"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/properties/{propertyId}/fees/{feeId}": {
+            "put": {
+                "tags": [
+                    "Admin Property Fees"
+                ],
+                "summary": "Update a property fee",
+                "operationId": "8b65681c0e5d6a2ca0a00f0f82d27ce3",
+                "parameters": [
+                    {
+                        "name": "propertyId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "feeId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "fee_name": {
+                                        "type": "string"
+                                    },
+                                    "amount": {
+                                        "type": "number"
+                                    },
+                                    "amount_type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "fixed",
+                                            "percentage"
+                                        ]
+                                    },
+                                    "applies_to": {
+                                        "type": "string",
+                                        "enum": [
+                                            "per_stay",
+                                            "per_night",
+                                            "per_guest"
+                                        ]
+                                    },
+                                    "is_mandatory": {
+                                        "type": "boolean"
+                                    },
+                                    "is_taxable": {
+                                        "type": "boolean"
+                                    },
+                                    "is_active": {
+                                        "type": "boolean"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Fee updated"
+                    },
+                    "404": {
+                        "description": "Fee not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Admin Property Fees"
+                ],
+                "summary": "Delete a property fee",
+                "operationId": "13e87f03778c0b11707d3ddb7c6d386d",
+                "parameters": [
+                    {
+                        "name": "propertyId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "feeId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Fee deleted"
+                    },
+                    "404": {
+                        "description": "Fee not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/properties/{propertyId}/fees/bulk": {
+            "post": {
+                "tags": [
+                    "Admin Property Fees"
+                ],
+                "summary": "Bulk replace all fees for a property",
+                "operationId": "cca6c0272d76be817f7fe545d34ed783",
+                "parameters": [
+                    {
+                        "name": "propertyId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "fees"
+                                ],
+                                "properties": {
+                                    "fees": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "fee_type": {
+                                                    "type": "string"
+                                                },
+                                                "fee_name": {
+                                                    "type": "string"
+                                                },
+                                                "amount": {
+                                                    "type": "number"
+                                                },
+                                                "amount_type": {
+                                                    "type": "string"
+                                                },
+                                                "applies_to": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Fees replaced"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/properties/{propertyId}/fees/preview": {
+            "get": {
+                "tags": [
+                    "Admin Property Fees"
+                ],
+                "summary": "Preview fee calculation for a booking",
+                "operationId": "8d0e6a1f699e1d86841449e9923829b7",
+                "parameters": [
+                    {
+                        "name": "propertyId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "base_price",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "name": "nights",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "example": 3
+                        }
+                    },
+                    {
+                        "name": "guests",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "example": 2
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Fee preview with totals"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/admin/reviews": {
             "get": {
                 "tags": [
@@ -7811,7 +8181,7 @@
                     "Public Search"
                 ],
                 "summary": "Search vacation rentals (PUBLIC - No Auth Required)",
-                "description": "Search for vacation rentals from OwnerRez API with markup pricing",
+                "description": "Search for vacation rentals from OwnerRez API with markup pricing and advanced filters",
                 "operationId": "df1b0b35e7a45c415b73d753169e8901",
                 "requestBody": {
                     "required": true,
@@ -7842,12 +8212,66 @@
                                         "example": 2
                                     },
                                     "bedrooms": {
+                                        "description": "Minimum bedrooms",
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "bathrooms": {
+                                        "description": "Minimum bathrooms",
                                         "type": "integer",
                                         "example": 1
                                     },
                                     "propertyType": {
                                         "type": "string",
                                         "example": "apartment"
+                                    },
+                                    "minPrice": {
+                                        "type": "number",
+                                        "example": 50
+                                    },
+                                    "maxPrice": {
+                                        "type": "number",
+                                        "example": 500
+                                    },
+                                    "amenities": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "example": [
+                                            "wifi",
+                                            "pool"
+                                        ]
+                                    },
+                                    "instantBook": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "lat": {
+                                        "type": "number",
+                                        "example": 25.7617
+                                    },
+                                    "lng": {
+                                        "type": "number",
+                                        "example": -80.1918
+                                    },
+                                    "radius_km": {
+                                        "type": "number",
+                                        "example": 25
+                                    },
+                                    "sort": {
+                                        "type": "string",
+                                        "enum": [
+                                            "price_asc",
+                                            "price_desc",
+                                            "rating",
+                                            "featured"
+                                        ],
+                                        "example": "featured"
+                                    },
+                                    "per_page": {
+                                        "type": "integer",
+                                        "example": 12
                                     }
                                 },
                                 "type": "object"
@@ -8211,6 +8635,10 @@
         {
             "name": "Admin - Properties",
             "description": "Admin property management endpoints"
+        },
+        {
+            "name": "Admin Property Fees",
+            "description": "Manage cleaning fees, service fees, taxes, and damage deposits per property"
         },
         {
             "name": "Admin - Reviews",

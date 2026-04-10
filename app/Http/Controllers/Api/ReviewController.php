@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Booking;
 use App\Models\Review;
 use Illuminate\Http\Request;
 
@@ -29,6 +30,7 @@ class ReviewController extends Controller
         $reviews = Review::with('user:id,first_name,last_name')
             ->where('property_code', $propertyCode)
             ->where('status', 'approved')
+            ->orderByDesc('is_verified')
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
@@ -36,12 +38,18 @@ class ReviewController extends Controller
             ->where('status', 'approved')
             ->avg('rating');
 
+        $verifiedCount = Review::where('property_code', $propertyCode)
+            ->where('status', 'approved')
+            ->where('is_verified', true)
+            ->count();
+
         return response()->json([
             'success' => true,
             'data'    => [
-                'reviews'        => $reviews,
-                'average_rating' => $avg ? round($avg, 1) : null,
-                'total_reviews'  => $reviews->total(),
+                'reviews'         => $reviews,
+                'average_rating'  => $avg ? round($avg, 1) : null,
+                'total_reviews'   => $reviews->total(),
+                'verified_reviews' => $verifiedCount,
             ],
         ]);
     }
@@ -90,6 +98,21 @@ class ReviewController extends Controller
 
         $userId = auth()->id();
 
+        // Check if user has a completed booking for this property (verified review)
+        $completedBooking = Booking::where('user_id', $userId)
+            ->where('property_code', $validated['property_code'])
+            ->where('booking_status', 'confirmed')
+            ->where('check_out_date', '<', now()->toDateString())
+            ->orderByDesc('check_out_date')
+            ->first();
+
+        if (!$completedBooking) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You can only review properties where you have completed a stay.',
+            ], 403);
+        }
+
         // Prevent duplicate review for same property
         $existing = Review::where('user_id', $userId)
             ->where('property_code', $validated['property_code'])
@@ -103,8 +126,11 @@ class ReviewController extends Controller
         }
 
         $review = Review::create(array_merge($validated, [
-            'user_id' => $userId,
-            'status'  => 'pending',
+            'user_id'           => $userId,
+            'booking_id'        => $completedBooking->id,
+            'booking_reference' => $validated['booking_reference'] ?? $completedBooking->booking_reference,
+            'status'            => 'pending',
+            'is_verified'       => true,
         ]));
 
         return response()->json([

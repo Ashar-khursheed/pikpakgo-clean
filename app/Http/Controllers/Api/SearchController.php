@@ -61,7 +61,7 @@ class SearchController extends Controller
      * @OA\Post(
      *     path="/public/search/properties",
      *     summary="Search vacation rentals (PUBLIC - No Auth Required)",
-     *     description="Search for vacation rentals from OwnerRez API with markup pricing",
+     *     description="Search for vacation rentals from OwnerRez API with markup pricing and advanced filters",
      *     tags={"Public Search"},
      *     @OA\RequestBody(
      *         required=true,
@@ -71,8 +71,18 @@ class SearchController extends Controller
      *             @OA\Property(property="checkOut", type="string", format="date", example="2027-01-25"),
      *             @OA\Property(property="location", type="string", example="Miami"),
      *             @OA\Property(property="guests", type="integer", example=2),
-     *             @OA\Property(property="bedrooms", type="integer", example=1),
-     *             @OA\Property(property="propertyType", type="string", example="apartment")
+     *             @OA\Property(property="bedrooms", type="integer", example=2, description="Minimum bedrooms"),
+     *             @OA\Property(property="bathrooms", type="integer", example=1, description="Minimum bathrooms"),
+     *             @OA\Property(property="propertyType", type="string", example="apartment"),
+     *             @OA\Property(property="minPrice", type="number", example=50),
+     *             @OA\Property(property="maxPrice", type="number", example=500),
+     *             @OA\Property(property="amenities", type="array", @OA\Items(type="string"), example={"wifi","pool"}),
+     *             @OA\Property(property="instantBook", type="boolean", example=false),
+     *             @OA\Property(property="lat", type="number", example=25.7617),
+     *             @OA\Property(property="lng", type="number", example=-80.1918),
+     *             @OA\Property(property="radius_km", type="number", example=25),
+     *             @OA\Property(property="sort", type="string", enum={"price_asc","price_desc","rating","featured"}, example="featured"),
+     *             @OA\Property(property="per_page", type="integer", example=12)
      *         )
      *     ),
      *     @OA\Response(response=200, description="Successful search")
@@ -89,51 +99,114 @@ class SearchController extends Controller
         $request->merge($input);
 
         $validator = Validator::make($request->all(), [
-            'checkIn' => 'required|date|after_or_equal:today',
-            'checkOut' => 'required|date|after:checkIn',
-            'location' => 'nullable|string',
-            'guests' => 'nullable|integer|min:1',
-            'bedrooms' => 'nullable|integer|min:1',
-            'bathrooms' => 'nullable|integer|min:1',
+            'checkIn'      => 'required|date|after_or_equal:today',
+            'checkOut'     => 'required|date|after:checkIn',
+            'location'     => 'nullable|string',
+            'guests'       => 'nullable|integer|min:1',
+            'bedrooms'     => 'nullable|integer|min:1',
+            'bathrooms'    => 'nullable|integer|min:1',
             'propertyType' => 'nullable|string',
-            'minPrice' => 'nullable|numeric|min:0',
-            'maxPrice' => 'nullable|numeric|min:0',
-            'amenities' => 'nullable|array'
+            'minPrice'     => 'nullable|numeric|min:0',
+            'maxPrice'     => 'nullable|numeric|min:0',
+            'amenities'    => 'nullable|array',
+            'amenities.*'  => 'string',
+            'instantBook'  => 'nullable|boolean',
+            'lat'          => 'nullable|numeric|between:-90,90',
+            'lng'          => 'nullable|numeric|between:-180,180',
+            'radius_km'    => 'nullable|numeric|min:1|max:500',
+            'sort'         => 'nullable|string|in:price_asc,price_desc,rating,featured',
+            'per_page'     => 'nullable|integer|min:1|max:50',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Validation error',
-                'errors' => $validator->errors()
+                'errors'  => $validator->errors()
             ], 400);
         }
 
-        // For direct properties: search our local DB
-        $location   = $request->location;
-        $checkIn    = $request->checkIn;
-        $checkOut   = $request->checkOut;
-        $guests     = (int)($request->guests ?? 1);
-        $minPrice   = $request->minPrice;
-        $maxPrice   = $request->maxPrice;
+        $location  = $request->location;
+        $minPrice  = $request->minPrice;
+        $maxPrice  = $request->maxPrice;
+        $perPage   = (int) ($request->per_page ?? 12);
+        $sort      = $request->sort ?? 'featured';
 
-        $query = \App\Models\PropertyListing::where('is_active', true)
+        $query = PropertyListing::where('is_active', true)
+
+            // Location text search
             ->when($location, fn($q) => $q->where(fn($q2) => $q2
                 ->where('city', 'like', "%{$location}%")
                 ->orWhere('state', 'like', "%{$location}%")
                 ->orWhere('country', 'like', "%{$location}%")
                 ->orWhere('name', 'like', "%{$location}%")
             ))
+
+            // Map-based bounding box (lat/lng + radius in km using Haversine)
+            ->when($request->lat && $request->lng, function ($q) use ($request) {
+                $lat    = (float) $request->lat;
+                $lng    = (float) $request->lng;
+                $radius = (float) ($request->radius_km ?? 25);
+                // Haversine formula via raw SQL
+                $q->whereRaw(
+                    '(6371 * acos(cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude)))) <= ?',
+                    [$lat, $lng, $lat, $radius]
+                )->whereNotNull('latitude')->whereNotNull('longitude');
+            })
+
+            // Price range
             ->when($minPrice, fn($q) => $q->where('price_from', '>=', $minPrice))
             ->when($maxPrice, fn($q) => $q->where('price_from', '<=', $maxPrice))
+
+            // Property type
             ->when($request->propertyType, fn($q) => $q->where('property_type', $request->propertyType))
-            ->when($guests, fn($q) => $q->where('total_rooms', '>=', 1));
 
-        $properties = $query->orderBy('is_featured', 'desc')
-            ->orderByDesc('rating_average')
-            ->paginate(12);
+            // Bedrooms filter
+            ->when($request->bedrooms, fn($q) => $q->where('bedrooms', '>=', (int) $request->bedrooms))
 
-        return response()->json(['success' => true, 'data' => $properties]);
+            // Bathrooms filter
+            ->when($request->bathrooms, fn($q) => $q->where('bathrooms', '>=', (int) $request->bathrooms))
+
+            // Guests capacity
+            ->when($request->guests, fn($q) => $q->where('max_guests', '>=', (int) $request->guests))
+
+            // Instant book
+            ->when($request->instantBook, fn($q) => $q->where('instant_book', true))
+
+            // Amenities filter (each amenity must be present in the JSON column)
+            ->when($request->amenities, function ($q) use ($request) {
+                foreach ($request->amenities as $amenity) {
+                    $q->whereJsonContains('amenities', $amenity);
+                }
+            });
+
+        // Sorting
+        match ($sort) {
+            'price_asc'  => $query->orderBy('price_from', 'asc'),
+            'price_desc' => $query->orderBy('price_from', 'desc'),
+            'rating'     => $query->orderByDesc('rating_average'),
+            default      => $query->orderByDesc('is_featured')->orderByDesc('rating_average'),
+        };
+
+        $properties = $query->paginate($perPage);
+
+        return response()->json([
+            'success' => true,
+            'data'    => $properties,
+            'filters' => [
+                'location'     => $location,
+                'checkIn'      => $request->checkIn,
+                'checkOut'     => $request->checkOut,
+                'guests'       => $request->guests,
+                'bedrooms'     => $request->bedrooms,
+                'bathrooms'    => $request->bathrooms,
+                'propertyType' => $request->propertyType,
+                'minPrice'     => $minPrice,
+                'maxPrice'     => $maxPrice,
+                'amenities'    => $request->amenities,
+                'sort'         => $sort,
+            ],
+        ]);
     }
     
     /**
