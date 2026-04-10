@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\BlogController;
 use App\Http\Controllers\Api\ContentController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ProfileController;
@@ -19,6 +20,7 @@ use App\Http\Controllers\Api\Admin\AdminContentController;
 use App\Http\Controllers\Api\Admin\AdminPropertyController;
 use App\Http\Controllers\Api\Admin\AdminReviewController;
 use App\Http\Controllers\Api\Admin\AdminSettingsController;
+use App\Http\Controllers\Api\Admin\AdminBlogController;
 use App\Http\Controllers\Api\Admin\AdminSeoController;
 use App\Http\Controllers\Api\Admin\AdminUserController;
 use App\Http\Controllers\Api\Admin\DashboardController;
@@ -95,6 +97,17 @@ Route::prefix('public')->group(function () {
     Route::prefix('seo')->group(function () {
         Route::get('/',                         [ContentController::class, 'getSeo']);          // ?path=/about-us OR ?slug=about-us
         Route::get('property/{propertyCode}',   [ContentController::class, 'getPropertySeo']); // auto-generated property SEO
+    });
+
+    // Public Blog
+    Route::prefix('blog')->group(function () {
+        Route::get('posts',                  [BlogController::class, 'index']);
+        Route::get('posts/{slug}',           [BlogController::class, 'show']);
+        Route::get('categories',             [BlogController::class, 'categories']);
+        Route::get('categories/{slug}',      [BlogController::class, 'categoryShow']);
+        Route::get('featured',               [BlogController::class, 'featured']);
+        Route::get('recent',                 [BlogController::class, 'recent']);
+        Route::get('tags',                   [BlogController::class, 'tags']);
     });
 
     // Public settings (site name, currency, etc.)
@@ -314,6 +327,25 @@ Route::prefix('admin')->middleware(['auth:api', 'user.type:admin'])->group(funct
         Route::put('{id}',           [AdminContentController::class, 'update']);
         Route::delete('{id}',        [AdminContentController::class, 'destroy']);
         Route::put('{id}/restore',   [AdminContentController::class, 'restore']);
+    });
+
+    // Blog Management
+    Route::prefix('blog')->group(function () {
+        // Categories
+        Route::get('categories',                    [AdminBlogController::class, 'categoryIndex']);
+        Route::post('categories',                   [AdminBlogController::class, 'categoryStore']);
+        Route::get('categories/{id}',               [AdminBlogController::class, 'categoryShow']);
+        Route::put('categories/{id}',               [AdminBlogController::class, 'categoryUpdate']);
+        Route::delete('categories/{id}',            [AdminBlogController::class, 'categoryDestroy']);
+        // Posts
+        Route::get('posts',                         [AdminBlogController::class, 'postIndex']);
+        Route::post('posts',                        [AdminBlogController::class, 'postStore']);
+        Route::get('posts/{id}',                    [AdminBlogController::class, 'postShow']);
+        Route::put('posts/{id}',                    [AdminBlogController::class, 'postUpdate']);
+        Route::delete('posts/{id}',                 [AdminBlogController::class, 'postDestroy']);
+        Route::put('posts/{id}/restore',            [AdminBlogController::class, 'postRestore']);
+        Route::put('posts/{id}/status',             [AdminBlogController::class, 'postUpdateStatus']);
+        Route::put('posts/{id}/toggle-featured',    [AdminBlogController::class, 'postToggleFeatured']);
     });
 
     // SEO Management — per-route SEO configs

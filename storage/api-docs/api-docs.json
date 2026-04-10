@@ -23,6 +23,742 @@
         }
     ],
     "paths": {
+        "/admin/blog/categories": {
+            "get": {
+                "tags": [
+                    "Admin - Blog"
+                ],
+                "summary": "List all blog categories",
+                "operationId": "aa54c609faa184ecdb781bb8421d5e22",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "is_active",
+                        "in": "query",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Category list with post counts"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Admin - Blog"
+                ],
+                "summary": "Create a blog category",
+                "operationId": "25953b2d8a270c26f6b7c070b6696a23",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Travel Tips"
+                                    },
+                                    "slug": {
+                                        "description": "Auto-generated from name if omitted",
+                                        "type": "string",
+                                        "example": "travel-tips"
+                                    },
+                                    "description": {
+                                        "type": "string"
+                                    },
+                                    "featured_image": {
+                                        "type": "string"
+                                    },
+                                    "color": {
+                                        "type": "string",
+                                        "example": "#3B82F6"
+                                    },
+                                    "sort_order": {
+                                        "type": "integer",
+                                        "example": 0
+                                    },
+                                    "is_active": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "meta_title": {
+                                        "type": "string"
+                                    },
+                                    "meta_description": {
+                                        "type": "string"
+                                    },
+                                    "og_image": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Category created"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/blog/categories/{id}": {
+            "get": {
+                "tags": [
+                    "Admin - Blog"
+                ],
+                "summary": "Get a single blog category",
+                "operationId": "f782fe0e0bf5fe157ec5129f72ead53b",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Category details"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Admin - Blog"
+                ],
+                "summary": "Update a blog category",
+                "operationId": "db29ac41803d658e6660a26916dbbad7",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "description": {
+                                        "type": "string"
+                                    },
+                                    "featured_image": {
+                                        "type": "string"
+                                    },
+                                    "color": {
+                                        "type": "string"
+                                    },
+                                    "sort_order": {
+                                        "type": "integer"
+                                    },
+                                    "is_active": {
+                                        "type": "boolean"
+                                    },
+                                    "meta_title": {
+                                        "type": "string"
+                                    },
+                                    "meta_description": {
+                                        "type": "string"
+                                    },
+                                    "og_image": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Category updated"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Admin - Blog"
+                ],
+                "summary": "Delete a blog category",
+                "operationId": "d40db32c213e5eeeb380b2097e23971f",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Deleted"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/blog/posts": {
+            "get": {
+                "tags": [
+                    "Admin - Blog"
+                ],
+                "summary": "List all blog posts (admin view — includes drafts)",
+                "operationId": "6d17ece1990b066e05a49f0506457e32",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "draft",
+                                "published",
+                                "scheduled",
+                                "archived"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "blog_category_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "is_featured",
+                        "in": "query",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "example": 20
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated post list"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Admin - Blog"
+                ],
+                "summary": "Create a blog post",
+                "operationId": "999be1d235dcac098a5382b0601d7cd9",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "title"
+                                ],
+                                "properties": {
+                                    "title": {
+                                        "type": "string",
+                                        "example": "Top 10 Beach Destinations for 2027"
+                                    },
+                                    "slug": {
+                                        "description": "Auto-generated if omitted",
+                                        "type": "string",
+                                        "example": "top-10-beach-destinations-2027"
+                                    },
+                                    "blog_category_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "excerpt": {
+                                        "type": "string",
+                                        "example": "Discover the world's most beautiful beaches…"
+                                    },
+                                    "content": {
+                                        "description": "Full HTML or Markdown content",
+                                        "type": "string"
+                                    },
+                                    "featured_image": {
+                                        "type": "string"
+                                    },
+                                    "gallery": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "tags": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "example": [
+                                            "beach",
+                                            "travel",
+                                            "2027"
+                                        ]
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "draft",
+                                            "published",
+                                            "scheduled",
+                                            "archived"
+                                        ],
+                                        "example": "draft"
+                                    },
+                                    "published_at": {
+                                        "description": "Required when status=scheduled",
+                                        "type": "string",
+                                        "format": "date-time"
+                                    },
+                                    "is_featured": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "allow_comments": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "meta_title": {
+                                        "description": "Defaults to post title",
+                                        "type": "string"
+                                    },
+                                    "meta_description": {
+                                        "description": "Defaults to excerpt",
+                                        "type": "string"
+                                    },
+                                    "og_title": {
+                                        "type": "string"
+                                    },
+                                    "og_description": {
+                                        "type": "string"
+                                    },
+                                    "og_image": {
+                                        "description": "Defaults to featured_image",
+                                        "type": "string"
+                                    },
+                                    "twitter_title": {
+                                        "type": "string"
+                                    },
+                                    "twitter_description": {
+                                        "type": "string"
+                                    },
+                                    "twitter_image": {
+                                        "type": "string"
+                                    },
+                                    "canonical_url": {
+                                        "type": "string"
+                                    },
+                                    "no_index": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "schema_markup": {
+                                        "description": "Custom JSON-LD — auto-generates BlogPosting schema if omitted",
+                                        "type": "object"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Post created"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/blog/posts/{id}": {
+            "get": {
+                "tags": [
+                    "Admin - Blog"
+                ],
+                "summary": "Get a single blog post (full detail with SEO)",
+                "operationId": "a1eaf6dce9754951803315b91e771e62",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Post detail with resolved SEO block"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Admin - Blog"
+                ],
+                "summary": "Update a blog post",
+                "operationId": "a2c602a9298592f8ee2897251de25463",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "title": {
+                                        "type": "string"
+                                    },
+                                    "blog_category_id": {
+                                        "type": "integer"
+                                    },
+                                    "excerpt": {
+                                        "type": "string"
+                                    },
+                                    "content": {
+                                        "type": "string"
+                                    },
+                                    "featured_image": {
+                                        "type": "string"
+                                    },
+                                    "gallery": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "tags": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "draft",
+                                            "published",
+                                            "scheduled",
+                                            "archived"
+                                        ]
+                                    },
+                                    "published_at": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                    },
+                                    "is_featured": {
+                                        "type": "boolean"
+                                    },
+                                    "allow_comments": {
+                                        "type": "boolean"
+                                    },
+                                    "meta_title": {
+                                        "type": "string"
+                                    },
+                                    "meta_description": {
+                                        "type": "string"
+                                    },
+                                    "og_title": {
+                                        "type": "string"
+                                    },
+                                    "og_description": {
+                                        "type": "string"
+                                    },
+                                    "og_image": {
+                                        "type": "string"
+                                    },
+                                    "twitter_title": {
+                                        "type": "string"
+                                    },
+                                    "twitter_description": {
+                                        "type": "string"
+                                    },
+                                    "twitter_image": {
+                                        "type": "string"
+                                    },
+                                    "canonical_url": {
+                                        "type": "string"
+                                    },
+                                    "no_index": {
+                                        "type": "boolean"
+                                    },
+                                    "schema_markup": {
+                                        "type": "object"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Post updated"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Admin - Blog"
+                ],
+                "summary": "Soft-delete a blog post",
+                "operationId": "85f02de262659803da3b73de861a275b",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Post deleted"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/blog/posts/{id}/restore": {
+            "put": {
+                "tags": [
+                    "Admin - Blog"
+                ],
+                "summary": "Restore a soft-deleted blog post",
+                "operationId": "d863bdc7bf97731f51673e663bd2d2e1",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Post restored"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/blog/posts/{id}/toggle-featured": {
+            "put": {
+                "tags": [
+                    "Admin - Blog"
+                ],
+                "summary": "Toggle featured status of a post",
+                "operationId": "c564302c77cdec9c02f54954e33f5193",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Featured status toggled"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/blog/posts/{id}/status": {
+            "put": {
+                "tags": [
+                    "Admin - Blog"
+                ],
+                "summary": "Update post publish status",
+                "operationId": "1747576953908dc5be1e60e8eb02ce55",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "status"
+                                ],
+                                "properties": {
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "draft",
+                                            "published",
+                                            "scheduled",
+                                            "archived"
+                                        ]
+                                    },
+                                    "published_at": {
+                                        "description": "Required when status=scheduled",
+                                        "type": "string",
+                                        "format": "date-time"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Status updated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/admin/bookings": {
             "get": {
                 "tags": [
@@ -1511,23 +2247,17 @@
                 "operationId": "3820f7d1b2aa4f982b3cbab2e0f4fb85",
                 "parameters": [
                     {
-                        "name": "type",
+                        "name": "group",
                         "in": "query",
-                        "description": "Filter: seo|page|all (default: all)",
+                        "description": "Filter by group: Core|Search|Booking|Account|Blog|Dynamic",
                         "schema": {
-                            "type": "string",
-                            "enum": [
-                                "seo",
-                                "page",
-                                "all"
-                            ],
-                            "example": "all"
+                            "type": "string"
                         }
                     },
                     {
                         "name": "search",
                         "in": "query",
-                        "description": "Search by slug or title",
+                        "description": "Search by slug, label or meta_title",
                         "schema": {
                             "type": "string"
                         }
@@ -1537,13 +2267,13 @@
                         "in": "query",
                         "schema": {
                             "type": "integer",
-                            "example": 20
+                            "example": 50
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Paginated SEO list"
+                        "description": "Paginated SEO config list"
                     }
                 },
                 "security": [
@@ -1556,7 +2286,7 @@
                 "tags": [
                     "Admin - SEO"
                 ],
-                "summary": "Create an SEO configuration for a route",
+                "summary": "Create / set SEO for a route",
                 "operationId": "897df2503ae4a59cbe8f9c36c2ea60cd",
                 "requestBody": {
                     "required": true,
@@ -1564,18 +2294,36 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "slug",
-                                    "title"
+                                    "route_slug",
+                                    "meta_title"
                                 ],
                                 "properties": {
-                                    "slug": {
-                                        "description": "Route identifier — use the page slug or a custom key",
+                                    "route_slug": {
+                                        "description": "Route key — must match predefined slugs or any custom key",
                                         "type": "string",
                                         "example": "home"
                                     },
-                                    "title": {
+                                    "route_path": {
+                                        "description": "Frontend URL path",
                                         "type": "string",
-                                        "example": "PikPakGo — Vacation Rentals & Hotels"
+                                        "example": "/"
+                                    },
+                                    "route_label": {
+                                        "type": "string",
+                                        "example": "Homepage"
+                                    },
+                                    "route_group": {
+                                        "type": "string",
+                                        "enum": [
+                                            "Core",
+                                            "Search",
+                                            "Booking",
+                                            "Account",
+                                            "Blog",
+                                            "Dynamic",
+                                            "General"
+                                        ],
+                                        "example": "Core"
                                     },
                                     "meta_title": {
                                         "type": "string",
@@ -1586,8 +2334,7 @@
                                         "example": "Find the best vacation rentals and hotels worldwide."
                                     },
                                     "og_title": {
-                                        "type": "string",
-                                        "example": "PikPakGo"
+                                        "type": "string"
                                     },
                                     "og_description": {
                                         "type": "string"
@@ -1595,6 +2342,23 @@
                                     "og_image": {
                                         "type": "string",
                                         "example": "https://cdn.pikpakgo.com/og-default.jpg"
+                                    },
+                                    "twitter_card": {
+                                        "type": "string",
+                                        "enum": [
+                                            "summary",
+                                            "summary_large_image"
+                                        ],
+                                        "example": "summary_large_image"
+                                    },
+                                    "twitter_title": {
+                                        "type": "string"
+                                    },
+                                    "twitter_description": {
+                                        "type": "string"
+                                    },
+                                    "twitter_image": {
+                                        "type": "string"
                                     },
                                     "canonical_url": {
                                         "type": "string",
@@ -1604,8 +2368,12 @@
                                         "type": "boolean",
                                         "example": false
                                     },
+                                    "no_follow": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
                                     "schema_markup": {
-                                        "description": "JSON-LD structured data object",
+                                        "description": "Custom JSON-LD — leave null to auto-generate",
                                         "type": "object"
                                     },
                                     "is_active": {
@@ -1623,7 +2391,7 @@
                         "description": "SEO config created"
                     },
                     "422": {
-                        "description": "Validation error or slug already exists"
+                        "description": "Validation error"
                     }
                 },
                 "security": [
@@ -1638,11 +2406,12 @@
                 "tags": [
                     "Admin - SEO"
                 ],
-                "summary": "List predefined application routes for SEO management",
+                "summary": "All predefined app routes with current SEO status",
+                "description": "Returns every page of the application grouped by section. Each entry shows whether SEO has been configured or is still missing (seo_config: null).",
                 "operationId": "52e7dda7a19f456251cb3f84c81fef7a",
                 "responses": {
                     "200": {
-                        "description": "Predefined routes with their current SEO status"
+                        "description": "Route list with SEO status"
                     }
                 },
                 "security": [
@@ -1657,7 +2426,7 @@
                 "tags": [
                     "Admin - SEO"
                 ],
-                "summary": "Get a single SEO configuration",
+                "summary": "Get a single SEO config",
                 "operationId": "75114af84db5fd15cfbe06631e11f719",
                 "parameters": [
                     {
@@ -1671,7 +2440,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "SEO config details"
+                        "description": "SEO config detail"
                     },
                     "404": {
                         "description": "Not found"
@@ -1687,7 +2456,7 @@
                 "tags": [
                     "Admin - SEO"
                 ],
-                "summary": "Update an SEO configuration",
+                "summary": "Update SEO config for a route",
                 "operationId": "c5004942494e12569ad1da54dcf39415",
                 "parameters": [
                     {
@@ -1705,16 +2474,13 @@
                         "application/json": {
                             "schema": {
                                 "properties": {
-                                    "title": {
-                                        "type": "string"
-                                    },
                                     "meta_title": {
                                         "type": "string",
                                         "example": "Updated Page Title | PikPakGo"
                                     },
                                     "meta_description": {
                                         "type": "string",
-                                        "example": "Updated meta description for SEO."
+                                        "example": "Updated meta description."
                                     },
                                     "og_title": {
                                         "type": "string"
@@ -1725,10 +2491,29 @@
                                     "og_image": {
                                         "type": "string"
                                     },
+                                    "twitter_card": {
+                                        "type": "string",
+                                        "enum": [
+                                            "summary",
+                                            "summary_large_image"
+                                        ]
+                                    },
+                                    "twitter_title": {
+                                        "type": "string"
+                                    },
+                                    "twitter_description": {
+                                        "type": "string"
+                                    },
+                                    "twitter_image": {
+                                        "type": "string"
+                                    },
                                     "canonical_url": {
                                         "type": "string"
                                     },
                                     "no_index": {
+                                        "type": "boolean"
+                                    },
+                                    "no_follow": {
                                         "type": "boolean"
                                     },
                                     "schema_markup": {
@@ -1745,7 +2530,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "SEO config updated"
+                        "description": "Updated"
                     },
                     "404": {
                         "description": "Not found"
@@ -1761,7 +2546,7 @@
                 "tags": [
                     "Admin - SEO"
                 ],
-                "summary": "Delete an SEO configuration",
+                "summary": "Delete SEO config (page reverts to site defaults)",
                 "operationId": "a180b537b8ce71e5e24948afa7ecb4d0",
                 "parameters": [
                     {
@@ -1793,7 +2578,8 @@
                 "tags": [
                     "Admin - SEO"
                 ],
-                "summary": "Bulk upsert SEO configs for multiple routes at once",
+                "summary": "Bulk upsert SEO for multiple routes at once",
+                "description": "Ideal for initial setup — pass all pages in one request. Existing configs are updated; missing ones are created.",
                 "operationId": "c6fcc3c02663bd57d873c20f71593c82",
                 "requestBody": {
                     "required": true,
@@ -1807,38 +2593,40 @@
                                     "pages": {
                                         "type": "array",
                                         "items": {
+                                            "required": [
+                                                "route_slug",
+                                                "meta_title"
+                                            ],
                                             "properties": {
-                                                "slug": {
+                                                "route_slug": {
                                                     "type": "string",
                                                     "example": "home"
                                                 },
-                                                "title": {
+                                                "route_path": {
+                                                    "type": "string",
+                                                    "example": "/"
+                                                },
+                                                "route_label": {
                                                     "type": "string",
                                                     "example": "Homepage"
                                                 },
+                                                "route_group": {
+                                                    "type": "string",
+                                                    "example": "Core"
+                                                },
                                                 "meta_title": {
-                                                    "type": "string"
+                                                    "type": "string",
+                                                    "example": "PikPakGo — Vacation Rentals"
                                                 },
                                                 "meta_description": {
-                                                    "type": "string"
-                                                },
-                                                "og_title": {
-                                                    "type": "string"
-                                                },
-                                                "og_description": {
                                                     "type": "string"
                                                 },
                                                 "og_image": {
                                                     "type": "string"
                                                 },
-                                                "canonical_url": {
-                                                    "type": "string"
-                                                },
                                                 "no_index": {
-                                                    "type": "boolean"
-                                                },
-                                                "schema_markup": {
-                                                    "type": "object"
+                                                    "type": "boolean",
+                                                    "example": false
                                                 }
                                             },
                                             "type": "object"
@@ -1867,7 +2655,7 @@
                 "tags": [
                     "Admin - SEO"
                 ],
-                "summary": "Get or preview auto-generated SEO for a specific property page",
+                "summary": "Preview auto-generated SEO for a specific property page",
                 "operationId": "288ff5e34044fbff10087c05e0bc7bfe",
                 "parameters": [
                     {
@@ -1882,7 +2670,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Property SEO data"
+                        "description": "Property SEO preview"
                     },
                     "404": {
                         "description": "Property not found"
@@ -3756,6 +4544,201 @@
                     },
                     "422": {
                         "description": "Already verified or not found"
+                    }
+                }
+            }
+        },
+        "/public/blog/posts": {
+            "get": {
+                "tags": [
+                    "Public - Blog"
+                ],
+                "summary": "List published blog posts",
+                "operationId": "f5c5e2f0030d1a8a36bf99f48393aed6",
+                "parameters": [
+                    {
+                        "name": "category",
+                        "in": "query",
+                        "description": "Category slug",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "tag",
+                        "in": "query",
+                        "description": "Tag filter",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "featured",
+                        "in": "query",
+                        "description": "Only featured posts",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "example": 12
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated published posts"
+                    }
+                }
+            }
+        },
+        "/public/blog/posts/{slug}": {
+            "get": {
+                "tags": [
+                    "Public - Blog"
+                ],
+                "summary": "Get a single published blog post with full content and SEO",
+                "operationId": "587e3e16106ce7731264ffece69b777b",
+                "parameters": [
+                    {
+                        "name": "slug",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "top-10-beach-destinations-2027"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Post detail with SEO block"
+                    },
+                    "404": {
+                        "description": "Post not found or not published"
+                    }
+                }
+            }
+        },
+        "/public/blog/categories": {
+            "get": {
+                "tags": [
+                    "Public - Blog"
+                ],
+                "summary": "List all active blog categories with post counts",
+                "operationId": "560d1d70b192a135434a26b483268b26",
+                "responses": {
+                    "200": {
+                        "description": "Category list"
+                    }
+                }
+            }
+        },
+        "/public/blog/categories/{slug}": {
+            "get": {
+                "tags": [
+                    "Public - Blog"
+                ],
+                "summary": "Get a category with its published posts and SEO",
+                "operationId": "431588cd5ed0f091b79d0e66352b14fa",
+                "parameters": [
+                    {
+                        "name": "slug",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "travel-tips"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "example": 12
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Category detail with posts and SEO"
+                    },
+                    "404": {
+                        "description": "Category not found"
+                    }
+                }
+            }
+        },
+        "/public/blog/featured": {
+            "get": {
+                "tags": [
+                    "Public - Blog"
+                ],
+                "summary": "Get featured blog posts",
+                "operationId": "5e1f20096292b60bfabead2e4433c77a",
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "example": 6
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Featured posts"
+                    }
+                }
+            }
+        },
+        "/public/blog/tags": {
+            "get": {
+                "tags": [
+                    "Public - Blog"
+                ],
+                "summary": "Get all tags used in published posts",
+                "operationId": "fceff7dc6c3954ef09df1fafdabccef9",
+                "responses": {
+                    "200": {
+                        "description": "Flat tag list with usage count"
+                    }
+                }
+            }
+        },
+        "/public/blog/recent": {
+            "get": {
+                "tags": [
+                    "Public - Blog"
+                ],
+                "summary": "Get most recent published posts",
+                "operationId": "7c40b424fb7d03333dad8c55b3deeddc",
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "example": 5
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Recent posts"
                     }
                 }
             }
@@ -7214,6 +8197,10 @@
     },
     "tags": [
         {
+            "name": "Admin - Blog",
+            "description": "Full blog management — categories and posts with built-in SEO fields"
+        },
+        {
             "name": "Admin - Bookings",
             "description": "Admin booking management endpoints"
         },
@@ -7231,7 +8218,7 @@
         },
         {
             "name": "Admin - SEO",
-            "description": "Manage per-route SEO meta — title, description, OG tags, schema markup, canonical URL, robots"
+            "description": "Manage SEO meta for every page — home, properties, booking, search, etc. Each route gets its own title, description, OG tags, Twitter card, canonical URL, robots directives, and JSON-LD schema."
         },
         {
             "name": "Admin - Settings",
@@ -7256,6 +8243,10 @@
         {
             "name": "Authentication",
             "description": "User authentication and profile management"
+        },
+        {
+            "name": "Public - Blog",
+            "description": "Public blog — posts, categories, featured articles, search"
         },
         {
             "name": "Bookings",

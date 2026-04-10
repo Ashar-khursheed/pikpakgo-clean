@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\BlogPost;
 use App\Models\ContentPage;
 use App\Models\PropertyListing;
+use App\Models\SeoConfig;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -77,44 +79,52 @@ class ContentController extends Controller
         $cacheKey = 'seo_' . ($propertyCode ?? $slug ?? 'home');
 
         $result = Cache::remember($cacheKey, 600, function () use ($slug, $path, $propertyCode) {
-            // 1. Property page — auto-generate from property data
+            // 1. Property page — check for manual override, then auto-generate
             if ($propertyCode) {
+                $override = SeoConfig::where('route_slug', 'property-' . Str::slug($propertyCode))->where('is_active', true)->first();
+                if ($override) {
+                    return ['source' => 'seo_config', 'slug' => $override->route_slug, 'data' => $override->seo];
+                }
+
                 $property = PropertyListing::where('provider_code', $propertyCode)
                     ->orWhere('provider_property_id', $propertyCode)
-                    ->active()
+                    ->where('is_active', true)
                     ->first();
 
                 if ($property) {
-                    return [
-                        'source' => 'auto-generated',
-                        'slug'   => 'property-' . Str::slug($propertyCode),
-                        'data'   => $this->generatePropertySeo($property),
-                    ];
+                    return ['source' => 'auto-generated', 'slug' => 'property-' . Str::slug($propertyCode), 'data' => $this->generatePropertySeo($property)];
                 }
             }
 
-            // 2. CMS / SEO config lookup by slug
+            // 2. Blog post SEO
+            if ($slug && Str::startsWith($slug, 'blog-')) {
+                $postSlug = Str::after($slug, 'blog-');
+                $post = BlogPost::published()->where('slug', $postSlug)->first();
+                if ($post) {
+                    return ['source' => 'blog_post', 'slug' => $slug, 'data' => $post->seo];
+                }
+            }
+
+            // 3. Dedicated seo_configs table (home, properties, booking, etc.)
             if ($slug) {
-                $page = ContentPage::where('slug', $slug)
-                    ->active()
-                    ->published()
-                    ->first();
-
-                if ($page) {
-                    return [
-                        'source' => 'cms',
-                        'slug'   => $slug,
-                        'data'   => $page->seo,
-                    ];
+                $seoConfig = SeoConfig::where('route_slug', $slug)->where('is_active', true)->first();
+                if ($seoConfig) {
+                    return ['source' => 'seo_config', 'slug' => $slug, 'data' => $seoConfig->seo];
                 }
             }
 
-            // 3. Fallback — site-wide defaults from Settings
-            return [
-                'source' => 'default',
-                'slug'   => $slug ?? $this->pathToSlug($path ?? '/'),
-                'data'   => $this->siteDefaultSeo(),
-            ];
+            // 4. CMS content pages (about-us, faq, terms, etc.)
+            if ($slug) {
+                $page = ContentPage::where('slug', $slug)->where('is_active', true)
+                    ->where(fn ($q) => $q->whereNull('published_at')->orWhere('published_at', '<=', now()))
+                    ->first();
+                if ($page) {
+                    return ['source' => 'cms', 'slug' => $slug, 'data' => $page->seo];
+                }
+            }
+
+            // 5. Fallback — site-wide defaults from Settings
+            return ['source' => 'default', 'slug' => $slug ?? $this->pathToSlug($path ?? '/'), 'data' => $this->siteDefaultSeo()];
         });
 
         return response()->json(array_merge(['success' => true], $result));
@@ -135,10 +145,9 @@ class ContentController extends Controller
         $cacheKey = "seo_property_{$propertyCode}";
 
         $data = Cache::remember($cacheKey, 600, function () use ($propertyCode) {
-            // Check for admin-set override first
-            $override = ContentPage::where('slug', 'property-' . Str::slug($propertyCode))
-                ->where('type', 'seo')
-                ->active()
+            // Check for admin-set override first (seo_configs table)
+            $override = SeoConfig::where('route_slug', 'property-' . Str::slug($propertyCode))
+                ->where('is_active', true)
                 ->first();
 
             if ($override) {

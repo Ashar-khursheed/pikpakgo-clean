@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\ContentPage;
+use App\Models\SeoConfig;
 use App\Models\PropertyListing;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -12,15 +12,53 @@ use Illuminate\Support\Str;
 /**
  * @OA\Tag(
  *     name="Admin - SEO",
- *     description="Manage per-route SEO meta — title, description, OG tags, schema markup, canonical URL, robots"
+ *     description="Manage SEO meta for every page — home, properties, booking, search, etc. Each route gets its own title, description, OG tags, Twitter card, canonical URL, robots directives, and JSON-LD schema."
  * )
  */
 class AdminSeoController extends Controller
 {
-    // All content_pages with type='seo' are dedicated route SEO entries.
-    // Pages with other types (page, header, footer, etc.) also carry SEO fields
-    // but are managed via AdminContentController. This controller focuses on
-    // SEO-only entries (routes without a full content page).
+    // Predefined application routes (all pages that need SEO)
+    private const PREDEFINED_ROUTES = [
+        // ── Core ────────────────────────────────────────────────────
+        ['group' => 'Core',    'route_slug' => 'home',              'route_label' => 'Homepage',                    'route_path' => '/'],
+        ['group' => 'Core',    'route_slug' => 'about-us',          'route_label' => 'About Us',                    'route_path' => '/about-us'],
+        ['group' => 'Core',    'route_slug' => 'contact',           'route_label' => 'Contact Us',                  'route_path' => '/contact'],
+        ['group' => 'Core',    'route_slug' => 'faq',               'route_label' => 'FAQ',                         'route_path' => '/faq'],
+        ['group' => 'Core',    'route_slug' => 'terms',             'route_label' => 'Terms & Conditions',          'route_path' => '/terms'],
+        ['group' => 'Core',    'route_slug' => 'privacy-policy',    'route_label' => 'Privacy Policy',              'route_path' => '/privacy-policy'],
+        ['group' => 'Core',    'route_slug' => 'cookie-policy',     'route_label' => 'Cookie Policy',               'route_path' => '/cookie-policy'],
+
+        // ── Search & Listings ────────────────────────────────────────
+        ['group' => 'Search',  'route_slug' => 'search',            'route_label' => 'Search Results',              'route_path' => '/search'],
+        ['group' => 'Search',  'route_slug' => 'properties',        'route_label' => 'All Properties',              'route_path' => '/properties'],
+        ['group' => 'Search',  'route_slug' => 'hotels',            'route_label' => 'Hotels',                      'route_path' => '/hotels'],
+        ['group' => 'Search',  'route_slug' => 'vacation-rentals',  'route_label' => 'Vacation Rentals',            'route_path' => '/vacation-rentals'],
+
+        // ── Booking flow ─────────────────────────────────────────────
+        ['group' => 'Booking', 'route_slug' => 'booking',           'route_label' => 'Booking Page',                'route_path' => '/booking'],
+        ['group' => 'Booking', 'route_slug' => 'booking-review',    'route_label' => 'Booking Review / Checkout',   'route_path' => '/booking/review'],
+        ['group' => 'Booking', 'route_slug' => 'booking-payment',   'route_label' => 'Booking Payment',             'route_path' => '/booking/payment'],
+        ['group' => 'Booking', 'route_slug' => 'booking-confirm',   'route_label' => 'Booking Confirmation',        'route_path' => '/booking/confirm'],
+        ['group' => 'Booking', 'route_slug' => 'booking-failed',    'route_label' => 'Booking / Payment Failed',    'route_path' => '/booking/failed'],
+        ['group' => 'Booking', 'route_slug' => 'my-bookings',       'route_label' => 'My Bookings',                 'route_path' => '/my-bookings'],
+
+        // ── Account ──────────────────────────────────────────────────
+        ['group' => 'Account', 'route_slug' => 'login',             'route_label' => 'Login',                       'route_path' => '/login'],
+        ['group' => 'Account', 'route_slug' => 'register',          'route_label' => 'Register',                    'route_path' => '/register'],
+        ['group' => 'Account', 'route_slug' => 'forgot-password',   'route_label' => 'Forgot Password',             'route_path' => '/forgot-password'],
+        ['group' => 'Account', 'route_slug' => 'profile',           'route_label' => 'My Profile',                  'route_path' => '/profile'],
+        ['group' => 'Account', 'route_slug' => 'wishlist',          'route_label' => 'Wishlist',                    'route_path' => '/wishlist'],
+
+        // ── Blog ─────────────────────────────────────────────────────
+        ['group' => 'Blog',    'route_slug' => 'blog',              'route_label' => 'Blog Index',                  'route_path' => '/blog'],
+
+        // ── Dynamic templates (one config = default for all pages of that type)
+        ['group' => 'Dynamic', 'route_slug' => 'property-detail',   'route_label' => 'Property Detail — default template',  'route_path' => '/properties/{id}'],
+        ['group' => 'Dynamic', 'route_slug' => 'hotel-detail',      'route_label' => 'Hotel Detail — default template',     'route_path' => '/hotels/{id}'],
+        ['group' => 'Dynamic', 'route_slug' => 'destination',       'route_label' => 'Destination — default template',      'route_path' => '/destinations/{slug}'],
+    ];
+
+    // ─────────────────────────────────────────────────────────────────────────
 
     /**
      * @OA\Get(
@@ -28,215 +66,186 @@ class AdminSeoController extends Controller
      *     summary="List all SEO configurations",
      *     tags={"Admin - SEO"},
      *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(name="type", in="query", description="Filter: seo|page|all (default: all)", @OA\Schema(type="string", enum={"seo","page","all"}, example="all")),
-     *     @OA\Parameter(name="search", in="query", description="Search by slug or title", @OA\Schema(type="string")),
-     *     @OA\Parameter(name="per_page", in="query", @OA\Schema(type="integer", example=20)),
-     *     @OA\Response(response=200, description="Paginated SEO list")
+     *     @OA\Parameter(name="group",    in="query", description="Filter by group: Core|Search|Booking|Account|Blog|Dynamic", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="search",   in="query", description="Search by slug, label or meta_title", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="per_page", in="query", @OA\Schema(type="integer", example=50)),
+     *     @OA\Response(response=200, description="Paginated SEO config list")
      * )
      */
     public function index(Request $request)
     {
-        $type    = $request->get('type', 'all');
-        $search  = $request->get('search');
-        $perPage = min((int) $request->get('per_page', 20), 100);
-
-        $query = ContentPage::withTrashed()
-            ->select([
-                'id', 'slug', 'title', 'type',
-                'meta_title', 'meta_description',
-                'og_title', 'og_description', 'og_image',
-                'canonical_url', 'no_index', 'schema_markup',
-                'is_active', 'deleted_at',
-            ])
-            ->when($type !== 'all', fn ($q) => $q->where('type', $type))
-            ->when($search, fn ($q) => $q->where(fn ($q2) => $q2
-                ->where('slug', 'like', "%{$search}%")
-                ->orWhere('title', 'like', "%{$search}%")
-                ->orWhere('meta_title', 'like', "%{$search}%")
+        $query = SeoConfig::query()
+            ->when($request->group,  fn ($q) => $q->where('route_group', $request->group))
+            ->when($request->search, fn ($q) => $q->where(fn ($q2) => $q2
+                ->where('route_slug',  'like', "%{$request->search}%")
+                ->orWhere('route_label','like', "%{$request->search}%")
+                ->orWhere('meta_title', 'like', "%{$request->search}%")
             ))
-            ->orderBy('type')
-            ->orderBy('slug');
+            ->orderByRaw("FIELD(route_group,'Core','Search','Booking','Account','Blog','Dynamic','General')")
+            ->orderBy('route_slug');
 
-        return response()->json(['success' => true, 'data' => $query->paginate($perPage)]);
+        return response()->json(['success' => true, 'data' => $query->paginate((int) $request->get('per_page', 50))]);
     }
 
     /**
      * @OA\Get(
      *     path="/admin/seo/routes",
-     *     summary="List predefined application routes for SEO management",
+     *     summary="All predefined app routes with current SEO status",
+     *     description="Returns every page of the application grouped by section. Each entry shows whether SEO has been configured or is still missing (seo_config: null).",
      *     tags={"Admin - SEO"},
      *     security={{"bearerAuth":{}}},
-     *     @OA\Response(response=200, description="Predefined routes with their current SEO status")
+     *     @OA\Response(response=200, description="Route list with SEO status")
      * )
      */
     public function routes()
     {
-        $predefinedRoutes = [
-            // ── Core pages ─────────────────────────────────────────────────
-            ['group' => 'Core',    'slug' => 'home',                'label' => 'Homepage',                        'path' => '/'],
-            ['group' => 'Core',    'slug' => 'about-us',            'label' => 'About Us',                        'path' => '/about-us'],
-            ['group' => 'Core',    'slug' => 'contact',             'label' => 'Contact Us',                      'path' => '/contact'],
-            ['group' => 'Core',    'slug' => 'faq',                 'label' => 'FAQ',                             'path' => '/faq'],
-            ['group' => 'Core',    'slug' => 'terms',               'label' => 'Terms & Conditions',              'path' => '/terms'],
-            ['group' => 'Core',    'slug' => 'privacy-policy',      'label' => 'Privacy Policy',                  'path' => '/privacy-policy'],
-            ['group' => 'Core',    'slug' => 'cookie-policy',       'label' => 'Cookie Policy',                   'path' => '/cookie-policy'],
+        $slugs    = collect(self::PREDEFINED_ROUTES)->pluck('route_slug');
+        $existing = SeoConfig::whereIn('route_slug', $slugs)
+            ->get(['id','route_slug','meta_title','meta_description','og_image','no_index','is_active'])
+            ->keyBy('route_slug');
 
-            // ── Search & Properties ─────────────────────────────────────────
-            ['group' => 'Search',  'slug' => 'search',              'label' => 'Search Results',                  'path' => '/search'],
-            ['group' => 'Search',  'slug' => 'properties',          'label' => 'All Properties Listing',          'path' => '/properties'],
-            ['group' => 'Search',  'slug' => 'hotels',              'label' => 'Hotels Listing',                  'path' => '/hotels'],
-            ['group' => 'Search',  'slug' => 'vacation-rentals',    'label' => 'Vacation Rentals Listing',        'path' => '/vacation-rentals'],
+        $grouped = collect(self::PREDEFINED_ROUTES)
+            ->map(fn ($r) => array_merge($r, ['seo_config' => $existing->get($r['route_slug'])]))
+            ->groupBy('group');
 
-            // ── Booking flow ───────────────────────────────────────────────
-            ['group' => 'Booking', 'slug' => 'booking',             'label' => 'Booking Page',                    'path' => '/booking'],
-            ['group' => 'Booking', 'slug' => 'booking-review',      'label' => 'Booking Review / Checkout',       'path' => '/booking/review'],
-            ['group' => 'Booking', 'slug' => 'booking-payment',     'label' => 'Booking Payment Step',            'path' => '/booking/payment'],
-            ['group' => 'Booking', 'slug' => 'booking-confirm',     'label' => 'Booking Confirmation',            'path' => '/booking/confirm'],
-            ['group' => 'Booking', 'slug' => 'booking-failed',      'label' => 'Booking / Payment Failed',        'path' => '/booking/failed'],
-            ['group' => 'Booking', 'slug' => 'my-bookings',         'label' => 'My Bookings (dashboard)',         'path' => '/my-bookings'],
-
-            // ── Account ────────────────────────────────────────────────────
-            ['group' => 'Account', 'slug' => 'login',               'label' => 'Login Page',                      'path' => '/login'],
-            ['group' => 'Account', 'slug' => 'register',            'label' => 'Register Page',                   'path' => '/register'],
-            ['group' => 'Account', 'slug' => 'forgot-password',     'label' => 'Forgot Password',                 'path' => '/forgot-password'],
-            ['group' => 'Account', 'slug' => 'profile',             'label' => 'My Profile',                      'path' => '/profile'],
-            ['group' => 'Account', 'slug' => 'wishlist',            'label' => 'Wishlist',                        'path' => '/wishlist'],
-
-            // ── Dynamic page templates (admin sets default SEO for type) ──
-            ['group' => 'Dynamic', 'slug' => 'property-detail',     'label' => 'Property Detail — default template',   'path' => '/properties/{id}',          'note' => 'Auto-generated per property from DB. Override via POST /admin/seo with slug=property-{code}'],
-            ['group' => 'Dynamic', 'slug' => 'destination',         'label' => 'Destination Page — default template',  'path' => '/destinations/{slug}',      'note' => 'Create slug=destination-{city-name} to override per destination'],
-            ['group' => 'Dynamic', 'slug' => 'hotel-detail',        'label' => 'Hotel Detail — default template',      'path' => '/hotels/{id}',              'note' => 'Auto-generated per property from DB'],
-        ];
-
-        // Attach existing SEO records
-        $slugs    = collect($predefinedRoutes)->pluck('slug');
-        $existing = ContentPage::whereIn('slug', $slugs)
-            ->select(['id', 'slug', 'meta_title', 'meta_description', 'og_title', 'no_index', 'is_active'])
-            ->get()
-            ->keyBy('slug');
-
-        $result = collect($predefinedRoutes)->map(fn ($route) => array_merge(
-            $route,
-            ['seo' => $existing->get($route['slug'])]
-        ));
-
-        return response()->json(['success' => true, 'data' => $result]);
+        return response()->json(['success' => true, 'data' => $grouped]);
     }
 
     /**
      * @OA\Post(
      *     path="/admin/seo",
-     *     summary="Create an SEO configuration for a route",
+     *     summary="Create / set SEO for a route",
      *     tags={"Admin - SEO"},
      *     security={{"bearerAuth":{}}},
      *     @OA\RequestBody(required=true, @OA\JsonContent(
-     *         required={"slug","title"},
-     *         @OA\Property(property="slug",             type="string",  example="home",         description="Route identifier — use the page slug or a custom key"),
-     *         @OA\Property(property="title",            type="string",  example="PikPakGo — Vacation Rentals & Hotels"),
-     *         @OA\Property(property="meta_title",       type="string",  example="PikPakGo — Vacation Rentals & Hotels"),
-     *         @OA\Property(property="meta_description", type="string",  example="Find the best vacation rentals and hotels worldwide."),
-     *         @OA\Property(property="og_title",         type="string",  example="PikPakGo"),
-     *         @OA\Property(property="og_description",   type="string"),
-     *         @OA\Property(property="og_image",         type="string",  example="https://cdn.pikpakgo.com/og-default.jpg"),
-     *         @OA\Property(property="canonical_url",    type="string",  example="https://pikpakgo.com/"),
-     *         @OA\Property(property="no_index",         type="boolean", example=false),
-     *         @OA\Property(property="schema_markup",    type="object",  description="JSON-LD structured data object"),
-     *         @OA\Property(property="is_active",        type="boolean", example=true)
+     *         required={"route_slug","meta_title"},
+     *         @OA\Property(property="route_slug",        type="string",  example="home",           description="Route key — must match predefined slugs or any custom key"),
+     *         @OA\Property(property="route_path",        type="string",  example="/",              description="Frontend URL path"),
+     *         @OA\Property(property="route_label",       type="string",  example="Homepage"),
+     *         @OA\Property(property="route_group",       type="string",  example="Core",           enum={"Core","Search","Booking","Account","Blog","Dynamic","General"}),
+     *         @OA\Property(property="meta_title",        type="string",  example="PikPakGo — Vacation Rentals & Hotels"),
+     *         @OA\Property(property="meta_description",  type="string",  example="Find the best vacation rentals and hotels worldwide."),
+     *         @OA\Property(property="og_title",          type="string"),
+     *         @OA\Property(property="og_description",    type="string"),
+     *         @OA\Property(property="og_image",          type="string",  example="https://cdn.pikpakgo.com/og-default.jpg"),
+     *         @OA\Property(property="twitter_card",      type="string",  enum={"summary","summary_large_image"}, example="summary_large_image"),
+     *         @OA\Property(property="twitter_title",     type="string"),
+     *         @OA\Property(property="twitter_description",type="string"),
+     *         @OA\Property(property="twitter_image",     type="string"),
+     *         @OA\Property(property="canonical_url",     type="string",  example="https://pikpakgo.com/"),
+     *         @OA\Property(property="no_index",          type="boolean", example=false),
+     *         @OA\Property(property="no_follow",         type="boolean", example=false),
+     *         @OA\Property(property="schema_markup",     type="object",  description="Custom JSON-LD — leave null to auto-generate"),
+     *         @OA\Property(property="is_active",         type="boolean", example=true)
      *     )),
      *     @OA\Response(response=201, description="SEO config created"),
-     *     @OA\Response(response=422, description="Validation error or slug already exists")
+     *     @OA\Response(response=422, description="Validation error")
      * )
      */
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'slug'             => 'required|string|unique:content_pages,slug|max:200',
-            'title'            => 'required|string|max:255',
-            'meta_title'       => 'nullable|string|max:255',
-            'meta_description' => 'nullable|string|max:500',
-            'og_title'         => 'nullable|string|max:255',
-            'og_description'   => 'nullable|string|max:500',
-            'og_image'         => 'nullable|string|max:500',
-            'canonical_url'    => 'nullable|url|max:500',
-            'no_index'         => 'boolean',
-            'schema_markup'    => 'nullable|array',
-            'is_active'        => 'boolean',
+            'route_slug'        => 'required|string|max:200|unique:seo_configs,route_slug',
+            'route_path'        => 'nullable|string|max:300',
+            'route_label'       => 'nullable|string|max:200',
+            'route_group'       => 'nullable|string|max:50',
+            'meta_title'        => 'required|string|max:255',
+            'meta_description'  => 'nullable|string|max:500',
+            'og_title'          => 'nullable|string|max:255',
+            'og_description'    => 'nullable|string|max:500',
+            'og_image'          => 'nullable|string|max:500',
+            'twitter_card'      => 'nullable|in:summary,summary_large_image',
+            'twitter_title'     => 'nullable|string|max:255',
+            'twitter_description'=> 'nullable|string|max:500',
+            'twitter_image'     => 'nullable|string|max:500',
+            'canonical_url'     => 'nullable|url|max:500',
+            'no_index'          => 'boolean',
+            'no_follow'         => 'boolean',
+            'schema_markup'     => 'nullable|array',
+            'is_active'         => 'boolean',
         ]);
 
-        $page = ContentPage::create(array_merge($validated, ['type' => 'seo']));
+        $seo = SeoConfig::create($validated);
+        Cache::forget("seo_{$seo->route_slug}");
 
-        $this->flushSeoCache($page->slug);
-
-        return response()->json(['success' => true, 'data' => array_merge($page->toArray(), ['seo' => $page->seo])], 201);
+        return response()->json(['success' => true, 'data' => array_merge($seo->toArray(), ['seo' => $seo->seo])], 201);
     }
 
     /**
      * @OA\Get(
      *     path="/admin/seo/{id}",
-     *     summary="Get a single SEO configuration",
+     *     summary="Get a single SEO config",
      *     tags={"Admin - SEO"},
      *     security={{"bearerAuth":{}}},
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
-     *     @OA\Response(response=200, description="SEO config details"),
+     *     @OA\Response(response=200, description="SEO config detail"),
      *     @OA\Response(response=404, description="Not found")
      * )
      */
     public function show($id)
     {
-        $page = ContentPage::withTrashed()->findOrFail($id);
-        return response()->json(['success' => true, 'data' => array_merge($page->toArray(), ['seo' => $page->seo])]);
+        $seo = SeoConfig::findOrFail($id);
+        return response()->json(['success' => true, 'data' => array_merge($seo->toArray(), ['seo' => $seo->seo])]);
     }
 
     /**
      * @OA\Put(
      *     path="/admin/seo/{id}",
-     *     summary="Update an SEO configuration",
+     *     summary="Update SEO config for a route",
      *     tags={"Admin - SEO"},
      *     security={{"bearerAuth":{}}},
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
      *     @OA\RequestBody(required=true, @OA\JsonContent(
-     *         @OA\Property(property="title",            type="string"),
-     *         @OA\Property(property="meta_title",       type="string",  example="Updated Page Title | PikPakGo"),
-     *         @OA\Property(property="meta_description", type="string",  example="Updated meta description for SEO."),
-     *         @OA\Property(property="og_title",         type="string"),
-     *         @OA\Property(property="og_description",   type="string"),
-     *         @OA\Property(property="og_image",         type="string"),
-     *         @OA\Property(property="canonical_url",    type="string"),
-     *         @OA\Property(property="no_index",         type="boolean"),
-     *         @OA\Property(property="schema_markup",    type="object"),
-     *         @OA\Property(property="is_active",        type="boolean")
+     *         @OA\Property(property="meta_title",        type="string",  example="Updated Page Title | PikPakGo"),
+     *         @OA\Property(property="meta_description",  type="string",  example="Updated meta description."),
+     *         @OA\Property(property="og_title",          type="string"),
+     *         @OA\Property(property="og_description",    type="string"),
+     *         @OA\Property(property="og_image",          type="string"),
+     *         @OA\Property(property="twitter_card",      type="string",  enum={"summary","summary_large_image"}),
+     *         @OA\Property(property="twitter_title",     type="string"),
+     *         @OA\Property(property="twitter_description",type="string"),
+     *         @OA\Property(property="twitter_image",     type="string"),
+     *         @OA\Property(property="canonical_url",     type="string"),
+     *         @OA\Property(property="no_index",          type="boolean"),
+     *         @OA\Property(property="no_follow",         type="boolean"),
+     *         @OA\Property(property="schema_markup",     type="object"),
+     *         @OA\Property(property="is_active",         type="boolean")
      *     )),
-     *     @OA\Response(response=200, description="SEO config updated"),
+     *     @OA\Response(response=200, description="Updated"),
      *     @OA\Response(response=404, description="Not found")
      * )
      */
     public function update(Request $request, $id)
     {
-        $page = ContentPage::findOrFail($id);
+        $seo = SeoConfig::findOrFail($id);
 
         $validated = $request->validate([
-            'title'            => 'sometimes|string|max:255',
-            'meta_title'       => 'nullable|string|max:255',
-            'meta_description' => 'nullable|string|max:500',
-            'og_title'         => 'nullable|string|max:255',
-            'og_description'   => 'nullable|string|max:500',
-            'og_image'         => 'nullable|string|max:500',
-            'canonical_url'    => 'nullable|url|max:500',
-            'no_index'         => 'boolean',
-            'schema_markup'    => 'nullable|array',
-            'is_active'        => 'boolean',
+            'meta_title'        => 'sometimes|string|max:255',
+            'meta_description'  => 'nullable|string|max:500',
+            'og_title'          => 'nullable|string|max:255',
+            'og_description'    => 'nullable|string|max:500',
+            'og_image'          => 'nullable|string|max:500',
+            'twitter_card'      => 'nullable|in:summary,summary_large_image',
+            'twitter_title'     => 'nullable|string|max:255',
+            'twitter_description'=> 'nullable|string|max:500',
+            'twitter_image'     => 'nullable|string|max:500',
+            'canonical_url'     => 'nullable|url|max:500',
+            'no_index'          => 'boolean',
+            'no_follow'         => 'boolean',
+            'schema_markup'     => 'nullable|array',
+            'is_active'         => 'boolean',
         ]);
 
-        $page->update($validated);
-        $this->flushSeoCache($page->slug);
+        $seo->update($validated);
+        Cache::forget("seo_{$seo->route_slug}");
 
-        return response()->json(['success' => true, 'data' => array_merge($page->fresh()->toArray(), ['seo' => $page->fresh()->seo])]);
+        return response()->json(['success' => true, 'data' => array_merge($seo->fresh()->toArray(), ['seo' => $seo->fresh()->seo])]);
     }
 
     /**
      * @OA\Delete(
      *     path="/admin/seo/{id}",
-     *     summary="Delete an SEO configuration",
+     *     summary="Delete SEO config (page reverts to site defaults)",
      *     tags={"Admin - SEO"},
      *     security={{"bearerAuth":{}}},
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
@@ -246,37 +255,33 @@ class AdminSeoController extends Controller
      */
     public function destroy($id)
     {
-        $page = ContentPage::findOrFail($id);
-        $this->flushSeoCache($page->slug);
-        $page->delete();
+        $seo = SeoConfig::findOrFail($id);
+        Cache::forget("seo_{$seo->route_slug}");
+        $seo->delete();
 
-        return response()->json(['success' => true, 'message' => 'SEO config deleted.']);
+        return response()->json(['success' => true, 'message' => 'SEO config deleted. Page will use site defaults.']);
     }
 
     /**
      * @OA\Post(
      *     path="/admin/seo/bulk-update",
-     *     summary="Bulk upsert SEO configs for multiple routes at once",
+     *     summary="Bulk upsert SEO for multiple routes at once",
+     *     description="Ideal for initial setup — pass all pages in one request. Existing configs are updated; missing ones are created.",
      *     tags={"Admin - SEO"},
      *     security={{"bearerAuth":{}}},
      *     @OA\RequestBody(required=true, @OA\JsonContent(
      *         required={"pages"},
-     *         @OA\Property(
-     *             property="pages",
-     *             type="array",
-     *             @OA\Items(
-     *                 @OA\Property(property="slug",             type="string", example="home"),
-     *                 @OA\Property(property="title",            type="string", example="Homepage"),
-     *                 @OA\Property(property="meta_title",       type="string"),
-     *                 @OA\Property(property="meta_description", type="string"),
-     *                 @OA\Property(property="og_title",         type="string"),
-     *                 @OA\Property(property="og_description",   type="string"),
-     *                 @OA\Property(property="og_image",         type="string"),
-     *                 @OA\Property(property="canonical_url",    type="string"),
-     *                 @OA\Property(property="no_index",         type="boolean"),
-     *                 @OA\Property(property="schema_markup",    type="object")
-     *             )
-     *         )
+     *         @OA\Property(property="pages", type="array", @OA\Items(
+     *             required={"route_slug","meta_title"},
+     *             @OA\Property(property="route_slug",       type="string", example="home"),
+     *             @OA\Property(property="route_path",       type="string", example="/"),
+     *             @OA\Property(property="route_label",      type="string", example="Homepage"),
+     *             @OA\Property(property="route_group",      type="string", example="Core"),
+     *             @OA\Property(property="meta_title",       type="string", example="PikPakGo — Vacation Rentals"),
+     *             @OA\Property(property="meta_description", type="string"),
+     *             @OA\Property(property="og_image",         type="string"),
+     *             @OA\Property(property="no_index",         type="boolean", example=false)
+     *         ))
      *     )),
      *     @OA\Response(response=200, description="Bulk update result")
      * )
@@ -284,42 +289,38 @@ class AdminSeoController extends Controller
     public function bulkUpdate(Request $request)
     {
         $request->validate([
-            'pages'                     => 'required|array|min:1',
-            'pages.*.slug'              => 'required|string|max:200',
-            'pages.*.title'             => 'required|string|max:255',
-            'pages.*.meta_title'        => 'nullable|string|max:255',
-            'pages.*.meta_description'  => 'nullable|string|max:500',
-            'pages.*.og_title'          => 'nullable|string|max:255',
-            'pages.*.og_description'    => 'nullable|string|max:500',
-            'pages.*.og_image'          => 'nullable|string|max:500',
-            'pages.*.canonical_url'     => 'nullable|url|max:500',
-            'pages.*.no_index'          => 'nullable|boolean',
-            'pages.*.schema_markup'     => 'nullable|array',
+            'pages'                       => 'required|array|min:1',
+            'pages.*.route_slug'          => 'required|string|max:200',
+            'pages.*.meta_title'          => 'required|string|max:255',
+            'pages.*.route_path'          => 'nullable|string|max:300',
+            'pages.*.route_label'         => 'nullable|string|max:200',
+            'pages.*.route_group'         => 'nullable|string|max:50',
+            'pages.*.meta_description'    => 'nullable|string|max:500',
+            'pages.*.og_title'            => 'nullable|string|max:255',
+            'pages.*.og_description'      => 'nullable|string|max:500',
+            'pages.*.og_image'            => 'nullable|string|max:500',
+            'pages.*.canonical_url'       => 'nullable|url|max:500',
+            'pages.*.no_index'            => 'nullable|boolean',
+            'pages.*.no_follow'           => 'nullable|boolean',
+            'pages.*.schema_markup'       => 'nullable|array',
         ]);
 
         $updated = 0;
         $created = 0;
 
         foreach ($request->pages as $item) {
-            $slug = $item['slug'];
-
-            $record = ContentPage::withTrashed()->where('slug', $slug)->first();
-
-            if ($record) {
-                $record->restore();
-                $record->update(array_merge($item, ['type' => $record->type ?: 'seo']));
-                $updated++;
-            } else {
-                ContentPage::create(array_merge($item, ['type' => 'seo', 'is_active' => true]));
-                $created++;
-            }
-
-            $this->flushSeoCache($slug);
+            SeoConfig::updateOrCreate(
+                ['route_slug' => $item['route_slug']],
+                array_merge($item, ['is_active' => true])
+            );
+            Cache::forget("seo_{$item['route_slug']}");
+            $existing = SeoConfig::where('route_slug', $item['route_slug'])->exists();
+            $existing ? $updated++ : $created++;
         }
 
         return response()->json([
             'success' => true,
-            'message' => "SEO bulk update complete: {$updated} updated, {$created} created.",
+            'message' => "Bulk SEO update complete.",
             'stats'   => ['updated' => $updated, 'created' => $created],
         ]);
     }
@@ -327,11 +328,11 @@ class AdminSeoController extends Controller
     /**
      * @OA\Get(
      *     path="/admin/seo/property/{propertyCode}",
-     *     summary="Get or preview auto-generated SEO for a specific property page",
+     *     summary="Preview auto-generated SEO for a specific property page",
      *     tags={"Admin - SEO"},
      *     security={{"bearerAuth":{}}},
      *     @OA\Parameter(name="propertyCode", in="path", required=true, @OA\Schema(type="string", example="OR-12345")),
-     *     @OA\Response(response=200, description="Property SEO data"),
+     *     @OA\Response(response=200, description="Property SEO preview"),
      *     @OA\Response(response=404, description="Property not found")
      * )
      */
@@ -341,56 +342,45 @@ class AdminSeoController extends Controller
             ->orWhere('provider_property_id', $propertyCode)
             ->firstOrFail();
 
-        // Check for a custom override first
-        $override = ContentPage::where('slug', 'property-' . Str::slug($propertyCode))
-            ->where('type', 'seo')
-            ->active()
-            ->first();
+        // Check for a manual override
+        $override = SeoConfig::where('route_slug', 'property-' . Str::slug($propertyCode))->first();
 
         if ($override) {
-            return response()->json([
-                'success' => true,
-                'source'  => 'override',
-                'data'    => $override->seo,
-                'override_id' => $override->id,
-            ]);
+            return response()->json(['success' => true, 'source' => 'override', 'override_id' => $override->id, 'data' => $override->seo]);
         }
-
-        // Auto-generate SEO from property data
-        $seo = $this->generatePropertySeo($property);
 
         return response()->json([
             'success' => true,
             'source'  => 'auto-generated',
-            'data'    => $seo,
+            'note'    => 'Create a config with route_slug="property-' . Str::slug($propertyCode) . '" to override.',
+            'data'    => $this->buildPropertySeo($property),
         ]);
     }
 
-    // ── Private helpers ────────────────────────────────────────────────────────
+    // ── Private helpers ───────────────────────────────────────────────────────
 
-    private function generatePropertySeo(PropertyListing $property): array
+    private function buildPropertySeo(PropertyListing $property): array
     {
         $title = $property->name . ' — ' . $property->city . ', ' . $property->country;
         $desc  = $property->description
             ? Str::limit(strip_tags($property->description), 155)
-            : "Book {$property->name} in {$property->city}, {$property->country}. "
-              . ucfirst($property->property_type) . ' available from $' . ($property->price_from ?? 'N/A') . '/night.';
+            : "Book {$property->name} in {$property->city}. " . ucfirst($property->property_type) . ' from $' . ($property->price_from ?? 'N/A') . '/night.';
 
         return [
-            'title'          => $title,
-            'description'    => $desc,
-            'og_title'       => $title,
+            'title'       => $title,
+            'description' => $desc,
+            'og_title'    => $title,
             'og_description' => $desc,
-            'og_image'       => $property->featured_image,
-            'canonical'      => null,
-            'no_index'       => false,
-            'schema'         => [
-                '@context'    => 'https://schema.org',
-                '@type'       => 'LodgingBusiness',
-                'name'        => $property->name,
+            'og_image'    => $property->featured_image,
+            'canonical'   => null,
+            'no_index'    => false,
+            'schema'      => [
+                '@context' => 'https://schema.org',
+                '@type'    => 'LodgingBusiness',
+                'name'     => $property->name,
                 'description' => $desc,
-                'image'       => $property->images ?? [],
-                'address'     => [
+                'image'    => $property->images ?? [],
+                'address'  => [
                     '@type'           => 'PostalAddress',
                     'streetAddress'   => $property->address,
                     'addressLocality' => $property->city,
@@ -398,31 +388,11 @@ class AdminSeoController extends Controller
                     'postalCode'      => $property->postal_code,
                     'addressCountry'  => $property->country_code ?? $property->country,
                 ],
-                'geo' => $property->latitude ? [
-                    '@type'     => 'GeoCoordinates',
-                    'latitude'  => $property->latitude,
-                    'longitude' => $property->longitude,
-                ] : null,
-                'starRating' => $property->star_rating ? [
-                    '@type'       => 'Rating',
-                    'ratingValue' => $property->star_rating,
-                ] : null,
-                'aggregateRating' => $property->rating_average ? [
-                    '@type'       => 'AggregateRating',
-                    'ratingValue' => $property->rating_average,
-                    'reviewCount' => $property->rating_count,
-                ] : null,
-                'priceRange' => $property->price_from ? ('$' . number_format($property->price_from, 0)) : null,
-                'telephone'  => $property->phone,
-                'email'      => $property->email,
-                'url'        => $property->website,
+                'geo' => $property->latitude ? ['@type' => 'GeoCoordinates', 'latitude' => $property->latitude, 'longitude' => $property->longitude] : null,
+                'starRating' => $property->star_rating ? ['@type' => 'Rating', 'ratingValue' => $property->star_rating] : null,
+                'aggregateRating' => $property->rating_average ? ['@type' => 'AggregateRating', 'ratingValue' => $property->rating_average, 'reviewCount' => $property->rating_count] : null,
+                'priceRange' => $property->price_from ? '$' . number_format($property->price_from, 0) : null,
             ],
         ];
-    }
-
-    private function flushSeoCache(string $slug): void
-    {
-        Cache::forget("seo_{$slug}");
-        Cache::forget("content_page_{$slug}");
     }
 }
