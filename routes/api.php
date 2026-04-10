@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\Admin\AdminContentController;
 use App\Http\Controllers\Api\Admin\AdminPropertyController;
 use App\Http\Controllers\Api\Admin\AdminReviewController;
 use App\Http\Controllers\Api\Admin\AdminSettingsController;
+use App\Http\Controllers\Api\Admin\AdminSeoController;
 use App\Http\Controllers\Api\Admin\AdminUserController;
 use App\Http\Controllers\Api\Admin\DashboardController;
 use App\Http\Controllers\Api\Admin\PricingMarkupController;
@@ -88,6 +89,12 @@ Route::prefix('public')->group(function () {
         Route::get('header',       [ContentController::class, 'getHeader']);
         Route::get('footer',       [ContentController::class, 'getFooter']);
         Route::get('nav',          [ContentController::class, 'getNav']);
+    });
+
+    // Public SEO resolution — call before rendering any frontend page
+    Route::prefix('seo')->group(function () {
+        Route::get('/',                         [ContentController::class, 'getSeo']);          // ?path=/about-us OR ?slug=about-us
+        Route::get('property/{propertyCode}',   [ContentController::class, 'getPropertySeo']); // auto-generated property SEO
     });
 
     // Public settings (site name, currency, etc.)
@@ -307,6 +314,18 @@ Route::prefix('admin')->middleware(['auth:api', 'user.type:admin'])->group(funct
         Route::put('{id}',           [AdminContentController::class, 'update']);
         Route::delete('{id}',        [AdminContentController::class, 'destroy']);
         Route::put('{id}/restore',   [AdminContentController::class, 'restore']);
+    });
+
+    // SEO Management — per-route SEO configs
+    Route::prefix('seo')->group(function () {
+        Route::get('/',                             [AdminSeoController::class, 'index']);
+        Route::post('/',                            [AdminSeoController::class, 'store']);
+        Route::post('bulk-update',                  [AdminSeoController::class, 'bulkUpdate']);
+        Route::get('routes',                        [AdminSeoController::class, 'routes']);
+        Route::get('property/{propertyCode}',       [AdminSeoController::class, 'propertySeoPeview']);
+        Route::get('{id}',                          [AdminSeoController::class, 'show']);
+        Route::put('{id}',                          [AdminSeoController::class, 'update']);
+        Route::delete('{id}',                       [AdminSeoController::class, 'destroy']);
     });
 
     // Contact Forms & Newsletter (Admin)

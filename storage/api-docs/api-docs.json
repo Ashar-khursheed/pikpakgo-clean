@@ -1502,6 +1502,399 @@
                 ]
             }
         },
+        "/admin/seo": {
+            "get": {
+                "tags": [
+                    "Admin - SEO"
+                ],
+                "summary": "List all SEO configurations",
+                "operationId": "3820f7d1b2aa4f982b3cbab2e0f4fb85",
+                "parameters": [
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "description": "Filter: seo|page|all (default: all)",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "seo",
+                                "page",
+                                "all"
+                            ],
+                            "example": "all"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search by slug or title",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "example": 20
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated SEO list"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Admin - SEO"
+                ],
+                "summary": "Create an SEO configuration for a route",
+                "operationId": "897df2503ae4a59cbe8f9c36c2ea60cd",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "slug",
+                                    "title"
+                                ],
+                                "properties": {
+                                    "slug": {
+                                        "description": "Route identifier — use the page slug or a custom key",
+                                        "type": "string",
+                                        "example": "home"
+                                    },
+                                    "title": {
+                                        "type": "string",
+                                        "example": "PikPakGo — Vacation Rentals & Hotels"
+                                    },
+                                    "meta_title": {
+                                        "type": "string",
+                                        "example": "PikPakGo — Vacation Rentals & Hotels"
+                                    },
+                                    "meta_description": {
+                                        "type": "string",
+                                        "example": "Find the best vacation rentals and hotels worldwide."
+                                    },
+                                    "og_title": {
+                                        "type": "string",
+                                        "example": "PikPakGo"
+                                    },
+                                    "og_description": {
+                                        "type": "string"
+                                    },
+                                    "og_image": {
+                                        "type": "string",
+                                        "example": "https://cdn.pikpakgo.com/og-default.jpg"
+                                    },
+                                    "canonical_url": {
+                                        "type": "string",
+                                        "example": "https://pikpakgo.com/"
+                                    },
+                                    "no_index": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "schema_markup": {
+                                        "description": "JSON-LD structured data object",
+                                        "type": "object"
+                                    },
+                                    "is_active": {
+                                        "type": "boolean",
+                                        "example": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "SEO config created"
+                    },
+                    "422": {
+                        "description": "Validation error or slug already exists"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/seo/routes": {
+            "get": {
+                "tags": [
+                    "Admin - SEO"
+                ],
+                "summary": "List predefined application routes for SEO management",
+                "operationId": "52e7dda7a19f456251cb3f84c81fef7a",
+                "responses": {
+                    "200": {
+                        "description": "Predefined routes with their current SEO status"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/seo/{id}": {
+            "get": {
+                "tags": [
+                    "Admin - SEO"
+                ],
+                "summary": "Get a single SEO configuration",
+                "operationId": "75114af84db5fd15cfbe06631e11f719",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "SEO config details"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Admin - SEO"
+                ],
+                "summary": "Update an SEO configuration",
+                "operationId": "c5004942494e12569ad1da54dcf39415",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "title": {
+                                        "type": "string"
+                                    },
+                                    "meta_title": {
+                                        "type": "string",
+                                        "example": "Updated Page Title | PikPakGo"
+                                    },
+                                    "meta_description": {
+                                        "type": "string",
+                                        "example": "Updated meta description for SEO."
+                                    },
+                                    "og_title": {
+                                        "type": "string"
+                                    },
+                                    "og_description": {
+                                        "type": "string"
+                                    },
+                                    "og_image": {
+                                        "type": "string"
+                                    },
+                                    "canonical_url": {
+                                        "type": "string"
+                                    },
+                                    "no_index": {
+                                        "type": "boolean"
+                                    },
+                                    "schema_markup": {
+                                        "type": "object"
+                                    },
+                                    "is_active": {
+                                        "type": "boolean"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "SEO config updated"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Admin - SEO"
+                ],
+                "summary": "Delete an SEO configuration",
+                "operationId": "a180b537b8ce71e5e24948afa7ecb4d0",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Deleted"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/seo/bulk-update": {
+            "post": {
+                "tags": [
+                    "Admin - SEO"
+                ],
+                "summary": "Bulk upsert SEO configs for multiple routes at once",
+                "operationId": "c6fcc3c02663bd57d873c20f71593c82",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "pages"
+                                ],
+                                "properties": {
+                                    "pages": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "slug": {
+                                                    "type": "string",
+                                                    "example": "home"
+                                                },
+                                                "title": {
+                                                    "type": "string",
+                                                    "example": "Homepage"
+                                                },
+                                                "meta_title": {
+                                                    "type": "string"
+                                                },
+                                                "meta_description": {
+                                                    "type": "string"
+                                                },
+                                                "og_title": {
+                                                    "type": "string"
+                                                },
+                                                "og_description": {
+                                                    "type": "string"
+                                                },
+                                                "og_image": {
+                                                    "type": "string"
+                                                },
+                                                "canonical_url": {
+                                                    "type": "string"
+                                                },
+                                                "no_index": {
+                                                    "type": "boolean"
+                                                },
+                                                "schema_markup": {
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Bulk update result"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/seo/property/{propertyCode}": {
+            "get": {
+                "tags": [
+                    "Admin - SEO"
+                ],
+                "summary": "Get or preview auto-generated SEO for a specific property page",
+                "operationId": "288ff5e34044fbff10087c05e0bc7bfe",
+                "parameters": [
+                    {
+                        "name": "propertyCode",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "OR-12345"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Property SEO data"
+                    },
+                    "404": {
+                        "description": "Property not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/admin/settings": {
             "get": {
                 "tags": [
@@ -3735,6 +4128,129 @@
                         "bearerAuth": []
                     }
                 ]
+            }
+        },
+        "/public/seo": {
+            "get": {
+                "tags": [
+                    "Public - Content"
+                ],
+                "summary": "Resolve SEO meta for any frontend route",
+                "description": "Call this before rendering any page. Pass `path` (the frontend URL) or `slug`. Returns title, meta description, OG tags, canonical URL, no-index flag, and JSON-LD schema markup. Falls back to site-wide defaults when no specific config exists.",
+                "operationId": "e4b6f521b1b26fa779260bb2b5410c0d",
+                "parameters": [
+                    {
+                        "name": "path",
+                        "in": "query",
+                        "description": "Frontend URL path (e.g. /, /search, /about-us, /properties/OR-123)",
+                        "schema": {
+                            "type": "string",
+                            "example": "/about-us"
+                        }
+                    },
+                    {
+                        "name": "slug",
+                        "in": "query",
+                        "description": "CMS slug or route key (e.g. home, about-us, search)",
+                        "schema": {
+                            "type": "string",
+                            "example": "about-us"
+                        }
+                    },
+                    {
+                        "name": "property_code",
+                        "in": "query",
+                        "description": "Property code for auto-generated property page SEO",
+                        "schema": {
+                            "type": "string",
+                            "example": "OR-12345"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Resolved SEO meta block",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "source": {
+                                            "description": "cms|auto-generated|default",
+                                            "type": "string",
+                                            "example": "cms"
+                                        },
+                                        "slug": {
+                                            "type": "string",
+                                            "example": "about-us"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "title": {
+                                                    "type": "string"
+                                                },
+                                                "description": {
+                                                    "type": "string"
+                                                },
+                                                "og_title": {
+                                                    "type": "string"
+                                                },
+                                                "og_description": {
+                                                    "type": "string"
+                                                },
+                                                "og_image": {
+                                                    "type": "string"
+                                                },
+                                                "canonical": {
+                                                    "type": "string"
+                                                },
+                                                "no_index": {
+                                                    "type": "boolean"
+                                                },
+                                                "schema": {
+                                                    "description": "JSON-LD structured data",
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/public/seo/property/{propertyCode}": {
+            "get": {
+                "tags": [
+                    "Public - Content"
+                ],
+                "summary": "Get auto-generated SEO for a specific property page",
+                "operationId": "efc118b42e39dfa2882d41eaf1cce21f",
+                "parameters": [
+                    {
+                        "name": "propertyCode",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "OR-12345"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Property SEO meta"
+                    },
+                    "404": {
+                        "description": "Property not found"
+                    }
+                }
             }
         },
         "/public/content/pages/{slug}": {
@@ -6712,6 +7228,10 @@
         {
             "name": "Admin - Reviews",
             "description": "Admin review moderation endpoints"
+        },
+        {
+            "name": "Admin - SEO",
+            "description": "Manage per-route SEO meta — title, description, OG tags, schema markup, canonical URL, robots"
         },
         {
             "name": "Admin - Settings",

@@ -4,7 +4,11 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\ContentPage;
+use App\Models\PropertyListing;
+use App\Models\Setting;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 
 /**
  * @OA\Tag(
@@ -14,6 +18,247 @@ use Illuminate\Support\Facades\Cache;
  */
 class ContentController extends Controller
 {
+    /**
+     * @OA\Get(
+     *     path="/public/seo",
+     *     summary="Resolve SEO meta for any frontend route",
+     *     description="Call this before rendering any page. Pass `path` (the frontend URL) or `slug`. Returns title, meta description, OG tags, canonical URL, no-index flag, and JSON-LD schema markup. Falls back to site-wide defaults when no specific config exists.",
+     *     tags={"Public - Content"},
+     *     @OA\Parameter(
+     *         name="path",
+     *         in="query",
+     *         description="Frontend URL path (e.g. /, /search, /about-us, /properties/OR-123)",
+     *         @OA\Schema(type="string", example="/about-us")
+     *     ),
+     *     @OA\Parameter(
+     *         name="slug",
+     *         in="query",
+     *         description="CMS slug or route key (e.g. home, about-us, search)",
+     *         @OA\Schema(type="string", example="about-us")
+     *     ),
+     *     @OA\Parameter(
+     *         name="property_code",
+     *         in="query",
+     *         description="Property code for auto-generated property page SEO",
+     *         @OA\Schema(type="string", example="OR-12345")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Resolved SEO meta block",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success",  type="boolean"),
+     *             @OA\Property(property="source",   type="string",  example="cms", description="cms|auto-generated|default"),
+     *             @OA\Property(property="slug",     type="string",  example="about-us"),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="title",          type="string"),
+     *                 @OA\Property(property="description",    type="string"),
+     *                 @OA\Property(property="og_title",       type="string"),
+     *                 @OA\Property(property="og_description", type="string"),
+     *                 @OA\Property(property="og_image",       type="string"),
+     *                 @OA\Property(property="canonical",      type="string"),
+     *                 @OA\Property(property="no_index",       type="boolean"),
+     *                 @OA\Property(property="schema",         type="object", description="JSON-LD structured data")
+     *             )
+     *         )
+     *     )
+     * )
+     */
+    public function getSeo(Request $request)
+    {
+        $path         = $request->get('path');
+        $slug         = $request->get('slug');
+        $propertyCode = $request->get('property_code');
+
+        // Resolve slug from path when not supplied directly
+        if (!$slug && $path) {
+            $slug = $this->pathToSlug($path);
+        }
+
+        $cacheKey = 'seo_' . ($propertyCode ?? $slug ?? 'home');
+
+        $result = Cache::remember($cacheKey, 600, function () use ($slug, $path, $propertyCode) {
+            // 1. Property page — auto-generate from property data
+            if ($propertyCode) {
+                $property = PropertyListing::where('provider_code', $propertyCode)
+                    ->orWhere('provider_property_id', $propertyCode)
+                    ->active()
+                    ->first();
+
+                if ($property) {
+                    return [
+                        'source' => 'auto-generated',
+                        'slug'   => 'property-' . Str::slug($propertyCode),
+                        'data'   => $this->generatePropertySeo($property),
+                    ];
+                }
+            }
+
+            // 2. CMS / SEO config lookup by slug
+            if ($slug) {
+                $page = ContentPage::where('slug', $slug)
+                    ->active()
+                    ->published()
+                    ->first();
+
+                if ($page) {
+                    return [
+                        'source' => 'cms',
+                        'slug'   => $slug,
+                        'data'   => $page->seo,
+                    ];
+                }
+            }
+
+            // 3. Fallback — site-wide defaults from Settings
+            return [
+                'source' => 'default',
+                'slug'   => $slug ?? $this->pathToSlug($path ?? '/'),
+                'data'   => $this->siteDefaultSeo(),
+            ];
+        });
+
+        return response()->json(array_merge(['success' => true], $result));
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/public/seo/property/{propertyCode}",
+     *     summary="Get auto-generated SEO for a specific property page",
+     *     tags={"Public - Content"},
+     *     @OA\Parameter(name="propertyCode", in="path", required=true, @OA\Schema(type="string", example="OR-12345")),
+     *     @OA\Response(response=200, description="Property SEO meta"),
+     *     @OA\Response(response=404, description="Property not found")
+     * )
+     */
+    public function getPropertySeo($propertyCode)
+    {
+        $cacheKey = "seo_property_{$propertyCode}";
+
+        $data = Cache::remember($cacheKey, 600, function () use ($propertyCode) {
+            // Check for admin-set override first
+            $override = ContentPage::where('slug', 'property-' . Str::slug($propertyCode))
+                ->where('type', 'seo')
+                ->active()
+                ->first();
+
+            if ($override) {
+                return ['source' => 'override', 'data' => $override->seo];
+            }
+
+            // Auto-generate from property record
+            $property = PropertyListing::where('provider_code', $propertyCode)
+                ->orWhere('provider_property_id', $propertyCode)
+                ->active()
+                ->first();
+
+            if (!$property) return null;
+
+            return ['source' => 'auto-generated', 'data' => $this->generatePropertySeo($property)];
+        });
+
+        if (!$data) {
+            return response()->json(['success' => false, 'message' => 'Property not found.'], 404);
+        }
+
+        return response()->json(array_merge(['success' => true, 'property_code' => $propertyCode], $data));
+    }
+
+    // ── Private helpers ─────────────────────────────────────────────────────
+
+    /** Convert a frontend path to a CMS slug */
+    private function pathToSlug(string $path): string
+    {
+        $path = ltrim(parse_url($path, PHP_URL_PATH) ?? $path, '/');
+        if ($path === '' || $path === '/') return 'home';
+        return Str::slug(str_replace('/', '-', $path));
+    }
+
+    /** Auto-generate SEO block from a PropertyListing */
+    private function generatePropertySeo(PropertyListing $property): array
+    {
+        $title = $property->name . ' — ' . $property->city . ', ' . $property->country;
+        $desc  = $property->description
+            ? Str::limit(strip_tags($property->description), 155)
+            : "Book {$property->name} in {$property->city}, {$property->country}. "
+              . ucfirst($property->property_type) . ' available from $' . ($property->price_from ?? 'N/A') . '/night.';
+
+        return [
+            'title'          => $title,
+            'description'    => $desc,
+            'og_title'       => $title,
+            'og_description' => $desc,
+            'og_image'       => $property->featured_image,
+            'canonical'      => null,
+            'no_index'       => false,
+            'schema'         => [
+                '@context'       => 'https://schema.org',
+                '@type'          => 'LodgingBusiness',
+                'name'           => $property->name,
+                'description'    => $desc,
+                'image'          => $property->images ?? [],
+                'address'        => [
+                    '@type'           => 'PostalAddress',
+                    'streetAddress'   => $property->address,
+                    'addressLocality' => $property->city,
+                    'addressRegion'   => $property->state,
+                    'postalCode'      => $property->postal_code,
+                    'addressCountry'  => $property->country_code ?? $property->country,
+                ],
+                'geo' => $property->latitude ? [
+                    '@type'     => 'GeoCoordinates',
+                    'latitude'  => $property->latitude,
+                    'longitude' => $property->longitude,
+                ] : null,
+                'starRating' => $property->star_rating ? [
+                    '@type'       => 'Rating',
+                    'ratingValue' => $property->star_rating,
+                ] : null,
+                'aggregateRating' => $property->rating_average ? [
+                    '@type'       => 'AggregateRating',
+                    'ratingValue' => $property->rating_average,
+                    'reviewCount' => $property->rating_count,
+                ] : null,
+                'priceRange' => $property->price_from ? ('$' . number_format($property->price_from, 0)) : null,
+                'telephone'  => $property->phone,
+                'email'      => $property->email,
+                'url'        => $property->website,
+            ],
+        ];
+    }
+
+    /** Site-wide SEO defaults pulled from Settings table */
+    private function siteDefaultSeo(): array
+    {
+        $settings = Cache::remember('settings_public_seo', 3600, function () {
+            return Setting::whereIn('key', [
+                'site_name', 'site_description', 'site_logo', 'site_url',
+                'default_og_image', 'default_meta_description',
+            ])->pluck('value', 'key');
+        });
+
+        $siteName = $settings->get('site_name', 'PikPakGo');
+        $desc     = $settings->get('default_meta_description', $settings->get('site_description',
+            'Find vacation rentals and hotels worldwide. Book directly and save.'));
+
+        return [
+            'title'          => $siteName,
+            'description'    => $desc,
+            'og_title'       => $siteName,
+            'og_description' => $desc,
+            'og_image'       => $settings->get('default_og_image'),
+            'canonical'      => $settings->get('site_url'),
+            'no_index'       => false,
+            'schema'         => [
+                '@context' => 'https://schema.org',
+                '@type'    => 'TravelAgency',
+                'name'     => $siteName,
+                'url'      => $settings->get('site_url'),
+                'logo'     => $settings->get('site_logo'),
+                'description' => $desc,
+            ],
+        ];
+    }
+
     /**
      * @OA\Get(
      *     path="/public/content/pages/{slug}",
