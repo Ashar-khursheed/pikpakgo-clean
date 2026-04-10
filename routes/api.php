@@ -252,19 +252,24 @@ Route::prefix('admin')->middleware(['auth:api', 'user.type:admin'])->group(funct
         Route::get('/', [AdminBookingController::class, 'index']);
         Route::get('{id}', [AdminBookingController::class, 'show']);
         Route::put('{id}/status', [AdminBookingController::class, 'updateStatus']);
+        Route::post('{id}/refund', [AdminBookingController::class, 'refund']);
     });
 
     // Property Management
     Route::prefix('properties')->group(function () {
         Route::get('/', [AdminPropertyController::class, 'index']);
+        Route::post('/', [AdminPropertyController::class, 'store']);
         Route::post('sync', [AdminPropertyController::class, 'syncFromAPIs']);
         Route::get('{id}', [AdminPropertyController::class, 'show']);
+        Route::put('{id}', [AdminPropertyController::class, 'update']);
         Route::put('{id}/status', [AdminPropertyController::class, 'updateStatus']);
+        Route::delete('{id}', [AdminPropertyController::class, 'destroy']);
     });
 
     // User Management
     Route::prefix('users')->group(function () {
         Route::get('/', [AdminUserController::class, 'index']);
+        Route::post('/', [AdminUserController::class, 'store']);
         Route::get('{id}', [AdminUserController::class, 'show']);
         Route::put('{id}', [AdminUserController::class, 'update']);
         Route::put('{id}/status', [AdminUserController::class, 'updateStatus']);
@@ -313,6 +318,7 @@ Route::prefix('admin')->middleware(['auth:api', 'user.type:admin'])->group(funct
     Route::get('hosts', [ProfileController::class, 'adminListHosts']);
     Route::put('hosts/{id}/verify', [ProfileController::class, 'adminVerifyHost']);
     Route::get('agencies', [ProfileController::class, 'adminListAgencies']);
+    Route::put('agencies/{id}/verify', [ProfileController::class, 'adminVerifyAgency']);
 
     // Financial Reports & Provider Payout Management
     Route::prefix('financial')->group(function () {

@@ -174,6 +174,200 @@ class AdminPropertyController extends Controller
     }
 
     /**
+     * @OA\Post(
+     *     path="/admin/properties",
+     *     summary="Create a property manually (Admin)",
+     *     tags={"Admin - Properties"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(required=true, @OA\JsonContent(
+     *         required={"name","provider","property_type","city","country"},
+     *         @OA\Property(property="name",                type="string",  example="Ocean View Villa"),
+     *         @OA\Property(property="provider",            type="string",  enum={"ownerrez","hotelbeds","direct"}, example="direct"),
+     *         @OA\Property(property="provider_property_id",type="string",  example="CUSTOM-001"),
+     *         @OA\Property(property="provider_code",       type="string",  example="CUSTOM-001"),
+     *         @OA\Property(property="description",         type="string"),
+     *         @OA\Property(property="property_type",       type="string",  example="villa"),
+     *         @OA\Property(property="category",            type="string",  enum={"budget","standard","superior","luxury"}),
+     *         @OA\Property(property="star_rating",         type="integer", example=4),
+     *         @OA\Property(property="country",             type="string",  example="United States"),
+     *         @OA\Property(property="country_code",        type="string",  example="US"),
+     *         @OA\Property(property="state",               type="string",  example="Florida"),
+     *         @OA\Property(property="city",                type="string",  example="Miami"),
+     *         @OA\Property(property="address",             type="string"),
+     *         @OA\Property(property="postal_code",         type="string"),
+     *         @OA\Property(property="latitude",            type="number",  format="float", example=25.7617),
+     *         @OA\Property(property="longitude",           type="number",  format="float", example=-80.1918),
+     *         @OA\Property(property="phone",               type="string"),
+     *         @OA\Property(property="email",               type="string",  format="email"),
+     *         @OA\Property(property="website",             type="string"),
+     *         @OA\Property(property="images",              type="array",   @OA\Items(type="string")),
+     *         @OA\Property(property="featured_image",      type="string"),
+     *         @OA\Property(property="amenities",           type="array",   @OA\Items(type="string")),
+     *         @OA\Property(property="total_rooms",         type="integer"),
+     *         @OA\Property(property="price_from",          type="number",  example=150.00),
+     *         @OA\Property(property="price_currency",      type="string",  example="USD"),
+     *         @OA\Property(property="check_in_time",       type="string",  example="15:00"),
+     *         @OA\Property(property="check_out_time",      type="string",  example="11:00"),
+     *         @OA\Property(property="cancellation_policy", type="string"),
+     *         @OA\Property(property="child_policy",        type="string"),
+     *         @OA\Property(property="pet_policy",          type="string"),
+     *         @OA\Property(property="is_active",           type="boolean", example=true),
+     *         @OA\Property(property="is_featured",         type="boolean", example=false)
+     *     )),
+     *     @OA\Response(response=201, description="Property created"),
+     *     @OA\Response(response=422, description="Validation error")
+     * )
+     */
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'name'                 => 'required|string|max:255',
+            'provider'             => 'required|in:ownerrez,hotelbeds,direct',
+            'provider_property_id' => 'nullable|string|max:255',
+            'provider_code'        => 'nullable|string|max:255',
+            'description'          => 'nullable|string',
+            'property_type'        => 'required|string|max:100',
+            'category'             => 'nullable|in:budget,standard,superior,luxury',
+            'star_rating'          => 'nullable|integer|min:1|max:5',
+            'country'              => 'required|string|max:100',
+            'country_code'         => 'nullable|string|max:3',
+            'state'                => 'nullable|string|max:100',
+            'city'                 => 'required|string|max:100',
+            'address'              => 'nullable|string|max:500',
+            'postal_code'          => 'nullable|string|max:20',
+            'latitude'             => 'nullable|numeric|between:-90,90',
+            'longitude'            => 'nullable|numeric|between:-180,180',
+            'phone'                => 'nullable|string|max:30',
+            'email'                => 'nullable|email|max:200',
+            'website'              => 'nullable|url|max:255',
+            'images'               => 'nullable|array',
+            'images.*'             => 'string',
+            'featured_image'       => 'nullable|string',
+            'amenities'            => 'nullable|array',
+            'amenities.*'          => 'string',
+            'total_rooms'          => 'nullable|integer|min:1',
+            'price_from'           => 'nullable|numeric|min:0',
+            'price_currency'       => 'nullable|string|max:3',
+            'check_in_time'        => 'nullable|date_format:H:i',
+            'check_out_time'       => 'nullable|date_format:H:i',
+            'cancellation_policy'  => 'nullable|string',
+            'child_policy'         => 'nullable|string',
+            'pet_policy'           => 'nullable|string',
+            'is_active'            => 'boolean',
+            'is_featured'          => 'boolean',
+        ]);
+
+        $property = PropertyListing::create($validated);
+
+        return response()->json(['success' => true, 'data' => $property], 201);
+    }
+
+    /**
+     * @OA\Put(
+     *     path="/admin/properties/{id}",
+     *     summary="Update a property manually (Admin)",
+     *     tags={"Admin - Properties"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\RequestBody(required=true, @OA\JsonContent(
+     *         @OA\Property(property="name",                type="string"),
+     *         @OA\Property(property="description",         type="string"),
+     *         @OA\Property(property="property_type",       type="string"),
+     *         @OA\Property(property="category",            type="string",  enum={"budget","standard","superior","luxury"}),
+     *         @OA\Property(property="star_rating",         type="integer"),
+     *         @OA\Property(property="country",             type="string"),
+     *         @OA\Property(property="country_code",        type="string"),
+     *         @OA\Property(property="state",               type="string"),
+     *         @OA\Property(property="city",                type="string"),
+     *         @OA\Property(property="address",             type="string"),
+     *         @OA\Property(property="postal_code",         type="string"),
+     *         @OA\Property(property="latitude",            type="number",  format="float"),
+     *         @OA\Property(property="longitude",           type="number",  format="float"),
+     *         @OA\Property(property="phone",               type="string"),
+     *         @OA\Property(property="email",               type="string",  format="email"),
+     *         @OA\Property(property="website",             type="string"),
+     *         @OA\Property(property="images",              type="array",   @OA\Items(type="string")),
+     *         @OA\Property(property="featured_image",      type="string"),
+     *         @OA\Property(property="amenities",           type="array",   @OA\Items(type="string")),
+     *         @OA\Property(property="total_rooms",         type="integer"),
+     *         @OA\Property(property="price_from",          type="number"),
+     *         @OA\Property(property="price_currency",      type="string"),
+     *         @OA\Property(property="check_in_time",       type="string",  example="15:00"),
+     *         @OA\Property(property="check_out_time",      type="string",  example="11:00"),
+     *         @OA\Property(property="cancellation_policy", type="string"),
+     *         @OA\Property(property="child_policy",        type="string"),
+     *         @OA\Property(property="pet_policy",          type="string"),
+     *         @OA\Property(property="is_active",           type="boolean"),
+     *         @OA\Property(property="is_featured",         type="boolean")
+     *     )),
+     *     @OA\Response(response=200, description="Property updated"),
+     *     @OA\Response(response=404, description="Not found"),
+     *     @OA\Response(response=422, description="Validation error")
+     * )
+     */
+    public function update(Request $request, $id)
+    {
+        $property = PropertyListing::findOrFail($id);
+
+        $validated = $request->validate([
+            'name'                => 'sometimes|string|max:255',
+            'description'         => 'sometimes|nullable|string',
+            'property_type'       => 'sometimes|string|max:100',
+            'category'            => 'sometimes|nullable|in:budget,standard,superior,luxury',
+            'star_rating'         => 'sometimes|nullable|integer|min:1|max:5',
+            'country'             => 'sometimes|string|max:100',
+            'country_code'        => 'sometimes|nullable|string|max:3',
+            'state'               => 'sometimes|nullable|string|max:100',
+            'city'                => 'sometimes|string|max:100',
+            'address'             => 'sometimes|nullable|string|max:500',
+            'postal_code'         => 'sometimes|nullable|string|max:20',
+            'latitude'            => 'sometimes|nullable|numeric|between:-90,90',
+            'longitude'           => 'sometimes|nullable|numeric|between:-180,180',
+            'phone'               => 'sometimes|nullable|string|max:30',
+            'email'               => 'sometimes|nullable|email|max:200',
+            'website'             => 'sometimes|nullable|url|max:255',
+            'images'              => 'sometimes|nullable|array',
+            'images.*'            => 'string',
+            'featured_image'      => 'sometimes|nullable|string',
+            'amenities'           => 'sometimes|nullable|array',
+            'amenities.*'         => 'string',
+            'total_rooms'         => 'sometimes|nullable|integer|min:1',
+            'price_from'          => 'sometimes|nullable|numeric|min:0',
+            'price_currency'      => 'sometimes|nullable|string|max:3',
+            'check_in_time'       => 'sometimes|nullable|date_format:H:i',
+            'check_out_time'      => 'sometimes|nullable|date_format:H:i',
+            'cancellation_policy' => 'sometimes|nullable|string',
+            'child_policy'        => 'sometimes|nullable|string',
+            'pet_policy'          => 'sometimes|nullable|string',
+            'is_active'           => 'sometimes|boolean',
+            'is_featured'         => 'sometimes|boolean',
+        ]);
+
+        $property->update($validated);
+
+        return response()->json(['success' => true, 'message' => 'Property updated', 'data' => $property->fresh()]);
+    }
+
+    /**
+     * @OA\Delete(
+     *     path="/admin/properties/{id}",
+     *     summary="Delete a property (Admin)",
+     *     tags={"Admin - Properties"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Response(response=200, description="Property deleted"),
+     *     @OA\Response(response=404, description="Not found")
+     * )
+     */
+    public function destroy($id)
+    {
+        $property = PropertyListing::findOrFail($id);
+        $property->delete();
+
+        return response()->json(['success' => true, 'message' => 'Property deleted successfully']);
+    }
+
+    /**
      * Helper to save property to DB from OwnerRez listing index item.
      * Real OwnerRez items use listingExternalId (not id/property_id).
      */

@@ -140,7 +140,30 @@ class AdminContentController extends Controller
      *     tags={"Admin - Content (CMS)"},
      *     security={{"bearerAuth":{}}},
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
-     *     @OA\RequestBody(required=true, @OA\JsonContent(type="object")),
+     *     @OA\RequestBody(required=true, @OA\JsonContent(
+     *         @OA\Property(property="title",            type="string",  example="About Us"),
+     *         @OA\Property(property="type",             type="string",  enum={"page","header","footer","section","nav"}),
+     *         @OA\Property(property="template",         type="string",  enum={"default","landing","minimal","full-width"}),
+     *         @OA\Property(property="slug",             type="string",  example="about-us"),
+     *         @OA\Property(property="parent_slug",      type="string",  example=""),
+     *         @OA\Property(property="content",          type="object",  description="Flexible JSON content block"),
+     *         @OA\Property(property="sections",         type="array",   @OA\Items(type="object"), description="Page builder sections"),
+     *         @OA\Property(property="featured_image",   type="string"),
+     *         @OA\Property(property="meta_title",       type="string"),
+     *         @OA\Property(property="meta_description", type="string"),
+     *         @OA\Property(property="og_title",         type="string"),
+     *         @OA\Property(property="og_description",   type="string"),
+     *         @OA\Property(property="og_image",         type="string"),
+     *         @OA\Property(property="canonical_url",    type="string"),
+     *         @OA\Property(property="no_index",         type="boolean", example=false),
+     *         @OA\Property(property="schema_markup",    type="object",  description="JSON-LD structured data"),
+     *         @OA\Property(property="show_in_nav",      type="boolean", example=false),
+     *         @OA\Property(property="nav_label",        type="string"),
+     *         @OA\Property(property="nav_icon",         type="string"),
+     *         @OA\Property(property="sort_order",       type="integer", example=0),
+     *         @OA\Property(property="is_active",        type="boolean", example=true),
+     *         @OA\Property(property="published_at",     type="string",  format="date-time")
+     *     )),
      *     @OA\Response(response=200, description="Page updated")
      * )
      */

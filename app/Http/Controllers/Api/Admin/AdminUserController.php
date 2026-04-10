@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 /**
  * @OA\Tag(
@@ -15,6 +16,67 @@ use Illuminate\Support\Facades\Hash;
  */
 class AdminUserController extends Controller
 {
+    /**
+     * @OA\Post(
+     *     path="/admin/users",
+     *     summary="Create a new user (Admin)",
+     *     tags={"Admin - Users"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(required=true, @OA\JsonContent(
+     *         required={"first_name","last_name","email","user_type"},
+     *         @OA\Property(property="first_name",         type="string",  example="John"),
+     *         @OA\Property(property="last_name",          type="string",  example="Doe"),
+     *         @OA\Property(property="email",              type="string",  format="email", example="john@example.com"),
+     *         @OA\Property(property="phone",              type="string",  example="+1234567890"),
+     *         @OA\Property(property="user_type",          type="string",  enum={"customer","host","agency","admin"}, example="customer"),
+     *         @OA\Property(property="status",             type="string",  enum={"active","inactive","suspended","pending"}, example="active"),
+     *         @OA\Property(property="country",            type="string",  example="US"),
+     *         @OA\Property(property="city",               type="string",  example="Miami"),
+     *         @OA\Property(property="password",           type="string",  example="SecurePass123!", description="Leave blank to auto-generate"),
+     *         @OA\Property(property="email_verified",     type="boolean", example=true, description="Mark email as verified immediately")
+     *     )),
+     *     @OA\Response(response=201, description="User created"),
+     *     @OA\Response(response=422, description="Validation error")
+     * )
+     */
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'first_name'     => 'required|string|max:100',
+            'last_name'      => 'required|string|max:100',
+            'email'          => 'required|email|unique:users,email|max:200',
+            'phone'          => 'nullable|string|max:20',
+            'user_type'      => 'required|in:customer,host,agency,admin',
+            'status'         => 'nullable|in:active,inactive,suspended,pending',
+            'country'        => 'nullable|string|max:100',
+            'city'           => 'nullable|string|max:100',
+            'password'       => 'nullable|string|min:8',
+            'email_verified' => 'boolean',
+        ]);
+
+        $password = $validated['password'] ?? Str::random(12);
+
+        $user = User::create([
+            'first_name'        => $validated['first_name'],
+            'last_name'         => $validated['last_name'],
+            'email'             => $validated['email'],
+            'phone'             => $validated['phone'] ?? null,
+            'user_type'         => $validated['user_type'],
+            'status'            => $validated['status'] ?? 'active',
+            'country'           => $validated['country'] ?? null,
+            'city'              => $validated['city'] ?? null,
+            'password'          => Hash::make($password),
+            'email_verified_at' => ($validated['email_verified'] ?? false) ? now() : null,
+        ]);
+
+        return response()->json([
+            'success'           => true,
+            'message'           => 'User created successfully.',
+            'data'              => $user,
+            'generated_password'=> isset($validated['password']) ? null : $password,
+        ], 201);
+    }
+
     /**
      * @OA\Get(
      *     path="/admin/users",

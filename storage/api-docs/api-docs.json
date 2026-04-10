@@ -223,6 +223,79 @@
                 ]
             }
         },
+        "/admin/bookings/{id}/refund": {
+            "post": {
+                "tags": [
+                    "Admin - Bookings"
+                ],
+                "summary": "Issue a refund for a booking (Admin)",
+                "operationId": "f208e1c88db42d374b57637294e66225",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "refund_amount",
+                                    "reason"
+                                ],
+                                "properties": {
+                                    "refund_amount": {
+                                        "description": "Amount to refund",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 150
+                                    },
+                                    "reason": {
+                                        "type": "string",
+                                        "example": "Guest requested cancellation within free cancellation window"
+                                    },
+                                    "refund_type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "full",
+                                            "partial"
+                                        ],
+                                        "example": "partial"
+                                    },
+                                    "internal_notes": {
+                                        "type": "string",
+                                        "example": "Processed manually after guest complaint"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Refund processed"
+                    },
+                    "404": {
+                        "description": "Booking not found"
+                    },
+                    "422": {
+                        "description": "Ineligible for refund"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/admin/bookings/export/csv": {
             "get": {
                 "tags": [
@@ -270,65 +343,449 @@
         "/admin/content": {
             "get": {
                 "tags": [
-                    "Admin Content"
+                    "Admin - Content (CMS)"
                 ],
-                "summary": "List content pages",
+                "summary": "List all content pages",
                 "operationId": "3a99006b71d55d396640b8de7ecc793f",
+                "parameters": [
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "page",
+                                "header",
+                                "footer",
+                                "section",
+                                "nav"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "show_in_nav",
+                        "in": "query",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "List of content pages"
+                        "description": "Paginated content list"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             },
             "post": {
                 "tags": [
-                    "Admin Content"
+                    "Admin - Content (CMS)"
                 ],
-                "summary": "Create content page",
+                "summary": "Create a content page",
                 "operationId": "cd45feb68be6258942a924867775b36e",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "title",
+                                    "type"
+                                ],
+                                "properties": {
+                                    "title": {
+                                        "type": "string",
+                                        "example": "About Us"
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "page",
+                                            "header",
+                                            "footer",
+                                            "section",
+                                            "nav"
+                                        ],
+                                        "example": "page"
+                                    },
+                                    "template": {
+                                        "type": "string",
+                                        "enum": [
+                                            "default",
+                                            "landing",
+                                            "minimal",
+                                            "full-width"
+                                        ],
+                                        "example": "default"
+                                    },
+                                    "slug": {
+                                        "type": "string",
+                                        "example": "about-us"
+                                    },
+                                    "parent_slug": {
+                                        "type": "string",
+                                        "example": ""
+                                    },
+                                    "content": {
+                                        "description": "Flexible JSON content block",
+                                        "type": "object"
+                                    },
+                                    "sections": {
+                                        "description": "Page builder sections",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "featured_image": {
+                                        "type": "string"
+                                    },
+                                    "meta_title": {
+                                        "type": "string"
+                                    },
+                                    "meta_description": {
+                                        "type": "string"
+                                    },
+                                    "og_title": {
+                                        "type": "string"
+                                    },
+                                    "og_description": {
+                                        "type": "string"
+                                    },
+                                    "og_image": {
+                                        "type": "string"
+                                    },
+                                    "canonical_url": {
+                                        "type": "string"
+                                    },
+                                    "no_index": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "schema_markup": {
+                                        "description": "JSON-LD structured data",
+                                        "type": "object"
+                                    },
+                                    "show_in_nav": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "nav_label": {
+                                        "type": "string"
+                                    },
+                                    "nav_icon": {
+                                        "type": "string"
+                                    },
+                                    "sort_order": {
+                                        "type": "integer",
+                                        "example": 0
+                                    },
+                                    "is_active": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "published_at": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "201": {
-                        "description": "Content created"
+                        "description": "Page created"
+                    },
+                    "422": {
+                        "description": "Validation error"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/admin/content/{id}": {
             "get": {
                 "tags": [
-                    "Admin Content"
+                    "Admin - Content (CMS)"
                 ],
-                "summary": "Get content page",
+                "summary": "Get a single content page with full SEO data",
                 "operationId": "5532ac733cc6ffdef4452821283a6358",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "Content details"
+                        "description": "Page details"
+                    },
+                    "404": {
+                        "description": "Not found"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             },
             "put": {
                 "tags": [
-                    "Admin Content"
+                    "Admin - Content (CMS)"
                 ],
-                "summary": "Update content page",
+                "summary": "Update a content page",
                 "operationId": "bdec4a68bfe2e2f9b43ca94927a2b19a",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "title": {
+                                        "type": "string",
+                                        "example": "About Us"
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "page",
+                                            "header",
+                                            "footer",
+                                            "section",
+                                            "nav"
+                                        ]
+                                    },
+                                    "template": {
+                                        "type": "string",
+                                        "enum": [
+                                            "default",
+                                            "landing",
+                                            "minimal",
+                                            "full-width"
+                                        ]
+                                    },
+                                    "slug": {
+                                        "type": "string",
+                                        "example": "about-us"
+                                    },
+                                    "parent_slug": {
+                                        "type": "string",
+                                        "example": ""
+                                    },
+                                    "content": {
+                                        "description": "Flexible JSON content block",
+                                        "type": "object"
+                                    },
+                                    "sections": {
+                                        "description": "Page builder sections",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "featured_image": {
+                                        "type": "string"
+                                    },
+                                    "meta_title": {
+                                        "type": "string"
+                                    },
+                                    "meta_description": {
+                                        "type": "string"
+                                    },
+                                    "og_title": {
+                                        "type": "string"
+                                    },
+                                    "og_description": {
+                                        "type": "string"
+                                    },
+                                    "og_image": {
+                                        "type": "string"
+                                    },
+                                    "canonical_url": {
+                                        "type": "string"
+                                    },
+                                    "no_index": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "schema_markup": {
+                                        "description": "JSON-LD structured data",
+                                        "type": "object"
+                                    },
+                                    "show_in_nav": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "nav_label": {
+                                        "type": "string"
+                                    },
+                                    "nav_icon": {
+                                        "type": "string"
+                                    },
+                                    "sort_order": {
+                                        "type": "integer",
+                                        "example": 0
+                                    },
+                                    "is_active": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "published_at": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
-                        "description": "Content updated"
+                        "description": "Page updated"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             },
             "delete": {
                 "tags": [
-                    "Admin Content"
+                    "Admin - Content (CMS)"
                 ],
-                "summary": "Delete content page",
+                "summary": "Soft-delete a content page",
                 "operationId": "7ab44417844b5f5f0ba9f29b320f2810",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "Content deleted"
+                        "description": "Page deleted"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/content/{id}/restore": {
+            "put": {
+                "tags": [
+                    "Admin - Content (CMS)"
+                ],
+                "summary": "Restore a soft-deleted content page",
+                "operationId": "8709e076c57a2e13fa4cb016243b6e62",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Page restored"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/content/reorder": {
+            "post": {
+                "tags": [
+                    "Admin - Content (CMS)"
+                ],
+                "summary": "Reorder nav items (drag-and-drop sort)",
+                "operationId": "af251620a92cdd7e99fe2a49e8f83d92",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "order"
+                                ],
+                                "properties": {
+                                    "order": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer"
+                                                },
+                                                "sort_order": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Order updated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/admin/properties": {
@@ -375,6 +832,179 @@
                         "bearerAuth": []
                     }
                 ]
+            },
+            "post": {
+                "tags": [
+                    "Admin - Properties"
+                ],
+                "summary": "Create a property manually (Admin)",
+                "operationId": "1b987ea2c0405f087d12c9656c20133d",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "provider",
+                                    "property_type",
+                                    "city",
+                                    "country"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Ocean View Villa"
+                                    },
+                                    "provider": {
+                                        "type": "string",
+                                        "enum": [
+                                            "ownerrez",
+                                            "hotelbeds",
+                                            "direct"
+                                        ],
+                                        "example": "direct"
+                                    },
+                                    "provider_property_id": {
+                                        "type": "string",
+                                        "example": "CUSTOM-001"
+                                    },
+                                    "provider_code": {
+                                        "type": "string",
+                                        "example": "CUSTOM-001"
+                                    },
+                                    "description": {
+                                        "type": "string"
+                                    },
+                                    "property_type": {
+                                        "type": "string",
+                                        "example": "villa"
+                                    },
+                                    "category": {
+                                        "type": "string",
+                                        "enum": [
+                                            "budget",
+                                            "standard",
+                                            "superior",
+                                            "luxury"
+                                        ]
+                                    },
+                                    "star_rating": {
+                                        "type": "integer",
+                                        "example": 4
+                                    },
+                                    "country": {
+                                        "type": "string",
+                                        "example": "United States"
+                                    },
+                                    "country_code": {
+                                        "type": "string",
+                                        "example": "US"
+                                    },
+                                    "state": {
+                                        "type": "string",
+                                        "example": "Florida"
+                                    },
+                                    "city": {
+                                        "type": "string",
+                                        "example": "Miami"
+                                    },
+                                    "address": {
+                                        "type": "string"
+                                    },
+                                    "postal_code": {
+                                        "type": "string"
+                                    },
+                                    "latitude": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 25.7617
+                                    },
+                                    "longitude": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": -80.1918
+                                    },
+                                    "phone": {
+                                        "type": "string"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    },
+                                    "website": {
+                                        "type": "string"
+                                    },
+                                    "images": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "featured_image": {
+                                        "type": "string"
+                                    },
+                                    "amenities": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "total_rooms": {
+                                        "type": "integer"
+                                    },
+                                    "price_from": {
+                                        "type": "number",
+                                        "example": 150
+                                    },
+                                    "price_currency": {
+                                        "type": "string",
+                                        "example": "USD"
+                                    },
+                                    "check_in_time": {
+                                        "type": "string",
+                                        "example": "15:00"
+                                    },
+                                    "check_out_time": {
+                                        "type": "string",
+                                        "example": "11:00"
+                                    },
+                                    "cancellation_policy": {
+                                        "type": "string"
+                                    },
+                                    "child_policy": {
+                                        "type": "string"
+                                    },
+                                    "pet_policy": {
+                                        "type": "string"
+                                    },
+                                    "is_active": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "is_featured": {
+                                        "type": "boolean",
+                                        "example": false
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Property created"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/admin/properties/{id}": {
@@ -397,6 +1027,185 @@
                 "responses": {
                     "200": {
                         "description": "Property details"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Admin - Properties"
+                ],
+                "summary": "Update a property manually (Admin)",
+                "operationId": "daddea03856ba0b85ecb9c4073c60fc7",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "description": {
+                                        "type": "string"
+                                    },
+                                    "property_type": {
+                                        "type": "string"
+                                    },
+                                    "category": {
+                                        "type": "string",
+                                        "enum": [
+                                            "budget",
+                                            "standard",
+                                            "superior",
+                                            "luxury"
+                                        ]
+                                    },
+                                    "star_rating": {
+                                        "type": "integer"
+                                    },
+                                    "country": {
+                                        "type": "string"
+                                    },
+                                    "country_code": {
+                                        "type": "string"
+                                    },
+                                    "state": {
+                                        "type": "string"
+                                    },
+                                    "city": {
+                                        "type": "string"
+                                    },
+                                    "address": {
+                                        "type": "string"
+                                    },
+                                    "postal_code": {
+                                        "type": "string"
+                                    },
+                                    "latitude": {
+                                        "type": "number",
+                                        "format": "float"
+                                    },
+                                    "longitude": {
+                                        "type": "number",
+                                        "format": "float"
+                                    },
+                                    "phone": {
+                                        "type": "string"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    },
+                                    "website": {
+                                        "type": "string"
+                                    },
+                                    "images": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "featured_image": {
+                                        "type": "string"
+                                    },
+                                    "amenities": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "total_rooms": {
+                                        "type": "integer"
+                                    },
+                                    "price_from": {
+                                        "type": "number"
+                                    },
+                                    "price_currency": {
+                                        "type": "string"
+                                    },
+                                    "check_in_time": {
+                                        "type": "string",
+                                        "example": "15:00"
+                                    },
+                                    "check_out_time": {
+                                        "type": "string",
+                                        "example": "11:00"
+                                    },
+                                    "cancellation_policy": {
+                                        "type": "string"
+                                    },
+                                    "child_policy": {
+                                        "type": "string"
+                                    },
+                                    "pet_policy": {
+                                        "type": "string"
+                                    },
+                                    "is_active": {
+                                        "type": "boolean"
+                                    },
+                                    "is_featured": {
+                                        "type": "boolean"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Property updated"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Admin - Properties"
+                ],
+                "summary": "Delete a property (Admin)",
+                "operationId": "416648c1f1de0f5e7767552638327c0e",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Property deleted"
                     },
                     "404": {
                         "description": "Not found"
@@ -887,6 +1696,99 @@
                         "bearerAuth": []
                     }
                 ]
+            },
+            "post": {
+                "tags": [
+                    "Admin - Users"
+                ],
+                "summary": "Create a new user (Admin)",
+                "operationId": "9d827419c2c180698b57d7d202e850b9",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "first_name",
+                                    "last_name",
+                                    "email",
+                                    "user_type"
+                                ],
+                                "properties": {
+                                    "first_name": {
+                                        "type": "string",
+                                        "example": "John"
+                                    },
+                                    "last_name": {
+                                        "type": "string",
+                                        "example": "Doe"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "john@example.com"
+                                    },
+                                    "phone": {
+                                        "type": "string",
+                                        "example": "+1234567890"
+                                    },
+                                    "user_type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "customer",
+                                            "host",
+                                            "agency",
+                                            "admin"
+                                        ],
+                                        "example": "customer"
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "active",
+                                            "inactive",
+                                            "suspended",
+                                            "pending"
+                                        ],
+                                        "example": "active"
+                                    },
+                                    "country": {
+                                        "type": "string",
+                                        "example": "US"
+                                    },
+                                    "city": {
+                                        "type": "string",
+                                        "example": "Miami"
+                                    },
+                                    "password": {
+                                        "description": "Leave blank to auto-generate",
+                                        "type": "string",
+                                        "example": "SecurePass123!"
+                                    },
+                                    "email_verified": {
+                                        "description": "Mark email as verified immediately",
+                                        "type": "boolean",
+                                        "example": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "User created"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/admin/users/{id}": {
@@ -1360,6 +2262,174 @@
                 "responses": {
                     "200": {
                         "description": "User growth data"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/financial/overview": {
+            "get": {
+                "tags": [
+                    "Admin - Financial"
+                ],
+                "summary": "Platform financial overview — revenue, costs, profit",
+                "operationId": "cdad9b5a7aa328a59098ef88dc45a955",
+                "parameters": [
+                    {
+                        "name": "from",
+                        "in": "query",
+                        "description": "Start date (Y-m-d)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "to",
+                        "in": "query",
+                        "description": "End date (Y-m-d)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "group_by",
+                        "in": "query",
+                        "description": "day|month|year",
+                        "schema": {
+                            "type": "string",
+                            "default": "month"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Financial overview"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/financial/payouts": {
+            "get": {
+                "tags": [
+                    "Admin - Financial"
+                ],
+                "summary": "List bookings by provider payout status",
+                "operationId": "2b70d6ec57ba451d3cab59e8733e3439",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "pending|sent|failed|not_required",
+                        "schema": {
+                            "type": "string",
+                            "default": "pending"
+                        }
+                    },
+                    {
+                        "name": "provider",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Payout list"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/financial/payouts/{id}/retry": {
+            "post": {
+                "tags": [
+                    "Admin - Financial"
+                ],
+                "summary": "Retry a failed provider payout for a specific booking",
+                "operationId": "8bbdd03bd550e1f625669a3977340110",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Payout job re-queued"
+                    },
+                    "404": {
+                        "description": "Booking not found"
+                    },
+                    "422": {
+                        "description": "Booking not eligible for retry"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/financial/payouts/retry-all-failed": {
+            "post": {
+                "tags": [
+                    "Admin - Financial"
+                ],
+                "summary": "Retry all bookings with provider_payout_status = failed",
+                "operationId": "518dafdcb95db598bd0c091d554e9d62",
+                "responses": {
+                    "200": {
+                        "description": "Jobs queued"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/financial/profit-by-property": {
+            "get": {
+                "tags": [
+                    "Admin - Financial"
+                ],
+                "summary": "Net profit ranked by property",
+                "operationId": "7b8946da8d8c9b9ad845b9ff0cecb8df",
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "default": 10
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Profit by property"
                     }
                 },
                 "security": [
@@ -2670,13 +3740,27 @@
         "/public/content/pages/{slug}": {
             "get": {
                 "tags": [
-                    "Content"
+                    "Public - Content"
                 ],
-                "summary": "Get public page content",
+                "summary": "Get a CMS page by slug (with full SEO meta)",
                 "operationId": "e081dd2434504f6474634c977f94e968",
+                "parameters": [
+                    {
+                        "name": "slug",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "about-us"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "Page content"
+                        "description": "Page content + SEO"
+                    },
+                    "404": {
+                        "description": "Page not found"
                     }
                 }
             }
@@ -2684,13 +3768,13 @@
         "/public/content/header": {
             "get": {
                 "tags": [
-                    "Content"
+                    "Public - Content"
                 ],
-                "summary": "Get header content",
+                "summary": "Get site header — logo, nav links, CTA buttons",
                 "operationId": "0779b689bc4171be6a774328cc74c2be",
                 "responses": {
                     "200": {
-                        "description": "Header content"
+                        "description": "Header configuration"
                     }
                 }
             }
@@ -2698,13 +3782,27 @@
         "/public/content/footer": {
             "get": {
                 "tags": [
-                    "Content"
+                    "Public - Content"
                 ],
-                "summary": "Get footer content",
+                "summary": "Get site footer — links, socials, copyright, columns",
                 "operationId": "d6e3ff70748f0a7bceb19dffac9ed08f",
                 "responses": {
                     "200": {
-                        "description": "Footer content"
+                        "description": "Footer configuration"
+                    }
+                }
+            }
+        },
+        "/public/content/nav": {
+            "get": {
+                "tags": [
+                    "Public - Content"
+                ],
+                "summary": "Get full navigation menu (flat + hierarchical)",
+                "operationId": "3236bceb99ec37c16817fb282902f569",
+                "responses": {
+                    "200": {
+                        "description": "Navigation structure"
                     }
                 }
             }
@@ -2844,6 +3942,33 @@
                         }
                     },
                     {
+                        "name": "category",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "booking",
+                                "payment",
+                                "system",
+                                "promo",
+                                "review"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "priority",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "low",
+                                "normal",
+                                "high",
+                                "urgent"
+                            ]
+                        }
+                    },
+                    {
                         "name": "per_page",
                         "in": "query",
                         "schema": {
@@ -2854,7 +3979,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Notifications list with unread count"
+                        "description": "Notifications with unread count and badge"
                     }
                 },
                 "security": [
@@ -2881,12 +4006,31 @@
                 ]
             }
         },
+        "/notifications/badge": {
+            "get": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Get unread notification count (badge) — lightweight endpoint for navbar",
+                "operationId": "b132e410dbdd395920a73db93619cb95",
+                "responses": {
+                    "200": {
+                        "description": "Badge count"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/notifications/{id}/read": {
             "put": {
                 "tags": [
                     "Notifications"
                 ],
-                "summary": "Mark a notification as read",
+                "summary": "Mark a single notification as read",
                 "operationId": "a28a3f705edbab5a620d9b567f97d739",
                 "parameters": [
                     {
@@ -2937,7 +4081,7 @@
                 "tags": [
                     "Notifications"
                 ],
-                "summary": "Delete a notification",
+                "summary": "Delete a single notification",
                 "operationId": "0f28a0400610f81f01e2d25ce4e0edff",
                 "parameters": [
                     {
@@ -2952,9 +4096,6 @@
                 "responses": {
                     "200": {
                         "description": "Deleted"
-                    },
-                    "404": {
-                        "description": "Not found"
                     }
                 },
                 "security": [
@@ -3982,6 +5123,64 @@
                 "responses": {
                     "200": {
                         "description": "Agency list"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/agencies/{id}/verify": {
+            "put": {
+                "tags": [
+                    "Admin - Users"
+                ],
+                "summary": "Approve or reject an agency verification (Admin)",
+                "operationId": "fbcd1dbe5cffc2d35cd9805c0a99e213",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "status"
+                                ],
+                                "properties": {
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "approved",
+                                            "rejected"
+                                        ]
+                                    },
+                                    "rejection_reason": {
+                                        "description": "Required when status=rejected",
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Verification updated"
+                    },
+                    "404": {
+                        "description": "Not found"
                     }
                 },
                 "security": [
@@ -5503,8 +6702,8 @@
             "description": "Admin booking management endpoints"
         },
         {
-            "name": "Admin Content",
-            "description": "Content management endpoints"
+            "name": "Admin - Content (CMS)",
+            "description": "Full page builder with SEO, nav management, and dynamic header/footer"
         },
         {
             "name": "Admin - Properties",
@@ -5527,6 +6726,10 @@
             "description": "Admin dashboard statistics and analytics"
         },
         {
+            "name": "Admin - Financial",
+            "description": "Revenue, profit, and provider payout management"
+        },
+        {
             "name": "Admin - Pricing Markups",
             "description": "Manage pricing markup rules applied to booking prices"
         },
@@ -5539,8 +6742,8 @@
             "description": "Booking management — guest and authenticated user flows"
         },
         {
-            "name": "Content",
-            "description": "Public content endpoints"
+            "name": "Public - Content",
+            "description": "Public CMS content — pages, header, footer, nav, SEO meta"
         },
         {
             "name": "Guest Session",
@@ -5548,7 +6751,7 @@
         },
         {
             "name": "Notifications",
-            "description": "In-app user notifications"
+            "description": "In-app user notifications with priority levels and badge count"
         },
         {
             "name": "OwnerRez",

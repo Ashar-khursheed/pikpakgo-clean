@@ -257,4 +257,54 @@ class ProfileController extends Controller
 
         return response()->json(['success' => true, 'data' => $query->paginate(20)]);
     }
+
+    /**
+     * @OA\Put(
+     *     path="/admin/agencies/{id}/verify",
+     *     summary="Approve or reject an agency verification (Admin)",
+     *     tags={"Admin - Users"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\RequestBody(required=true, @OA\JsonContent(
+     *         required={"status"},
+     *         @OA\Property(property="status",           type="string", enum={"approved","rejected"}),
+     *         @OA\Property(property="rejection_reason", type="string", description="Required when status=rejected")
+     *     )),
+     *     @OA\Response(response=200, description="Verification updated"),
+     *     @OA\Response(response=404, description="Not found")
+     * )
+     */
+    public function adminVerifyAgency(Request $request, $id)
+    {
+        $profile = AgencyProfile::findOrFail($id);
+
+        $request->validate([
+            'status'           => 'required|in:approved,rejected',
+            'rejection_reason' => 'required_if:status,rejected|nullable|string',
+        ]);
+
+        $updates = ['verification_status' => $request->status];
+        if ($request->status === 'approved') {
+            $updates['is_verified'] = true;
+            $updates['verified_at'] = now();
+        } else {
+            $updates['rejection_reason'] = $request->rejection_reason;
+        }
+
+        $profile->update($updates);
+
+        if ($profile->user_id) {
+            $msg = $request->status === 'approved'
+                ? 'Your agency profile has been verified!'
+                : 'Your agency verification was rejected: ' . $request->rejection_reason;
+            \App\Models\UserNotification::notify(
+                $profile->user_id,
+                'agency_verification_' . $request->status,
+                'Agency Verification ' . ucfirst($request->status),
+                $msg
+            );
+        }
+
+        return response()->json(['success' => true, 'message' => 'Agency verification updated.', 'data' => $profile]);
+    }
 }

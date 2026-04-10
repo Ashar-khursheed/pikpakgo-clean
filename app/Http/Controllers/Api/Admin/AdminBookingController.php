@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
+use App\Models\PaymentTransaction;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 /**
  * @OA\Tag(
@@ -127,6 +129,83 @@ class AdminBookingController extends Controller
             'success' => true,
             'message' => 'Booking updated successfully',
             'data'    => $booking,
+        ]);
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/admin/bookings/{id}/refund",
+     *     summary="Issue a refund for a booking (Admin)",
+     *     tags={"Admin - Bookings"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\RequestBody(required=true, @OA\JsonContent(
+     *         required={"refund_amount","reason"},
+     *         @OA\Property(property="refund_amount", type="number",  format="float", example=150.00, description="Amount to refund"),
+     *         @OA\Property(property="reason",        type="string",  example="Guest requested cancellation within free cancellation window"),
+     *         @OA\Property(property="refund_type",   type="string",  enum={"full","partial"}, example="partial"),
+     *         @OA\Property(property="internal_notes",type="string",  example="Processed manually after guest complaint")
+     *     )),
+     *     @OA\Response(response=200, description="Refund processed"),
+     *     @OA\Response(response=404, description="Booking not found"),
+     *     @OA\Response(response=422, description="Ineligible for refund")
+     * )
+     */
+    public function refund(Request $request, $id)
+    {
+        $booking = Booking::findOrFail($id);
+
+        if ($booking->payment_status !== 'paid') {
+            return response()->json(['success' => false, 'message' => 'Booking has not been paid; cannot issue refund.'], 422);
+        }
+
+        $validated = $request->validate([
+            'refund_amount' => 'required|numeric|min:0.01|max:' . $booking->paid_amount,
+            'reason'        => 'required|string|max:500',
+            'refund_type'   => 'nullable|in:full,partial',
+            'internal_notes'=> 'nullable|string|max:2000',
+        ]);
+
+        $isFullRefund = $validated['refund_amount'] >= $booking->paid_amount;
+
+        // Record refund transaction
+        PaymentTransaction::create([
+            'booking_id'         => $booking->id,
+            'user_id'            => $booking->user_id,
+            'transaction_type'   => 'refund',
+            'amount'             => $validated['refund_amount'],
+            'currency'           => $booking->currency,
+            'status'             => 'success',
+            'gateway'            => 'manual',
+            'notes'              => $validated['reason'],
+        ]);
+
+        // Update booking payment status
+        $newPaymentStatus = $isFullRefund ? 'refunded' : 'partially_refunded';
+        $updates = [
+            'payment_status' => $newPaymentStatus,
+            'booking_status' => $isFullRefund ? 'cancelled' : $booking->booking_status,
+        ];
+        if (!empty($validated['internal_notes'])) {
+            $updates['internal_notes'] = $validated['internal_notes'];
+        }
+        if ($isFullRefund) {
+            $updates['cancelled_at'] = now();
+            $updates['cancelled_by'] = 'admin';
+        }
+
+        $booking->update($updates);
+
+        Log::info("Admin refund issued for booking {$booking->booking_reference}", [
+            'amount'    => $validated['refund_amount'],
+            'admin_id'  => auth()->id(),
+            'reason'    => $validated['reason'],
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Refund of ' . $booking->currency . ' ' . $validated['refund_amount'] . ' processed successfully.',
+            'data'    => $booking->fresh(),
         ]);
     }
 
