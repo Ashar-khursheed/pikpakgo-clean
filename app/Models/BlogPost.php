@@ -10,6 +10,8 @@ class BlogPost extends Model
 {
     use SoftDeletes;
 
+    protected $appends = ['seo_slug'];
+
     protected $fillable = [
         'blog_category_id', 'author_id',
         'title', 'slug', 'excerpt', 'content',
@@ -114,5 +116,10 @@ class BlogPost extends Model
             'keywords' => $this->tags ? implode(', ', $this->tags) : null,
             'articleSection' => $this->category?->name,
         ];
+    }
+
+    public function getSeoSlugAttribute(): string
+    {
+        return 'blog-' . $this->slug;
     }
 }

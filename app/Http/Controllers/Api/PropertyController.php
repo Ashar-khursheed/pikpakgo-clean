@@ -200,8 +200,14 @@ class PropertyController extends Controller
     {
         try {
             // Try to find in cached listings first
+            $propertyCode = $id;
+            if (\Illuminate\Support\Str::startsWith($id, 'property-')) {
+                $propertyCode = \Illuminate\Support\Str::after($id, 'property-');
+            }
+
             $property = PropertyListing::where('id', $id)
-                ->orWhere('provider_property_id', $id)
+                ->orWhere('provider_property_id', $propertyCode)
+                ->orWhere('provider_code', $propertyCode)
                 ->first();
             
             if ($property) {

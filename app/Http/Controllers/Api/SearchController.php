@@ -407,7 +407,8 @@ class SearchController extends Controller
                 ->map(fn ($p) => [
                     'type'          => 'property',
                     'label'         => $p->name,
-                    'value'         => $p->provider_property_id,
+                    'value'         => $p->seo_slug,
+                    'seo_slug'      => $p->seo_slug,
                     'subtitle'      => $p->city . ($p->country ? ', ' . $p->country : ''),
                     'image'         => $p->featured_image,
                     'price_from'    => $p->price_from,

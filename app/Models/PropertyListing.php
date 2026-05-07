@@ -10,6 +10,8 @@ class PropertyListing extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected $appends = ['seo_slug'];
+
     protected $fillable = [
         'provider',
         'provider_property_id',
@@ -272,5 +274,15 @@ class PropertyListing extends Model
     public function getStarRatingDisplayAttribute(): string
     {
         return $this->star_rating ? str_repeat('★', $this->star_rating) : 'N/A';
+    }
+
+    /**
+     * Get the SEO slug used for routing and SEO lookups
+     */
+    public function getSeoSlugAttribute(): string
+    {
+        // For properties, the SEO system uses property-{slugified_code}
+        $code = $this->provider_code ?: $this->provider_property_id;
+        return 'property-' . \Illuminate\Support\Str::slug($code);
     }
 }
