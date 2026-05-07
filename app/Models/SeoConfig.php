@@ -8,12 +8,21 @@ class SeoConfig extends Model
 {
     protected $fillable = [
         'route_slug', 'route_path', 'route_label', 'route_group',
+        'model_type', 'model_id',
         'meta_title', 'meta_description',
         'og_title', 'og_description', 'og_image',
         'twitter_card', 'twitter_title', 'twitter_description', 'twitter_image',
         'canonical_url', 'no_index', 'no_follow',
         'schema_markup', 'is_active',
     ];
+
+    /**
+     * Get the parent model (PropertyListing, BlogPost, etc.)
+     */
+    public function model()
+    {
+        return $this->morphTo();
+    }
 
     protected $casts = [
         'schema_markup' => 'array',

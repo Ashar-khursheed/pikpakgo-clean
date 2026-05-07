@@ -133,6 +133,7 @@ class SearchController extends Controller
         $sort      = $request->sort ?? 'featured';
 
         $query = PropertyListing::where('is_active', true)
+            ->select(PropertyListing::LISTING_COLUMNS)
 
             // Location text search
             ->when($location, fn($q) => $q->where(fn($q2) => $q2

@@ -57,7 +57,8 @@ class PropertyController extends Controller
         try {
             $perPage = min($request->input('per_page', 20), 100);
 
-            $query = PropertyListing::where('is_active', true);
+            $query = PropertyListing::where('is_active', true)
+                ->select(PropertyListing::LISTING_COLUMNS);
 
             // Text search
             if ($request->filled('location')) {
@@ -225,6 +226,7 @@ class PropertyController extends Controller
                     $this->syncPropertyData($property);
                 }
                 
+                $property->append('seo');
                 return response()->json([
                     'success' => true,
                     'data' => $property

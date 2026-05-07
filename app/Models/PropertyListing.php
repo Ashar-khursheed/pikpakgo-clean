@@ -10,7 +10,17 @@ class PropertyListing extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $appends = ['seo_slug', 'seo'];
+    /**
+     * Columns required for listing cards/search results
+     */
+    public const LISTING_COLUMNS = [
+        'id', 'provider', 'provider_property_id', 'provider_code', 'name', 
+        'property_type', 'star_rating', 'country', 'city', 'featured_image',
+        'price_from', 'price_currency', 'rating_average', 'rating_count',
+        'is_featured', 'bedrooms', 'bathrooms', 'max_guests'
+    ];
+
+    protected $appends = ['seo_slug'];
 
     protected $fillable = [
         'provider',

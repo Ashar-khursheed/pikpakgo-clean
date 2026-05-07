@@ -6,6 +6,7 @@ use App\Models\PropertyListing;
 use App\Models\SeoConfig;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Database\Eloquent\Model;
 
 class SeoService
 {
@@ -17,7 +18,7 @@ class SeoService
         $propertyCode = $property->provider_code ?: $property->provider_property_id;
         $routeSlug = 'property-' . Str::slug($propertyCode);
         $routePath = '/properties/' . $propertyCode;
-        return $this->resolveSeo($routeSlug, fn() => $this->generatePropertySeo($property), $routePath);
+        return $this->resolveSeo($routeSlug, fn() => $this->generatePropertySeo($property), $routePath, $property);
     }
 
     /**
@@ -27,7 +28,7 @@ class SeoService
     {
         $routeSlug = 'blog-' . $post->slug;
         $routePath = '/blog/' . $post->slug;
-        return $this->resolveSeo($routeSlug, fn() => $post->getGeneratedSeoAttribute(), $routePath);
+        return $this->resolveSeo($routeSlug, fn() => $post->getGeneratedSeoAttribute(), $routePath, $post);
     }
 
     /**
@@ -36,20 +37,32 @@ class SeoService
     public function getBlogCategorySeo(\App\Models\BlogCategory $category): array
     {
         $routeSlug = 'blog-category-' . $category->slug;
-        return $this->resolveSeo($routeSlug, fn() => $category->getGeneratedSeoAttribute());
+        return $this->resolveSeo($routeSlug, fn() => $category->getGeneratedSeoAttribute(), null, $category);
     }
 
     /**
      * Generic resolver that checks for overrides in seo_configs.
      */
-    private function resolveSeo(string $routeSlug, callable $fallbackGenerator, ?string $routePath = null): array
+    private function resolveSeo(string $routeSlug, callable $fallbackGenerator, ?string $routePath = null, ?Model $model = null): array
     {
-        // 1. Try to find by route_slug (primary lookup)
-        $override = SeoConfig::where('route_slug', $routeSlug)
-            ->where('is_active', true)
-            ->first();
+        $override = null;
 
-        // 2. If not found and a path was provided, try to find by route_path
+        // 1. Try to find by direct model relation if provided
+        if ($model) {
+            $override = SeoConfig::where('model_type', get_class($model))
+                ->where('model_id', $model->id)
+                ->where('is_active', true)
+                ->first();
+        }
+
+        // 2. Try to find by route_slug (legacy/fallback lookup)
+        if (!$override) {
+            $override = SeoConfig::where('route_slug', $routeSlug)
+                ->where('is_active', true)
+                ->first();
+        }
+
+        // 3. Try to find by route_path
         if (!$override && $routePath) {
             $override = SeoConfig::where('route_path', $routePath)
                 ->where('is_active', true)

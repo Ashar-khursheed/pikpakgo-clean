@@ -64,12 +64,21 @@ class BlogController extends Controller
      */
     public function show($slug)
     {
-        $post = Cache::remember("blog_post_{$slug}", 600, fn () =>
-            BlogPost::published()
+        // 1. Try to resolve via custom slug in SeoConfig
+        $seoOverride = \App\Models\SeoConfig::where('route_slug', $slug)->where('is_active', true)->first();
+        if ($seoOverride && $seoOverride->model_type === \App\Models\BlogPost::class) {
+            $post = \App\Models\BlogPost::published()
                 ->with(['category:id,name,slug,color', 'author:id,first_name,last_name,profile_image'])
-                ->where('slug', $slug)
-                ->first()
-        );
+                ->find($seoOverride->model_id);
+        } else {
+            // 2. Fallback to standard slug lookup
+            $post = Cache::remember("blog_post_{$slug}", 600, fn () =>
+                BlogPost::published()
+                    ->with(['category:id,name,slug,color', 'author:id,first_name,last_name,profile_image'])
+                    ->where('slug', $slug)
+                    ->first()
+            );
+        }
 
         if (!$post) {
             return response()->json(['success' => false, 'message' => 'Post not found.'], 404);
@@ -128,9 +137,16 @@ class BlogController extends Controller
      */
     public function categoryShow($slug, Request $request)
     {
-        $category = Cache::remember("blog_category_{$slug}", 600, fn () =>
-            BlogCategory::where('slug', $slug)->where('is_active', true)->first()
-        );
+        // 1. Try to resolve via custom slug in SeoConfig
+        $seoOverride = \App\Models\SeoConfig::where('route_slug', $slug)->where('is_active', true)->first();
+        if ($seoOverride && $seoOverride->model_type === \App\Models\BlogCategory::class) {
+            $category = \App\Models\BlogCategory::where('is_active', true)->find($seoOverride->model_id);
+        } else {
+            // 2. Fallback to standard slug lookup
+            $category = Cache::remember("blog_category_{$slug}", 600, fn () =>
+                BlogCategory::where('slug', $slug)->where('is_active', true)->first()
+            );
+        }
 
         if (!$category) {
             return response()->json(['success' => false, 'message' => 'Category not found.'], 404);
