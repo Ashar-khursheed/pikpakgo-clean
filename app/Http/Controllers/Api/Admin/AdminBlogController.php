@@ -73,16 +73,25 @@ class AdminBlogController extends Controller
             'name'             => 'required|string|max:100',
             'slug'             => 'nullable|string|unique:blog_categories,slug|max:120',
             'description'      => 'nullable|string|max:1000',
-            'featured_image'   => 'nullable|string',
+            'featured_image'   => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:5120',
             'color'            => 'nullable|string|max:20',
             'sort_order'       => 'nullable|integer',
-            'is_active'        => 'boolean',
+            'is_active'        => 'nullable',
             'meta_title'       => 'nullable|string|max:255',
             'meta_description' => 'nullable|string|max:500',
-            'og_image'         => 'nullable|string',
+            'og_image'         => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:5120',
         ]);
 
         $validated['slug'] = $validated['slug'] ?? Str::slug($validated['name']);
+        $validated['is_active'] = filter_var($request->is_active ?? true, FILTER_VALIDATE_BOOLEAN);
+
+        // Handle Image Uploads
+        if ($request->hasFile('featured_image')) {
+            $validated['featured_image'] = $this->handleFileUpload($request->file('featured_image'), 'blog/categories');
+        }
+        if ($request->hasFile('og_image')) {
+            $validated['og_image'] = $this->handleFileUpload($request->file('og_image'), 'blog/seo');
+        }
 
         $category = BlogCategory::create($validated);
         Cache::forget('blog_categories');
@@ -137,14 +146,26 @@ class AdminBlogController extends Controller
             'name'             => 'sometimes|string|max:100',
             'slug'             => 'sometimes|string|unique:blog_categories,slug,' . $id . '|max:120',
             'description'      => 'nullable|string|max:1000',
-            'featured_image'   => 'nullable|string',
+            'featured_image'   => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:5120',
             'color'            => 'nullable|string|max:20',
             'sort_order'       => 'nullable|integer',
-            'is_active'        => 'boolean',
+            'is_active'        => 'nullable',
             'meta_title'       => 'nullable|string|max:255',
             'meta_description' => 'nullable|string|max:500',
-            'og_image'         => 'nullable|string',
+            'og_image'         => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:5120',
         ]);
+
+        if (isset($validated['is_active'])) {
+            $validated['is_active'] = filter_var($validated['is_active'], FILTER_VALIDATE_BOOLEAN);
+        }
+
+        // Handle Image Uploads
+        if ($request->hasFile('featured_image')) {
+            $validated['featured_image'] = $this->handleFileUpload($request->file('featured_image'), 'blog/categories');
+        }
+        if ($request->hasFile('og_image')) {
+            $validated['og_image'] = $this->handleFileUpload($request->file('og_image'), 'blog/seo');
+        }
 
         $category->update($validated);
         Cache::forget('blog_categories');
@@ -249,40 +270,63 @@ class AdminBlogController extends Controller
     public function postStore(Request $request)
     {
         $validated = $request->validate([
-            'title'            => 'required|string|max:255',
-            'slug'             => 'nullable|string|unique:blog_posts,slug|max:300',
-            'blog_category_id' => 'nullable|exists:blog_categories,id',
-            'excerpt'          => 'nullable|string|max:500',
-            'content'          => 'nullable|string',
-            'featured_image'   => 'nullable|string',
-            'gallery'          => 'nullable|array',
-            'gallery.*'        => 'string',
-            'tags'             => 'nullable|array',
-            'tags.*'           => 'string|max:50',
-            'status'           => 'nullable|in:draft,published,scheduled,archived',
-            'published_at'     => 'nullable|date',
-            'is_featured'      => 'boolean',
-            'allow_comments'   => 'boolean',
-            'meta_title'       => 'nullable|string|max:255',
-            'meta_description' => 'nullable|string|max:500',
-            'og_title'         => 'nullable|string|max:255',
-            'og_description'   => 'nullable|string|max:500',
-            'og_image'         => 'nullable|string',
-            'twitter_title'    => 'nullable|string|max:255',
+            'title'               => 'required|string|max:255',
+            'slug'                => 'nullable|string|unique:blog_posts,slug|max:300',
+            'blog_category_id'    => 'nullable|exists:blog_categories,id',
+            'excerpt'             => 'nullable|string|max:500',
+            'content'             => 'nullable|string',
+            'featured_image'      => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:5120',
+            'gallery'             => 'nullable|array',
+            'gallery.*'           => 'image|mimes:jpg,jpeg,png,webp,gif|max:5120',
+            'tags'                => 'nullable|array',
+            'tags.*'              => 'string|max:50',
+            'status'              => 'nullable|in:draft,published,scheduled,archived',
+            'published_at'        => 'nullable|date',
+            'is_featured'         => 'nullable',
+            'allow_comments'      => 'nullable',
+            'meta_title'          => 'nullable|string|max:255',
+            'meta_description'    => 'nullable|string|max:500',
+            'og_title'            => 'nullable|string|max:255',
+            'og_description'      => 'nullable|string|max:500',
+            'og_image'            => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:5120',
+            'twitter_title'       => 'nullable|string|max:255',
             'twitter_description' => 'nullable|string|max:500',
-            'twitter_image'    => 'nullable|string',
-            'canonical_url'    => 'nullable|url',
-            'no_index'         => 'boolean',
-            'schema_markup'    => 'nullable|array',
+            'twitter_image'       => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:5120',
+            'canonical_url'       => 'nullable|url',
+            'no_index'            => 'nullable',
+            'schema_markup'       => 'nullable|array',
         ]);
 
-        $validated['slug']      = $validated['slug'] ?? Str::slug($validated['title']);
-        $validated['author_id'] = auth()->id();
-        $validated['status']    = $validated['status'] ?? 'draft';
+        $validated['slug']           = $validated['slug'] ?? Str::slug($validated['title']);
+        $validated['author_id']      = auth()->id();
+        $validated['status']         = $validated['status'] ?? 'draft';
+        $validated['is_featured']    = filter_var($request->is_featured ?? false, FILTER_VALIDATE_BOOLEAN);
+        $validated['allow_comments'] = filter_var($request->allow_comments ?? true, FILTER_VALIDATE_BOOLEAN);
+        $validated['no_index']       = filter_var($request->no_index ?? false, FILTER_VALIDATE_BOOLEAN);
 
         // Auto set published_at when publishing immediately
         if ($validated['status'] === 'published' && empty($validated['published_at'])) {
             $validated['published_at'] = now();
+        }
+
+        // Handle Image Uploads
+        if ($request->hasFile('featured_image')) {
+            $validated['featured_image'] = $this->handleFileUpload($request->file('featured_image'), 'blog/posts');
+        }
+        if ($request->hasFile('og_image')) {
+            $validated['og_image'] = $this->handleFileUpload($request->file('og_image'), 'blog/seo');
+        }
+        if ($request->hasFile('twitter_image')) {
+            $validated['twitter_image'] = $this->handleFileUpload($request->file('twitter_image'), 'blog/seo');
+        }
+
+        // Handle Gallery Uploads
+        if ($request->hasFile('gallery')) {
+            $galleryPaths = [];
+            foreach ($request->file('gallery') as $image) {
+                $galleryPaths[] = $this->handleFileUpload($image, 'blog/gallery');
+            }
+            $validated['gallery'] = $galleryPaths;
         }
 
         $post = BlogPost::create($validated);
@@ -358,35 +402,65 @@ class AdminBlogController extends Controller
         $post = BlogPost::findOrFail($id);
 
         $validated = $request->validate([
-            'title'            => 'sometimes|string|max:255',
-            'blog_category_id' => 'nullable|exists:blog_categories,id',
-            'excerpt'          => 'nullable|string|max:500',
-            'content'          => 'nullable|string',
-            'featured_image'   => 'nullable|string',
-            'gallery'          => 'nullable|array',
-            'gallery.*'        => 'string',
-            'tags'             => 'nullable|array',
-            'tags.*'           => 'string|max:50',
-            'status'           => 'nullable|in:draft,published,scheduled,archived',
-            'published_at'     => 'nullable|date',
-            'is_featured'      => 'boolean',
-            'allow_comments'   => 'boolean',
-            'meta_title'       => 'nullable|string|max:255',
-            'meta_description' => 'nullable|string|max:500',
-            'og_title'         => 'nullable|string|max:255',
-            'og_description'   => 'nullable|string|max:500',
-            'og_image'         => 'nullable|string',
-            'twitter_title'    => 'nullable|string|max:255',
+            'title'               => 'sometimes|string|max:255',
+            'blog_category_id'    => 'nullable|exists:blog_categories,id',
+            'excerpt'             => 'nullable|string|max:500',
+            'content'             => 'nullable|string',
+            'featured_image'      => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:5120',
+            'gallery'             => 'nullable|array',
+            'gallery.*'           => 'image|mimes:jpg,jpeg,png,webp,gif|max:5120',
+            'tags'                => 'nullable|array',
+            'tags.*'              => 'string|max:50',
+            'status'              => 'nullable|in:draft,published,scheduled,archived',
+            'published_at'        => 'nullable|date',
+            'is_featured'         => 'nullable',
+            'allow_comments'      => 'nullable',
+            'meta_title'          => 'nullable|string|max:255',
+            'meta_description'    => 'nullable|string|max:500',
+            'og_title'            => 'nullable|string|max:255',
+            'og_description'      => 'nullable|string|max:500',
+            'og_image'            => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:5120',
+            'twitter_title'       => 'nullable|string|max:255',
             'twitter_description' => 'nullable|string|max:500',
-            'twitter_image'    => 'nullable|string',
-            'canonical_url'    => 'nullable|url',
-            'no_index'         => 'boolean',
-            'schema_markup'    => 'nullable|array',
+            'twitter_image'       => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:5120',
+            'canonical_url'       => 'nullable|url',
+            'no_index'            => 'nullable',
+            'schema_markup'       => 'nullable|array',
         ]);
+
+        if (isset($validated['is_featured'])) {
+            $validated['is_featured'] = filter_var($validated['is_featured'], FILTER_VALIDATE_BOOLEAN);
+        }
+        if (isset($validated['allow_comments'])) {
+            $validated['allow_comments'] = filter_var($validated['allow_comments'], FILTER_VALIDATE_BOOLEAN);
+        }
+        if (isset($validated['no_index'])) {
+            $validated['no_index'] = filter_var($validated['no_index'], FILTER_VALIDATE_BOOLEAN);
+        }
 
         // Auto set published_at when publishing for the first time
         if (isset($validated['status']) && $validated['status'] === 'published' && !$post->published_at) {
             $validated['published_at'] = $validated['published_at'] ?? now();
+        }
+
+        // Handle Image Uploads
+        if ($request->hasFile('featured_image')) {
+            $validated['featured_image'] = $this->handleFileUpload($request->file('featured_image'), 'blog/posts');
+        }
+        if ($request->hasFile('og_image')) {
+            $validated['og_image'] = $this->handleFileUpload($request->file('og_image'), 'blog/seo');
+        }
+        if ($request->hasFile('twitter_image')) {
+            $validated['twitter_image'] = $this->handleFileUpload($request->file('twitter_image'), 'blog/seo');
+        }
+
+        // Handle Gallery Uploads
+        if ($request->hasFile('gallery')) {
+            $galleryPaths = [];
+            foreach ($request->file('gallery') as $image) {
+                $galleryPaths[] = $this->handleFileUpload($image, 'blog/gallery');
+            }
+            $validated['gallery'] = $galleryPaths;
         }
 
         $post->update($validated);
@@ -496,6 +570,13 @@ class AdminBlogController extends Controller
     }
 
     // ── Private helpers ─────────────────────────────────────────────────────
+
+    private function handleFileUpload($file, $folder)
+    {
+        $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+        $path = $file->storeAs($folder, $filename, 'public');
+        return '/storage/' . $path;
+    }
 
     private function flushPostCache(BlogPost $post): void
     {
