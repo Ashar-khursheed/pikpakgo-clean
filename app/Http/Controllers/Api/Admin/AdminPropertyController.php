@@ -433,11 +433,16 @@ class AdminPropertyController extends Controller
                 'images'         => $images,
                 'featured_image' => $images[0] ?? null,
                 'amenities'      => $amenities,
-                'price_from'     => null, // Pricing comes from quote endpoint, not listing detail
+                'bedrooms'       => $bedrooms,
+                'bathrooms'      => $bathrooms,
+                'max_guests'     => (int)($data['max_occupancy'] ?? $data['guests'] ?? 0),
+                'destination_code' => $data['destination_code'] ?? null,
+                'price_from'     => $data['rate'] ?? $data['price'] ?? $unit['unitMonetaryInformation']['baseRate'] ?? null,
                 'price_currency' => $currency,
                 'api_data'       => $data,
                 'last_synced_at' => now(),
                 'is_active'      => (bool)($data['active'] ?? true),
+                'instant_book'   => (bool)($data['instant_book'] ?? false),
             ]
         );
     }

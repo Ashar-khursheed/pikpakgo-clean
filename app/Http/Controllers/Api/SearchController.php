@@ -235,7 +235,7 @@ class SearchController extends Controller
                     ->selectRaw('MIN(price_from) as min_price')
                     ->where('is_active', true)
                     ->groupBy('city', 'country', 'destination_code')
-                    ->having('property_count', '>', 5)
+                    ->having('property_count', '>', 0)
                     ->orderBy('property_count', 'desc')
                     ->limit(20)
                     ->get();
