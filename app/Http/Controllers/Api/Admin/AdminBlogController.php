@@ -83,6 +83,7 @@ class AdminBlogController extends Controller
             'meta_title'       => 'nullable|string|max:255',
             'meta_description' => 'nullable|string|max:500',
             'og_image'         => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:5120',
+            'seo_slug'         => 'nullable|string|max:255',
         ]);
 
         $validated['slug'] = $validated['slug'] ?? Str::slug($validated['name']);
@@ -99,11 +100,11 @@ class AdminBlogController extends Controller
         $category = BlogCategory::create($validated);
 
         // Sync to seo_configs table
-        if ($request->filled('meta_title') || $request->filled('meta_description')) {
+        if ($request->filled('meta_title') || $request->filled('meta_description') || $request->filled('seo_slug')) {
             \App\Models\SeoConfig::updateOrCreate(
                 ['model_type' => BlogCategory::class, 'model_id' => $category->id],
                 [
-                    'route_slug'       => 'blog-category-' . $category->slug,
+                    'route_slug'       => $request->seo_slug ?? ('blog-category-' . $category->slug),
                     'route_path'       => '/blog/category/' . $category->slug,
                     'route_label'      => 'Blog Category: ' . $category->name,
                     'route_group'      => 'Blog',
@@ -195,11 +196,11 @@ class AdminBlogController extends Controller
         $category->update($validated);
 
         // Sync to seo_configs table
-        if ($request->filled('meta_title') || $request->filled('meta_description') || $request->filled('slug')) {
+        if ($request->filled('meta_title') || $request->filled('meta_description') || $request->filled('slug') || $request->filled('seo_slug')) {
             \App\Models\SeoConfig::updateOrCreate(
                 ['model_type' => BlogCategory::class, 'model_id' => $category->id],
                 [
-                    'route_slug'       => 'blog-category-' . $category->slug,
+                    'route_slug'       => $request->seo_slug ?? ('blog-category-' . $category->slug),
                     'route_path'       => '/blog/category/' . $category->slug,
                     'route_label'      => 'Blog Category: ' . $category->name,
                     'route_group'      => 'Blog',
@@ -376,11 +377,11 @@ class AdminBlogController extends Controller
         $post = BlogPost::create($validated);
 
         // Sync to seo_configs table
-        if ($request->filled('meta_title') || $request->filled('meta_description')) {
+        if ($request->filled('meta_title') || $request->filled('meta_description') || $request->filled('seo_slug')) {
             \App\Models\SeoConfig::updateOrCreate(
                 ['model_type' => BlogPost::class, 'model_id' => $post->id],
                 [
-                    'route_slug'       => 'blog-' . $post->slug,
+                    'route_slug'       => $request->seo_slug ?? ('blog-' . $post->slug),
                     'route_path'       => '/blog/' . $post->slug,
                     'route_label'      => 'Blog: ' . $post->title,
                     'route_group'      => 'Blog',
@@ -535,11 +536,11 @@ class AdminBlogController extends Controller
         $post->update($validated);
 
         // Sync to seo_configs table
-        if ($request->filled('meta_title') || $request->filled('meta_description') || $request->filled('slug')) {
+        if ($request->filled('meta_title') || $request->filled('meta_description') || $request->filled('slug') || $request->filled('seo_slug')) {
             \App\Models\SeoConfig::updateOrCreate(
                 ['model_type' => BlogPost::class, 'model_id' => $post->id],
                 [
-                    'route_slug'       => 'blog-' . $post->slug,
+                    'route_slug'       => $request->seo_slug ?? ('blog-' . $post->slug),
                     'route_path'       => '/blog/' . $post->slug,
                     'route_label'      => 'Blog: ' . $post->title,
                     'route_group'      => 'Blog',
