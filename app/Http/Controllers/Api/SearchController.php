@@ -154,9 +154,7 @@ class SearchController extends Controller
                 )->whereNotNull('latitude')->whereNotNull('longitude');
             })
 
-            // Price range
-            ->when($minPrice, fn($q) => $q->where('price_from', '>=', $minPrice))
-            ->when($maxPrice, fn($q) => $q->where('price_from', '<=', $maxPrice))
+            // Price range filter is handled after fetching properties to account for markup (display price)
 
             // Property type
             ->when($request->propertyType, fn($q) => $q->where('property_type', $request->propertyType))
@@ -180,19 +178,63 @@ class SearchController extends Controller
                 }
             });
 
-        // Sorting
-        match ($sort) {
-            'price_asc'  => $query->orderBy('price_from', 'asc'),
-            'price_desc' => $query->orderBy('price_from', 'desc'),
-            'rating'     => $query->orderByDesc('rating_average'),
-            default      => $query->orderByDesc('is_featured')->orderByDesc('rating_average'),
+        // Fetch all matching properties to filter by display price
+        $properties = $query->get();
+        
+        $checkIn = $request->checkIn ?? now()->addDays(7)->toDateString();
+
+        // Apply markup and filter by display price
+        $processedProperties = $properties->map(function ($property) use ($checkIn) {
+            $basePrice = $property->price_from ?? 0;
+            
+            if ($basePrice > 0) {
+                $markupData = $this->pricingService->calculateMarkup([
+                    'base_price'       => $basePrice,
+                    'provider'         => $property->provider,
+                    'property_type'    => $property->property_type,
+                    'destination_code' => $property->destination_code,
+                    'check_in_date'    => $checkIn,
+                ]);
+                
+                $property->display_price = $markupData['final_price'];
+                $property->markup_applied = true;
+            } else {
+                $property->display_price = $basePrice;
+            }
+            
+            return $property;
+        })->filter(function ($property) use ($minPrice, $maxPrice) {
+            if ($minPrice && $property->display_price < $minPrice) return false;
+            if ($maxPrice && $property->display_price > $maxPrice) return false;
+            return true;
+        });
+
+        // Sorting (applied to collection to account for display_price)
+        $processedProperties = match ($sort) {
+            'price_asc'  => $processedProperties->sortBy('display_price'),
+            'price_desc' => $processedProperties->sortByDesc('display_price'),
+            'rating'     => $processedProperties->sortByDesc('rating_average'),
+            default      => $processedProperties->sortByDesc('is_featured')->sortByDesc('rating_average'),
         };
 
-        $properties = $query->paginate($perPage);
+        $processedProperties = $processedProperties->values();
+
+        // Manual pagination
+        $total = $processedProperties->count();
+        $currentPage = (int) $request->input('page', 1);
+        $paginatedItems = $processedProperties->forPage($currentPage, $perPage)->values();
+        
+        $paginated = new \Illuminate\Pagination\LengthAwarePaginator(
+            $paginatedItems,
+            $total,
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
 
         return response()->json([
             'success' => true,
-            'data'    => $properties,
+            'data'    => $paginated,
             'filters' => [
                 'location'     => $location,
                 'checkIn'      => $request->checkIn,
