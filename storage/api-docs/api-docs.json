@@ -1717,6 +1717,14 @@
                                     "is_featured": {
                                         "type": "boolean",
                                         "example": false
+                                    },
+                                    "meta_title": {
+                                        "type": "string",
+                                        "example": "Custom SEO Title"
+                                    },
+                                    "meta_description": {
+                                        "type": "string",
+                                        "example": "Custom SEO description..."
                                     }
                                 },
                                 "type": "object"
@@ -1895,6 +1903,12 @@
                                     },
                                     "is_featured": {
                                         "type": "boolean"
+                                    },
+                                    "meta_title": {
+                                        "type": "string"
+                                    },
+                                    "meta_description": {
+                                        "type": "string"
                                     }
                                 },
                                 "type": "object"

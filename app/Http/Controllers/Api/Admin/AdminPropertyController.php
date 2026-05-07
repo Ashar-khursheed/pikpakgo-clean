@@ -212,7 +212,9 @@ class AdminPropertyController extends Controller
      *         @OA\Property(property="child_policy",        type="string"),
      *         @OA\Property(property="pet_policy",          type="string"),
      *         @OA\Property(property="is_active",           type="boolean", example=true),
-     *         @OA\Property(property="is_featured",         type="boolean", example=false)
+     *         @OA\Property(property="is_featured",         type="boolean", example=false),
+     *         @OA\Property(property="meta_title",          type="string",  example="Custom SEO Title"),
+     *         @OA\Property(property="meta_description",    type="string",  example="Custom SEO description...")
      *     )),
      *     @OA\Response(response=201, description="Property created"),
      *     @OA\Response(response=422, description="Validation error")
@@ -255,6 +257,8 @@ class AdminPropertyController extends Controller
             'pet_policy'           => 'nullable|string',
             'is_active'            => 'boolean',
             'is_featured'          => 'boolean',
+            'meta_title'           => 'nullable|string|max:255',
+            'meta_description'     => 'nullable|string|max:500',
         ]);
 
         $property = PropertyListing::create($validated);
@@ -316,7 +320,9 @@ class AdminPropertyController extends Controller
      *         @OA\Property(property="child_policy",        type="string"),
      *         @OA\Property(property="pet_policy",          type="string"),
      *         @OA\Property(property="is_active",           type="boolean"),
-     *         @OA\Property(property="is_featured",         type="boolean")
+     *         @OA\Property(property="is_featured",         type="boolean"),
+     *         @OA\Property(property="meta_title",          type="string"),
+     *         @OA\Property(property="meta_description",    type="string")
      *     )),
      *     @OA\Response(response=200, description="Property updated"),
      *     @OA\Response(response=404, description="Not found"),
@@ -359,6 +365,8 @@ class AdminPropertyController extends Controller
             'pet_policy'          => 'sometimes|nullable|string',
             'is_active'           => 'sometimes|boolean',
             'is_featured'         => 'sometimes|boolean',
+            'meta_title'          => 'nullable|string|max:255',
+            'meta_description'    => 'nullable|string|max:500',
         ]);
 
         $property->update($validated);
