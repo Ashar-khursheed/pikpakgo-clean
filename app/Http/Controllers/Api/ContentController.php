@@ -97,7 +97,8 @@ class ContentController extends Controller
                 $postSlug = Str::after($slug, 'blog-');
                 $post = BlogPost::published()->where('slug', $postSlug)->first();
                 if ($post) {
-                    return ['source' => 'blog_post', 'slug' => $slug, 'data' => $post->seo];
+                    $seoData = app(\App\Services\SeoService::class)->getBlogPostSeo($post);
+                    return array_merge(['source' => $seoData['source'], 'slug' => $seoData['slug']], ['data' => $seoData['data']]);
                 }
             }
 
@@ -111,11 +112,10 @@ class ContentController extends Controller
 
             // 4. CMS content pages (about-us, faq, terms, etc.)
             if ($slug) {
-                $page = ContentPage::where('slug', $slug)->where('is_active', true)
-                    ->where(fn ($q) => $q->whereNull('published_at')->orWhere('published_at', '<=', now()))
-                    ->first();
+                $page = ContentPage::active()->published()->where('slug', $slug)->first();
                 if ($page) {
-                    return ['source' => 'cms', 'slug' => $slug, 'data' => $page->seo];
+                    $seoData = app(\App\Services\SeoService::class)->getContentPageSeo($page);
+                    return array_merge(['source' => $seoData['source'], 'slug' => $seoData['slug']], ['data' => $seoData['data']]);
                 }
             }
 

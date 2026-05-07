@@ -10,7 +10,7 @@ class BlogPost extends Model
 {
     use SoftDeletes;
 
-    protected $appends = ['seo_slug'];
+    protected $appends = ['seo_slug', 'seo'];
 
     protected $fillable = [
         'blog_category_id', 'author_id',
@@ -67,8 +67,14 @@ class BlogPost extends Model
         $this->attributes['read_time'] = max(1, (int) ceil($wordCount / 200));
     }
 
-    /** Full SEO meta block — auto-filled from post fields if not explicitly set */
+    /** Full SEO meta block — checks for manual overrides in seo_configs first */
     public function getSeoAttribute(): array
+    {
+        return app(\App\Services\SeoService::class)->getBlogPostSeo($this);
+    }
+
+    /** Full SEO meta block — auto-filled from post fields if not explicitly set */
+    public function getGeneratedSeoAttribute(): array
     {
         $defaultTitle = $this->meta_title ?: $this->title;
         $defaultDesc  = $this->meta_description

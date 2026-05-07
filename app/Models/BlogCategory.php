@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class BlogCategory extends Model
 {
+    protected $appends = ['seo'];
+
     protected $fillable = [
         'name', 'slug', 'description', 'featured_image',
         'color', 'sort_order', 'is_active',
@@ -26,7 +28,14 @@ class BlogCategory extends Model
         return $this->hasMany(BlogPost::class)->published();
     }
 
+    /** Full SEO meta block — checks for overrides first */
     public function getSeoAttribute(): array
+    {
+        return app(\App\Services\SeoService::class)->getBlogCategorySeo($this);
+    }
+
+    /** Generated SEO block — fallback */
+    public function getGeneratedSeoAttribute(): array
     {
         return [
             'title'       => $this->meta_title ?: ($this->name . ' — Blog'),

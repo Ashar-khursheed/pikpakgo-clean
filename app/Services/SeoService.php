@@ -16,7 +16,40 @@ class SeoService
     {
         $propertyCode = $property->provider_code ?: $property->provider_property_id;
         $routeSlug = 'property-' . Str::slug($propertyCode);
+        return $this->resolveSeo($routeSlug, fn() => $this->generatePropertySeo($property));
+    }
 
+    /**
+     * Get SEO metadata for a blog post.
+     */
+    public function getBlogPostSeo(\App\Models\BlogPost $post): array
+    {
+        $routeSlug = 'blog-' . $post->slug;
+        return $this->resolveSeo($routeSlug, fn() => $post->getGeneratedSeoAttribute());
+    }
+
+    /**
+     * Get SEO metadata for a content page.
+     */
+    public function getContentPageSeo(\App\Models\ContentPage $page): array
+    {
+        return $this->resolveSeo($page->slug, fn() => $page->getGeneratedSeoAttribute());
+    }
+
+    /**
+     * Get SEO metadata for a blog category.
+     */
+    public function getBlogCategorySeo(\App\Models\BlogCategory $category): array
+    {
+        $routeSlug = 'blog-category-' . $category->slug;
+        return $this->resolveSeo($routeSlug, fn() => $category->getGeneratedSeoAttribute());
+    }
+
+    /**
+     * Generic resolver that checks for overrides in seo_configs.
+     */
+    private function resolveSeo(string $routeSlug, callable $fallbackGenerator): array
+    {
         // Check for manual override in seo_configs table
         $override = SeoConfig::where('route_slug', $routeSlug)
             ->where('is_active', true)
@@ -30,11 +63,11 @@ class SeoService
             ];
         }
 
-        // Auto-generate
+        // Auto-generate using the fallback
         return [
             'source' => 'auto-generated',
             'slug' => $routeSlug,
-            'data' => $this->generatePropertySeo($property)
+            'data' => $fallbackGenerator()
         ];
     }
 
