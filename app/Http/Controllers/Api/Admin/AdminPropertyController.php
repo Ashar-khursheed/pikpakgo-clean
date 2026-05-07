@@ -214,7 +214,8 @@ class AdminPropertyController extends Controller
      *         @OA\Property(property="is_active",           type="boolean", example=true),
      *         @OA\Property(property="is_featured",         type="boolean", example=false),
      *         @OA\Property(property="meta_title",          type="string",  example="Custom SEO Title"),
-     *         @OA\Property(property="meta_description",    type="string",  example="Custom SEO description...")
+     *         @OA\Property(property="meta_description",    type="string",  example="Custom SEO description..."),
+     *         @OA\Property(property="seo_slug",            type="string",  example="luxury-miami-villa")
      *     )),
      *     @OA\Response(response=201, description="Property created"),
      *     @OA\Response(response=422, description="Validation error")
@@ -259,17 +260,18 @@ class AdminPropertyController extends Controller
             'is_featured'          => 'boolean',
             'meta_title'           => 'nullable|string|max:255',
             'meta_description'     => 'nullable|string|max:500',
+            'seo_slug'             => 'nullable|string|max:255',
         ]);
 
         $property = PropertyListing::create($validated);
 
         // Sync to seo_configs table (optional manual override on create)
-        if ($request->filled('meta_title') || $request->filled('meta_description')) {
+        if ($request->filled('meta_title') || $request->filled('meta_description') || $request->filled('seo_slug')) {
             $propertyCode = $property->provider_code ?: $property->provider_property_id;
             \App\Models\SeoConfig::updateOrCreate(
                 ['model_type' => PropertyListing::class, 'model_id' => $property->id],
                 [
-                    'route_slug'       => 'property-' . \Illuminate\Support\Str::slug($propertyCode),
+                    'route_slug'       => $request->seo_slug ?? ('property-' . \Illuminate\Support\Str::slug($propertyCode)),
                     'route_path'       => '/properties/' . $propertyCode,
                     'route_label'      => 'Property: ' . $property->name,
                     'route_group'      => 'Dynamic',
@@ -322,7 +324,8 @@ class AdminPropertyController extends Controller
      *         @OA\Property(property="is_active",           type="boolean"),
      *         @OA\Property(property="is_featured",         type="boolean"),
      *         @OA\Property(property="meta_title",          type="string"),
-     *         @OA\Property(property="meta_description",    type="string")
+     *         @OA\Property(property="meta_description",    type="string"),
+     *         @OA\Property(property="seo_slug",            type="string")
      *     )),
      *     @OA\Response(response=200, description="Property updated"),
      *     @OA\Response(response=404, description="Not found"),
@@ -367,17 +370,18 @@ class AdminPropertyController extends Controller
             'is_featured'         => 'sometimes|boolean',
             'meta_title'          => 'nullable|string|max:255',
             'meta_description'    => 'nullable|string|max:500',
+            'seo_slug'            => 'nullable|string|max:255',
         ]);
 
         $property->update($validated);
 
         // Sync to seo_configs table
-        if ($request->filled('meta_title') || $request->filled('meta_description')) {
+        if ($request->filled('meta_title') || $request->filled('meta_description') || $request->filled('seo_slug')) {
             $propertyCode = $property->provider_code ?: $property->provider_property_id;
             \App\Models\SeoConfig::updateOrCreate(
                 ['model_type' => PropertyListing::class, 'model_id' => $property->id],
                 [
-                    'route_slug'       => 'property-' . \Illuminate\Support\Str::slug($propertyCode),
+                    'route_slug'       => $request->seo_slug ?? ('property-' . \Illuminate\Support\Str::slug($propertyCode)),
                     'route_path'       => '/properties/' . $propertyCode,
                     'route_label'      => 'Property: ' . $property->name,
                     'route_group'      => 'Dynamic',
