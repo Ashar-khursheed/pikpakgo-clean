@@ -149,6 +149,8 @@ class AdminSeoController extends Controller
             'route_path'        => 'nullable|string|max:300',
             'route_label'       => 'nullable|string|max:200',
             'route_group'       => 'nullable|string|max:50',
+            'model_type'        => 'nullable|string|max:100',
+            'model_id'          => 'nullable|integer',
             'meta_title'        => 'required|string|max:255',
             'meta_description'  => 'nullable|string|max:500',
             'og_title'          => 'nullable|string|max:255',
@@ -222,6 +224,8 @@ class AdminSeoController extends Controller
         $validated = $request->validate([
             'meta_title'        => 'sometimes|string|max:255',
             'meta_description'  => 'nullable|string|max:500',
+            'model_type'        => 'nullable|string|max:100',
+            'model_id'          => 'nullable|integer',
             'og_title'          => 'nullable|string|max:255',
             'og_description'    => 'nullable|string|max:500',
             'og_image'          => 'nullable|string|max:500',
@@ -342,57 +346,13 @@ class AdminSeoController extends Controller
             ->orWhere('provider_property_id', $propertyCode)
             ->firstOrFail();
 
-        // Check for a manual override
-        $override = SeoConfig::where('route_slug', 'property-' . Str::slug($propertyCode))->first();
-
-        if ($override) {
-            return response()->json(['success' => true, 'source' => 'override', 'override_id' => $override->id, 'data' => $override->seo]);
-        }
+        $seoData = app(\App\Services\SeoService::class)->getPropertySeo($property);
 
         return response()->json([
             'success' => true,
-            'source'  => 'auto-generated',
-            'note'    => 'Create a config with route_slug="property-' . Str::slug($propertyCode) . '" to override.',
-            'data'    => $this->buildPropertySeo($property),
+            'source'  => $seoData['source'],
+            'slug'    => $seoData['slug'],
+            'data'    => $seoData['data'],
         ]);
-    }
-
-    // ── Private helpers ───────────────────────────────────────────────────────
-
-    private function buildPropertySeo(PropertyListing $property): array
-    {
-        $title = $property->name . ' — ' . $property->city . ', ' . $property->country;
-        $desc  = $property->description
-            ? Str::limit(strip_tags($property->description), 155)
-            : "Book {$property->name} in {$property->city}. " . ucfirst($property->property_type) . ' from $' . ($property->price_from ?? 'N/A') . '/night.';
-
-        return [
-            'title'       => $title,
-            'description' => $desc,
-            'og_title'    => $title,
-            'og_description' => $desc,
-            'og_image'    => $property->featured_image,
-            'canonical'   => null,
-            'no_index'    => false,
-            'schema'      => [
-                '@context' => 'https://schema.org',
-                '@type'    => 'LodgingBusiness',
-                'name'     => $property->name,
-                'description' => $desc,
-                'image'    => $property->images ?? [],
-                'address'  => [
-                    '@type'           => 'PostalAddress',
-                    'streetAddress'   => $property->address,
-                    'addressLocality' => $property->city,
-                    'addressRegion'   => $property->state,
-                    'postalCode'      => $property->postal_code,
-                    'addressCountry'  => $property->country_code ?? $property->country,
-                ],
-                'geo' => $property->latitude ? ['@type' => 'GeoCoordinates', 'latitude' => $property->latitude, 'longitude' => $property->longitude] : null,
-                'starRating' => $property->star_rating ? ['@type' => 'Rating', 'ratingValue' => $property->star_rating] : null,
-                'aggregateRating' => $property->rating_average ? ['@type' => 'AggregateRating', 'ratingValue' => $property->rating_average, 'reviewCount' => $property->rating_count] : null,
-                'priceRange' => $property->price_from ? '$' . number_format($property->price_from, 0) : null,
-            ],
-        ];
     }
 }

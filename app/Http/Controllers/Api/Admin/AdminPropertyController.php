@@ -259,6 +259,24 @@ class AdminPropertyController extends Controller
 
         $property = PropertyListing::create($validated);
 
+        // Sync to seo_configs table (optional manual override on create)
+        if ($request->filled('meta_title') || $request->filled('meta_description')) {
+            $propertyCode = $property->provider_code ?: $property->provider_property_id;
+            \App\Models\SeoConfig::updateOrCreate(
+                ['model_type' => PropertyListing::class, 'model_id' => $property->id],
+                [
+                    'route_slug'       => 'property-' . \Illuminate\Support\Str::slug($propertyCode),
+                    'route_path'       => '/properties/' . $propertyCode,
+                    'route_label'      => 'Property: ' . $property->name,
+                    'route_group'      => 'Dynamic',
+                    'meta_title'       => $request->meta_title,
+                    'meta_description' => $request->meta_description,
+                    'og_image'         => $property->featured_image,
+                    'is_active'        => true,
+                ]
+            );
+        }
+
         return response()->json(['success' => true, 'data' => $property], 201);
     }
 
@@ -344,6 +362,24 @@ class AdminPropertyController extends Controller
         ]);
 
         $property->update($validated);
+
+        // Sync to seo_configs table
+        if ($request->filled('meta_title') || $request->filled('meta_description')) {
+            $propertyCode = $property->provider_code ?: $property->provider_property_id;
+            \App\Models\SeoConfig::updateOrCreate(
+                ['model_type' => PropertyListing::class, 'model_id' => $property->id],
+                [
+                    'route_slug'       => 'property-' . \Illuminate\Support\Str::slug($propertyCode),
+                    'route_path'       => '/properties/' . $propertyCode,
+                    'route_label'      => 'Property: ' . $property->name,
+                    'route_group'      => 'Dynamic',
+                    'meta_title'       => $request->meta_title,
+                    'meta_description' => $request->meta_description,
+                    'og_image'         => $property->featured_image,
+                    'is_active'        => true,
+                ]
+            );
+        }
 
         return response()->json(['success' => true, 'message' => 'Property updated', 'data' => $property->fresh()]);
     }

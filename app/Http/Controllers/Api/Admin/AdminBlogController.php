@@ -97,6 +97,24 @@ class AdminBlogController extends Controller
         }
 
         $category = BlogCategory::create($validated);
+
+        // Sync to seo_configs table
+        if ($request->filled('meta_title') || $request->filled('meta_description')) {
+            \App\Models\SeoConfig::updateOrCreate(
+                ['model_type' => BlogCategory::class, 'model_id' => $category->id],
+                [
+                    'route_slug'       => 'blog-category-' . $category->slug,
+                    'route_path'       => '/blog/category/' . $category->slug,
+                    'route_label'      => 'Blog Category: ' . $category->name,
+                    'route_group'      => 'Blog',
+                    'meta_title'       => $request->meta_title ?? ($category->name . ' — Blog'),
+                    'meta_description' => $request->meta_description ?? $category->description,
+                    'og_image'         => $category->og_image,
+                    'is_active'        => true,
+                ]
+            );
+        }
+
         Cache::forget('blog_categories');
 
         return response()->json(['success' => true, 'data' => $category], 201);
@@ -175,6 +193,24 @@ class AdminBlogController extends Controller
         }
 
         $category->update($validated);
+
+        // Sync to seo_configs table
+        if ($request->filled('meta_title') || $request->filled('meta_description') || $request->filled('slug')) {
+            \App\Models\SeoConfig::updateOrCreate(
+                ['model_type' => BlogCategory::class, 'model_id' => $category->id],
+                [
+                    'route_slug'       => 'blog-category-' . $category->slug,
+                    'route_path'       => '/blog/category/' . $category->slug,
+                    'route_label'      => 'Blog Category: ' . $category->name,
+                    'route_group'      => 'Blog',
+                    'meta_title'       => $request->meta_title ?? $category->meta_title ?? ($category->name . ' — Blog'),
+                    'meta_description' => $request->meta_description ?? $category->meta_description ?? $category->description,
+                    'og_image'         => $category->og_image,
+                    'is_active'        => true,
+                ]
+            );
+        }
+
         Cache::forget('blog_categories');
         Cache::forget("blog_category_{$category->slug}");
 
@@ -339,6 +375,29 @@ class AdminBlogController extends Controller
 
         $post = BlogPost::create($validated);
 
+        // Sync to seo_configs table
+        if ($request->filled('meta_title') || $request->filled('meta_description')) {
+            \App\Models\SeoConfig::updateOrCreate(
+                ['model_type' => BlogPost::class, 'model_id' => $post->id],
+                [
+                    'route_slug'       => 'blog-' . $post->slug,
+                    'route_path'       => '/blog/' . $post->slug,
+                    'route_label'      => 'Blog: ' . $post->title,
+                    'route_group'      => 'Blog',
+                    'meta_title'       => $request->meta_title ?? $post->title,
+                    'meta_description' => $request->meta_description,
+                    'og_title'         => $request->og_title,
+                    'og_description'   => $request->og_description,
+                    'og_image'         => $post->og_image,
+                    'twitter_title'    => $request->twitter_title,
+                    'twitter_description' => $request->twitter_description,
+                    'twitter_image'    => $post->twitter_image,
+                    'no_index'         => filter_var($request->no_index ?? false, FILTER_VALIDATE_BOOLEAN),
+                    'is_active'        => true,
+                ]
+            );
+        }
+
         $this->flushPostCache($post);
 
         return response()->json([
@@ -474,6 +533,30 @@ class AdminBlogController extends Controller
         }
 
         $post->update($validated);
+
+        // Sync to seo_configs table
+        if ($request->filled('meta_title') || $request->filled('meta_description') || $request->filled('slug')) {
+            \App\Models\SeoConfig::updateOrCreate(
+                ['model_type' => BlogPost::class, 'model_id' => $post->id],
+                [
+                    'route_slug'       => 'blog-' . $post->slug,
+                    'route_path'       => '/blog/' . $post->slug,
+                    'route_label'      => 'Blog: ' . $post->title,
+                    'route_group'      => 'Blog',
+                    'meta_title'       => $request->meta_title ?? $post->meta_title ?? $post->title,
+                    'meta_description' => $request->meta_description ?? $post->meta_description,
+                    'og_title'         => $request->og_title ?? $post->og_title,
+                    'og_description'   => $request->og_description ?? $post->og_description,
+                    'og_image'         => $post->og_image,
+                    'twitter_title'    => $request->twitter_title ?? $post->twitter_title,
+                    'twitter_description' => $request->twitter_description ?? $post->twitter_description,
+                    'twitter_image'    => $post->twitter_image,
+                    'no_index'         => filter_var($request->no_index ?? $post->no_index, FILTER_VALIDATE_BOOLEAN),
+                    'is_active'        => true,
+                ]
+            );
+        }
+
         $this->flushPostCache($post);
 
         return response()->json([
