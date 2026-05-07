@@ -81,18 +81,14 @@ class ContentController extends Controller
         $result = Cache::remember($cacheKey, 600, function () use ($slug, $path, $propertyCode) {
             // 1. Property page — check for manual override, then auto-generate
             if ($propertyCode) {
-                $override = SeoConfig::where('route_slug', 'property-' . Str::slug($propertyCode))->where('is_active', true)->first();
-                if ($override) {
-                    return ['source' => 'seo_config', 'slug' => $override->route_slug, 'data' => $override->seo];
-                }
-
                 $property = PropertyListing::where('provider_code', $propertyCode)
                     ->orWhere('provider_property_id', $propertyCode)
-                    ->where('is_active', true)
+                    ->active()
                     ->first();
 
                 if ($property) {
-                    return ['source' => 'auto-generated', 'slug' => 'property-' . Str::slug($propertyCode), 'data' => $this->generatePropertySeo($property)];
+                    $seoData = app(\App\Services\SeoService::class)->getPropertySeo($property);
+                    return array_merge(['source' => $seoData['source'], 'slug' => $seoData['slug']], ['data' => $seoData['data']]);
                 }
             }
 
@@ -145,16 +141,6 @@ class ContentController extends Controller
         $cacheKey = "seo_property_{$propertyCode}";
 
         $data = Cache::remember($cacheKey, 600, function () use ($propertyCode) {
-            // Check for admin-set override first (seo_configs table)
-            $override = SeoConfig::where('route_slug', 'property-' . Str::slug($propertyCode))
-                ->where('is_active', true)
-                ->first();
-
-            if ($override) {
-                return ['source' => 'override', 'data' => $override->seo];
-            }
-
-            // Auto-generate from property record
             $property = PropertyListing::where('provider_code', $propertyCode)
                 ->orWhere('provider_property_id', $propertyCode)
                 ->active()
@@ -162,7 +148,7 @@ class ContentController extends Controller
 
             if (!$property) return null;
 
-            return ['source' => 'auto-generated', 'data' => $this->generatePropertySeo($property)];
+            return app(\App\Services\SeoService::class)->getPropertySeo($property);
         });
 
         if (!$data) {
@@ -180,59 +166,6 @@ class ContentController extends Controller
         $path = ltrim(parse_url($path, PHP_URL_PATH) ?? $path, '/');
         if ($path === '' || $path === '/') return 'home';
         return Str::slug(str_replace('/', '-', $path));
-    }
-
-    /** Auto-generate SEO block from a PropertyListing */
-    private function generatePropertySeo(PropertyListing $property): array
-    {
-        $title = $property->name . ' — ' . $property->city . ', ' . $property->country;
-        $desc  = $property->description
-            ? Str::limit(strip_tags($property->description), 155)
-            : "Book {$property->name} in {$property->city}, {$property->country}. "
-              . ucfirst($property->property_type) . ' available from $' . ($property->price_from ?? 'N/A') . '/night.';
-
-        return [
-            'title'          => $title,
-            'description'    => $desc,
-            'og_title'       => $title,
-            'og_description' => $desc,
-            'og_image'       => $property->featured_image,
-            'canonical'      => null,
-            'no_index'       => false,
-            'schema'         => [
-                '@context'       => 'https://schema.org',
-                '@type'          => 'LodgingBusiness',
-                'name'           => $property->name,
-                'description'    => $desc,
-                'image'          => $property->images ?? [],
-                'address'        => [
-                    '@type'           => 'PostalAddress',
-                    'streetAddress'   => $property->address,
-                    'addressLocality' => $property->city,
-                    'addressRegion'   => $property->state,
-                    'postalCode'      => $property->postal_code,
-                    'addressCountry'  => $property->country_code ?? $property->country,
-                ],
-                'geo' => $property->latitude ? [
-                    '@type'     => 'GeoCoordinates',
-                    'latitude'  => $property->latitude,
-                    'longitude' => $property->longitude,
-                ] : null,
-                'starRating' => $property->star_rating ? [
-                    '@type'       => 'Rating',
-                    'ratingValue' => $property->star_rating,
-                ] : null,
-                'aggregateRating' => $property->rating_average ? [
-                    '@type'       => 'AggregateRating',
-                    'ratingValue' => $property->rating_average,
-                    'reviewCount' => $property->rating_count,
-                ] : null,
-                'priceRange' => $property->price_from ? ('$' . number_format($property->price_from, 0)) : null,
-                'telephone'  => $property->phone,
-                'email'      => $property->email,
-                'url'        => $property->website,
-            ],
-        ];
     }
 
     /** Site-wide SEO defaults pulled from Settings table */

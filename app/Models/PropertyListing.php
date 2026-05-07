@@ -10,7 +10,7 @@ class PropertyListing extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $appends = ['seo_slug'];
+    protected $appends = ['seo_slug', 'seo'];
 
     protected $fillable = [
         'provider',
@@ -284,5 +284,13 @@ class PropertyListing extends Model
         // For properties, the SEO system uses property-{slugified_code}
         $code = $this->provider_code ?: $this->provider_property_id;
         return 'property-' . \Illuminate\Support\Str::slug($code);
+    }
+
+    /**
+     * Get the SEO metadata for this property (checks SEO table overrides)
+     */
+    public function getSeoAttribute(): array
+    {
+        return app(\App\Services\SeoService::class)->getPropertySeo($this);
     }
 }
