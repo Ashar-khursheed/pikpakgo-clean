@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\PropertyListing;
+use App\Models\SeoConfig;
 use App\Services\OwnerRezService;
 use App\Services\PricingMarkupService;
 use Illuminate\Http\Request;
@@ -85,9 +86,9 @@ class PropertyController extends Controller
                 $query->where('rating_average', '>=', $request->min_rating);
             }
 
-            // Bedrooms filter (stored in api_data — try provider_code prefix match)
+            // Bedrooms filter
             if ($request->filled('bedrooms')) {
-                $query->whereRaw("JSON_EXTRACT(api_data, '$.bedrooms') >= ?", [(int) $request->bedrooms]);
+                $query->where('bedrooms', '>=', (int) $request->bedrooms);
             }
 
             // Amenities filter (all requested amenities must be in the JSON array)
@@ -109,7 +110,7 @@ class PropertyController extends Controller
                 default       => $query->orderBy('created_at', 'desc'),
             };
 
-            // Fetch all matching properties to filter by display price (markup depends on rule logic)
+            // Fetch properties
             $properties = $query->get();
             
             $minPriceFilter = $request->input('min_price');

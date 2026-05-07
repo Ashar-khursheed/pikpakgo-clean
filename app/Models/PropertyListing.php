@@ -17,7 +17,8 @@ class PropertyListing extends Model
         'id', 'provider', 'provider_property_id', 'provider_code', 'name', 
         'property_type', 'star_rating', 'country', 'city', 'featured_image',
         'price_from', 'price_currency', 'rating_average', 'rating_count',
-        'is_featured', 'bedrooms', 'bathrooms', 'max_guests'
+        'is_featured', 'bedrooms', 'bathrooms', 'max_guests',
+        'created_at', 'booking_count', 'view_count', 'destination_code'
     ];
 
     protected $appends = ['seo_slug'];
