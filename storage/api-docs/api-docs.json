@@ -1725,6 +1725,10 @@
                                     "meta_description": {
                                         "type": "string",
                                         "example": "Custom SEO description..."
+                                    },
+                                    "seo_slug": {
+                                        "type": "string",
+                                        "example": "luxury-miami-villa"
                                     }
                                 },
                                 "type": "object"
@@ -1908,6 +1912,9 @@
                                         "type": "string"
                                     },
                                     "meta_description": {
+                                        "type": "string"
+                                    },
+                                    "seo_slug": {
                                         "type": "string"
                                     }
                                 },
