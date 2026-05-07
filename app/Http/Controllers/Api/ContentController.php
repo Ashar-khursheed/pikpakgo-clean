@@ -114,8 +114,7 @@ class ContentController extends Controller
             if ($slug) {
                 $page = ContentPage::active()->published()->where('slug', $slug)->first();
                 if ($page) {
-                    $seoData = app(\App\Services\SeoService::class)->getContentPageSeo($page);
-                    return array_merge(['source' => $seoData['source'], 'slug' => $seoData['slug']], ['data' => $seoData['data']]);
+                    return ['source' => 'cms', 'slug' => $slug, 'data' => $page->seo];
                 }
             }
 

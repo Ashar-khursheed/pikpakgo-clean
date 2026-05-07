@@ -68,14 +68,8 @@ class ContentPage extends Model
         return $this->og_description ?: $this->meta_description;
     }
 
-    /** Full SEO meta block for frontend — checks for manual overrides first */
+    /** Full SEO meta block for frontend */
     public function getSeoAttribute(): array
-    {
-        return app(\App\Services\SeoService::class)->getContentPageSeo($this);
-    }
-
-    /** Full SEO meta block for frontend — auto-filled from page fields */
-    public function getGeneratedSeoAttribute(): array
     {
         return [
             'title'        => $this->meta_title ?: $this->title,

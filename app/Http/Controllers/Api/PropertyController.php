@@ -199,6 +199,12 @@ class PropertyController extends Controller
     public function show($id)
     {
         try {
+            // 1. Check if the provided ID is a custom route_slug in the SEO table
+            $seoOverride = SeoConfig::where('route_slug', $id)->where('is_active', true)->first();
+            if ($seoOverride && $seoOverride->route_path && \Illuminate\Support\Str::contains($seoOverride->route_path, '/properties/')) {
+                $id = \Illuminate\Support\Str::after($seoOverride->route_path, '/properties/');
+            }
+
             // Try to find in cached listings first
             $propertyCode = $id;
             if (\Illuminate\Support\Str::startsWith($id, 'property-')) {

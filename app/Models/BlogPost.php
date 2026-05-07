@@ -126,6 +126,6 @@ class BlogPost extends Model
 
     public function getSeoSlugAttribute(): string
     {
-        return 'blog-' . $this->slug;
+        return $this->seo['slug'];
     }
 }

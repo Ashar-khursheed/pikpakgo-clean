@@ -281,9 +281,7 @@ class PropertyListing extends Model
      */
     public function getSeoSlugAttribute(): string
     {
-        // For properties, the SEO system uses property-{slugified_code}
-        $code = $this->provider_code ?: $this->provider_property_id;
-        return 'property-' . \Illuminate\Support\Str::slug($code);
+        return $this->seo['slug'];
     }
 
     /**
