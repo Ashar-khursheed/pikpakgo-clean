@@ -215,7 +215,17 @@ class AdminPropertyController extends Controller
      *         @OA\Property(property="is_featured",         type="boolean", example=false),
      *         @OA\Property(property="meta_title",          type="string",  example="Custom SEO Title"),
      *         @OA\Property(property="meta_description",    type="string",  example="Custom SEO description..."),
-     *         @OA\Property(property="seo_slug",            type="string",  example="luxury-miami-villa")
+     *         @OA\Property(property="seo_slug",            type="string",  example="luxury-miami-villa"),
+     *         @OA\Property(property="og_title",            type="string"),
+     *         @OA\Property(property="og_description",      type="string"),
+     *         @OA\Property(property="og_image",            type="string",  format="binary"),
+     *         @OA\Property(property="twitter_title",       type="string"),
+     *         @OA\Property(property="twitter_description", type="string"),
+     *         @OA\Property(property="twitter_image",       type="string",  format="binary"),
+     *         @OA\Property(property="canonical_url",       type="string"),
+     *         @OA\Property(property="no_index",            type="boolean"),
+     *         @OA\Property(property="no_follow",           type="boolean"),
+     *         @OA\Property(property="schema_markup",       type="object")
      *     )),
      *     @OA\Response(response=201, description="Property created"),
      *     @OA\Response(response=422, description="Validation error")
@@ -261,27 +271,21 @@ class AdminPropertyController extends Controller
             'meta_title'           => 'nullable|string|max:255',
             'meta_description'     => 'nullable|string|max:500',
             'seo_slug'             => 'nullable|string|max:255',
+            'og_title'             => 'nullable|string|max:255',
+            'og_description'       => 'nullable|string|max:500',
+            'og_image'             => 'nullable', // can be file or string
+            'twitter_title'        => 'nullable|string|max:255',
+            'twitter_description'  => 'nullable|string|max:500',
+            'twitter_image'        => 'nullable', // can be file or string
+            'canonical_url'        => 'nullable|url|max:255',
+            'no_index'             => 'nullable',
+            'no_follow'            => 'nullable',
+            'schema_markup'        => 'nullable|array',
         ]);
 
         $property = PropertyListing::create($validated);
 
-        // Sync to seo_configs table (optional manual override on create)
-        if ($request->filled('meta_title') || $request->filled('meta_description') || $request->filled('seo_slug')) {
-            $propertyCode = $property->provider_code ?: $property->provider_property_id;
-            \App\Models\SeoConfig::updateOrCreate(
-                ['model_type' => PropertyListing::class, 'model_id' => $property->id],
-                [
-                    'route_slug'       => $request->seo_slug ?? ('property-' . \Illuminate\Support\Str::slug($propertyCode)),
-                    'route_path'       => '/properties/' . $propertyCode,
-                    'route_label'      => 'Property: ' . $property->name,
-                    'route_group'      => 'Dynamic',
-                    'meta_title'       => $request->meta_title,
-                    'meta_description' => $request->meta_description,
-                    'og_image'         => $property->featured_image,
-                    'is_active'        => true,
-                ]
-            );
-        }
+        $this->syncSeoData($property, $request);
 
         return response()->json(['success' => true, 'data' => $property], 201);
     }
@@ -325,7 +329,17 @@ class AdminPropertyController extends Controller
      *         @OA\Property(property="is_featured",         type="boolean"),
      *         @OA\Property(property="meta_title",          type="string"),
      *         @OA\Property(property="meta_description",    type="string"),
-     *         @OA\Property(property="seo_slug",            type="string")
+     *         @OA\Property(property="seo_slug",            type="string"),
+     *         @OA\Property(property="og_title",            type="string"),
+     *         @OA\Property(property="og_description",      type="string"),
+     *         @OA\Property(property="og_image",            type="string",  format="binary"),
+     *         @OA\Property(property="twitter_title",       type="string"),
+     *         @OA\Property(property="twitter_description", type="string"),
+     *         @OA\Property(property="twitter_image",       type="string",  format="binary"),
+     *         @OA\Property(property="canonical_url",       type="string"),
+     *         @OA\Property(property="no_index",            type="boolean"),
+     *         @OA\Property(property="no_follow",           type="boolean"),
+     *         @OA\Property(property="schema_markup",       type="object")
      *     )),
      *     @OA\Response(response=200, description="Property updated"),
      *     @OA\Response(response=404, description="Not found"),
@@ -371,27 +385,21 @@ class AdminPropertyController extends Controller
             'meta_title'          => 'nullable|string|max:255',
             'meta_description'    => 'nullable|string|max:500',
             'seo_slug'            => 'nullable|string|max:255',
+            'og_title'            => 'nullable|string|max:255',
+            'og_description'      => 'nullable|string|max:500',
+            'og_image'            => 'nullable',
+            'twitter_title'       => 'nullable|string|max:255',
+            'twitter_description' => 'nullable|string|max:500',
+            'twitter_image'       => 'nullable',
+            'canonical_url'       => 'nullable|url|max:255',
+            'no_index'            => 'nullable',
+            'no_follow'           => 'nullable',
+            'schema_markup'       => 'nullable|array',
         ]);
 
         $property->update($validated);
 
-        // Sync to seo_configs table
-        if ($request->filled('meta_title') || $request->filled('meta_description') || $request->filled('seo_slug')) {
-            $propertyCode = $property->provider_code ?: $property->provider_property_id;
-            \App\Models\SeoConfig::updateOrCreate(
-                ['model_type' => PropertyListing::class, 'model_id' => $property->id],
-                [
-                    'route_slug'       => $request->seo_slug ?? ('property-' . \Illuminate\Support\Str::slug($propertyCode)),
-                    'route_path'       => '/properties/' . $propertyCode,
-                    'route_label'      => 'Property: ' . $property->name,
-                    'route_group'      => 'Dynamic',
-                    'meta_title'       => $request->meta_title,
-                    'meta_description' => $request->meta_description,
-                    'og_image'         => $property->featured_image,
-                    'is_active'        => true,
-                ]
-            );
-        }
+        $this->syncSeoData($property, $request);
 
         return response()->json(['success' => true, 'message' => 'Property updated', 'data' => $property->fresh()]);
     }
@@ -413,6 +421,78 @@ class AdminPropertyController extends Controller
         $property->delete();
 
         return response()->json(['success' => true, 'message' => 'Property deleted successfully']);
+    }
+
+    /**
+     * Sync SEO data for a property
+     */
+    protected function syncSeoData($property, Request $request)
+    {
+        // Only sync if at least one SEO field is present
+        $seoFields = [
+            'meta_title', 'meta_description', 'seo_slug', 
+            'og_title', 'og_description', 'og_image',
+            'twitter_title', 'twitter_description', 'twitter_image',
+            'canonical_url', 'no_index', 'no_follow', 'schema_markup'
+        ];
+
+        $hasSeo = false;
+        foreach ($seoFields as $field) {
+            if ($request->has($field) || $request->hasFile($field)) {
+                $hasSeo = true;
+                break;
+            }
+        }
+
+        if (!$hasSeo) return;
+
+        $propertyCode = $property->provider_code ?: $property->provider_property_id;
+        
+        $seoData = [
+            'route_slug'       => $request->seo_slug ?? ('property-' . \Illuminate\Support\Str::slug($propertyCode)),
+            'route_path'       => '/properties/' . $propertyCode,
+            'route_label'      => 'Property: ' . $property->name,
+            'route_group'      => 'Dynamic',
+            'meta_title'       => $request->meta_title,
+            'meta_description' => $request->meta_description,
+            'og_title'         => $request->og_title,
+            'og_description'   => $request->og_description,
+            'twitter_title'    => $request->twitter_title,
+            'twitter_description' => $request->twitter_description,
+            'canonical_url'    => $request->canonical_url,
+            'no_index'         => $request->has('no_index') ? filter_var($request->no_index, FILTER_VALIDATE_BOOLEAN) : false,
+            'no_follow'        => $request->has('no_follow') ? filter_var($request->no_follow, FILTER_VALIDATE_BOOLEAN) : false,
+            'schema_markup'    => $request->schema_markup,
+            'is_active'        => true,
+        ];
+
+        // Handle Image Uploads for SEO
+        if ($request->hasFile('og_image')) {
+            $seoData['og_image'] = $this->handleFileUpload($request->file('og_image'), 'properties/seo');
+        } elseif ($request->filled('og_image')) {
+            $seoData['og_image'] = $request->og_image;
+        }
+
+        if ($request->hasFile('twitter_image')) {
+            $seoData['twitter_image'] = $this->handleFileUpload($request->file('twitter_image'), 'properties/seo');
+        } elseif ($request->filled('twitter_image')) {
+            $seoData['twitter_image'] = $request->twitter_image;
+        }
+
+        \App\Models\SeoConfig::updateOrCreate(
+            ['model_type' => PropertyListing::class, 'model_id' => $property->id],
+            array_filter($seoData, fn($value) => !is_null($value))
+        );
+    }
+
+    /**
+     * Handle file upload helper
+     */
+    protected function handleFileUpload($file, $folder)
+    {
+        $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+        $path = $file->storeAs($folder, $filename, 'public');
+        return '/storage/' . $path;
     }
 
     /**
