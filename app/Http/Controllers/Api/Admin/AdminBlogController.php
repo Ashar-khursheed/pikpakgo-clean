@@ -34,7 +34,7 @@ class AdminBlogController extends Controller
      */
     public function categoryIndex(Request $request)
     {
-        $categories = BlogCategory::withCount('posts')
+        $categories = BlogCategory::with(['seoConfig'])->withCount('posts')
             ->when($request->search,    fn ($q) => $q->where('name', 'like', "%{$request->search}%"))
             ->when($request->has('is_active'), fn ($q) => $q->where('is_active', filter_var($request->is_active, FILTER_VALIDATE_BOOLEAN)))
             ->orderBy('sort_order')
@@ -134,8 +134,8 @@ class AdminBlogController extends Controller
      */
     public function categoryShow($id)
     {
-        $category = BlogCategory::withCount('posts')->findOrFail($id);
-        return response()->json(['success' => true, 'data' => array_merge($category->toArray(), ['seo' => $category->seo])]);
+        $category = BlogCategory::with(['seoConfig'])->withCount('posts')->findOrFail($id);
+        return response()->json(['success' => true, 'data' => $category]);
     }
 
     /**
@@ -260,7 +260,7 @@ class AdminBlogController extends Controller
     public function postIndex(Request $request)
     {
         $posts = BlogPost::withTrashed()
-            ->with(['category:id,name,slug,color', 'author:id,first_name,last_name'])
+            ->with(['category:id,name,slug,color', 'author:id,first_name,last_name', 'seoConfig'])
             ->when($request->status,           fn ($q) => $q->where('status', $request->status))
             ->when($request->blog_category_id, fn ($q) => $q->where('blog_category_id', $request->blog_category_id))
             ->when($request->is_featured,      fn ($q) => $q->where('is_featured', true))
@@ -421,12 +421,12 @@ class AdminBlogController extends Controller
     public function postShow($id)
     {
         $post = BlogPost::withTrashed()
-            ->with(['category:id,name,slug,color', 'author:id,first_name,last_name,profile_image'])
+            ->with(['category:id,name,slug,color', 'author:id,first_name,last_name,profile_image', 'seoConfig'])
             ->findOrFail($id);
-
+			
         return response()->json([
             'success' => true,
-            'data'    => array_merge($post->toArray(), ['seo' => $post->seo]),
+            'data'    => $post,
         ]);
     }
 

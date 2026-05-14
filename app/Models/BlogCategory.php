@@ -18,6 +18,11 @@ class BlogCategory extends Model
         'is_active' => 'boolean',
     ];
 
+    public function seoConfig()
+    {
+        return $this->morphOne(SeoConfig::class, 'model');
+    }
+
     public function posts()
     {
         return $this->hasMany(BlogPost::class);

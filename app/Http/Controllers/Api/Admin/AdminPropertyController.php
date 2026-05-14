@@ -57,7 +57,7 @@ class AdminPropertyController extends Controller
             $query->where('is_active', filter_var($request->is_active, FILTER_VALIDATE_BOOLEAN));
         }
 
-        $properties = $query->orderBy('created_at', 'desc')->paginate(20);
+        $properties = $query->with('seoConfig')->orderBy('created_at', 'desc')->paginate(20);
 
         return response()->json([
             'success' => true,
@@ -78,7 +78,7 @@ class AdminPropertyController extends Controller
      */
     public function show($id)
     {
-        $property = PropertyListing::findOrFail($id);
+        $property = PropertyListing::with('seoConfig')->findOrFail($id);
         return response()->json(['success' => true, 'data' => $property]);
     }
 

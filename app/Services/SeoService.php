@@ -49,10 +49,15 @@ class SeoService
 
         // 1. Try to find by direct model relation if provided
         if ($model) {
-            $override = SeoConfig::where('model_type', get_class($model))
-                ->where('model_id', $model->id)
-                ->where('is_active', true)
-                ->first();
+            // Optimization: check if relationship is already loaded
+            if ($model->relationLoaded('seoConfig')) {
+                $override = $model->seoConfig;
+            } else {
+                $override = SeoConfig::where('model_type', get_class($model))
+                    ->where('model_id', $model->id)
+                    ->where('is_active', true)
+                    ->first();
+            }
         }
 
         // 2. Try to find by route_slug (legacy/fallback lookup)

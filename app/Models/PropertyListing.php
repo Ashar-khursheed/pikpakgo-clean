@@ -21,7 +21,7 @@ class PropertyListing extends Model
         'created_at', 'booking_count', 'view_count', 'destination_code'
     ];
 
-    protected $appends = ['seo_slug'];
+    protected $appends = ['seo_slug', 'seo'];
 
     protected $fillable = [
         'provider',
@@ -92,6 +92,14 @@ class PropertyListing extends Model
         'check_in_time' => 'datetime:H:i',
         'check_out_time' => 'datetime:H:i',
     ];
+
+    /**
+     * Get the SEO configuration for this property.
+     */
+    public function seoConfig()
+    {
+        return $this->morphOne(SeoConfig::class, 'model');
+    }
 
     /**
      * Get bookings for this property

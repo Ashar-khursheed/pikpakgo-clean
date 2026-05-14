@@ -35,6 +35,11 @@ class BlogPost extends Model
     ];
 
     // ── Relations ─────────────────────────────────────────────────
+    public function seoConfig()
+    {
+        return $this->morphOne(SeoConfig::class, 'model');
+    }
+
     public function category()
     {
         return $this->belongsTo(BlogCategory::class, 'blog_category_id');
