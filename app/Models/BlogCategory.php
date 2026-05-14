@@ -49,6 +49,13 @@ class BlogCategory extends Model
             'og_description' => $this->meta_description ?: $this->description,
             'og_image'    => $this->og_image ?? $this->featured_image,
             'no_index'    => false,
+            'schema'      => [
+                '@context' => 'https://schema.org',
+                '@type'    => 'CollectionPage',
+                'name'     => $this->name,
+                'description' => $this->description,
+                'url'         => url('/blog/category/' . $this->slug),
+            ],
         ];
     }
 }

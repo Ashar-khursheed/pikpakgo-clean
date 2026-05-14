@@ -75,10 +75,19 @@ class SeoService
         }
 
         if ($override) {
+            $data = $override->seo;
+            
+            // Smart Fallback: If manual override exists but schema is empty, 
+            // inject the auto-generated schema.
+            if (empty($data['schema'])) {
+                $generated = $fallbackGenerator();
+                $data['schema'] = $generated['schema'] ?? null;
+            }
+
             return [
                 'source' => 'seo_config',
                 'slug' => $override->route_slug,
-                'data' => $override->seo
+                'data' => $data
             ];
         }
 
