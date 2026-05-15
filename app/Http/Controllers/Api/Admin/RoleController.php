@@ -24,7 +24,7 @@ class RoleController extends Controller
 
     /**
      * @OA\Get(
-     *     path="/api/admin/roles",
+     *     path="/admin/roles",
      *     summary="List all roles",
      *     tags={"Admin Roles"},
      *     security={{"bearerAuth":{}}},
@@ -41,7 +41,7 @@ class RoleController extends Controller
 
     /**
      * @OA\Post(
-     *     path="/api/admin/roles",
+     *     path="/admin/roles",
      *     summary="Create a new role",
      *     tags={"Admin Roles"},
      *     security={{"bearerAuth":{}}},
@@ -70,7 +70,7 @@ class RoleController extends Controller
 
     /**
      * @OA\Put(
-     *     path="/api/admin/roles/{id}",
+     *     path="/admin/roles/{id}",
      *     summary="Update a role",
      *     tags={"Admin Roles"},
      *     security={{"bearerAuth":{}}},
@@ -99,7 +99,7 @@ class RoleController extends Controller
 
     /**
      * @OA\Delete(
-     *     path="/api/admin/roles/{id}",
+     *     path="/admin/roles/{id}",
      *     summary="Delete a role",
      *     tags={"Admin Roles"},
      *     security={{"bearerAuth":{}}},
@@ -119,7 +119,7 @@ class RoleController extends Controller
 
     /**
      * @OA\Post(
-     *     path="/api/admin/roles/{id}/permissions",
+     *     path="/admin/roles/{id}/permissions",
      *     summary="Sync permissions to a role",
      *     tags={"Admin Roles"},
      *     security={{"bearerAuth":{}}},

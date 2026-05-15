@@ -4071,13 +4071,13 @@
                 ]
             }
         },
-        "/api/admin/permissions": {
+        "/admin/permissions": {
             "get": {
                 "tags": [
                     "Admin Permissions"
                 ],
                 "summary": "List all permissions",
-                "operationId": "02d5289d86c9a86f7534eb2a054ca6f8",
+                "operationId": "d059147919362845999a87d915d479b0",
                 "responses": {
                     "200": {
                         "description": "Successful operation"
@@ -4094,7 +4094,7 @@
                     "Admin Permissions"
                 ],
                 "summary": "Create a new permission",
-                "operationId": "0fb1f609f0ecece740fea48416bef2f1",
+                "operationId": "f99b51487407958229654840350d34cb",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -4123,13 +4123,13 @@
                 ]
             }
         },
-        "/api/admin/permissions/{id}": {
+        "/admin/permissions/{id}": {
             "delete": {
                 "tags": [
                     "Admin Permissions"
                 ],
                 "summary": "Delete a permission",
-                "operationId": "4965306003e3440f49c7b081f56fc538",
+                "operationId": "7568387dae1ca39ad5a16b4db6d70524",
                 "parameters": [
                     {
                         "name": "id",
@@ -4500,13 +4500,13 @@
                 ]
             }
         },
-        "/api/admin/properties/approvals/pending": {
+        "/admin/properties/approvals/pending": {
             "get": {
                 "tags": [
                     "Admin Property Approvals"
                 ],
                 "summary": "List properties pending approval",
-                "operationId": "9c3f9049e989a9b6d1ba0497f221c949",
+                "operationId": "2aa8ff6068ca43b0969488c25ee1fbe9",
                 "responses": {
                     "200": {
                         "description": "Paginated list of pending properties"
@@ -4519,13 +4519,13 @@
                 ]
             }
         },
-        "/api/admin/properties/approvals/{id}/approve": {
+        "/admin/properties/approvals/{id}/approve": {
             "post": {
                 "tags": [
                     "Admin Property Approvals"
                 ],
                 "summary": "Approve a property",
-                "operationId": "4e8f5c1eaf13fe64f5cbca852337446b",
+                "operationId": "72ddc78172a84419ac1ae24a9bd26c72",
                 "parameters": [
                     {
                         "name": "id",
@@ -4548,13 +4548,13 @@
                 ]
             }
         },
-        "/api/admin/properties/approvals/{id}/reject": {
+        "/admin/properties/approvals/{id}/reject": {
             "post": {
                 "tags": [
                     "Admin Property Approvals"
                 ],
                 "summary": "Reject a property",
-                "operationId": "52c81ed0bc2c250039bc69389574feed",
+                "operationId": "e5d915142e7a508a1a1991a0f96eb2b3",
                 "parameters": [
                     {
                         "name": "id",
@@ -4593,13 +4593,13 @@
                 ]
             }
         },
-        "/api/admin/roles": {
+        "/admin/roles": {
             "get": {
                 "tags": [
                     "Admin Roles"
                 ],
                 "summary": "List all roles",
-                "operationId": "2af0a74e89a916dd65550cb1ff927c18",
+                "operationId": "1fbe54def12159b19db06ae306e57c85",
                 "responses": {
                     "200": {
                         "description": "Successful operation"
@@ -4616,7 +4616,7 @@
                     "Admin Roles"
                 ],
                 "summary": "Create a new role",
-                "operationId": "811df9a4fd01b110d9ae33803b064cd3",
+                "operationId": "633eb6c261d0e8898d191a70c3b4c6af",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -4648,13 +4648,13 @@
                 ]
             }
         },
-        "/api/admin/roles/{id}": {
+        "/admin/roles/{id}": {
             "put": {
                 "tags": [
                     "Admin Roles"
                 ],
                 "summary": "Update a role",
-                "operationId": "bc5cd0cc445c49b0c1e18f94df0bbb07",
+                "operationId": "b9dbaf96a933065cada66a69cefb332f",
                 "parameters": [
                     {
                         "name": "id",
@@ -4697,7 +4697,7 @@
                     "Admin Roles"
                 ],
                 "summary": "Delete a role",
-                "operationId": "f4ba84e17a0c7e7ef3dbd2465f808ecd",
+                "operationId": "31ed55b3c762e8f8cab5d813506b06a3",
                 "parameters": [
                     {
                         "name": "id",
@@ -4720,13 +4720,13 @@
                 ]
             }
         },
-        "/api/admin/roles/{id}/permissions": {
+        "/admin/roles/{id}/permissions": {
             "post": {
                 "tags": [
                     "Admin Roles"
                 ],
                 "summary": "Sync permissions to a role",
-                "operationId": "50b4e37a52c3ce97aca253484aacd0db",
+                "operationId": "4b85b0c158c1113e5aceee2a5b043910",
                 "parameters": [
                     {
                         "name": "id",

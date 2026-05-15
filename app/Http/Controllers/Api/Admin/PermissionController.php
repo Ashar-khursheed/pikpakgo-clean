@@ -25,7 +25,7 @@ class PermissionController extends Controller
 
     /**
      * @OA\Get(
-     *     path="/api/admin/permissions",
+     *     path="/admin/permissions",
      *     summary="List all permissions",
      *     tags={"Admin Permissions"},
      *     security={{"bearerAuth":{}}},
@@ -42,7 +42,7 @@ class PermissionController extends Controller
 
     /**
      * @OA\Post(
-     *     path="/api/admin/permissions",
+     *     path="/admin/permissions",
      *     summary="Create a new permission",
      *     tags={"Admin Permissions"},
      *     security={{"bearerAuth":{}}},
@@ -70,7 +70,7 @@ class PermissionController extends Controller
 
     /**
      * @OA\Delete(
-     *     path="/api/admin/permissions/{id}",
+     *     path="/admin/permissions/{id}",
      *     summary="Delete a permission",
      *     tags={"Admin Permissions"},
      *     security={{"bearerAuth":{}}},

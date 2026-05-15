@@ -17,7 +17,7 @@ class PropertyApprovalController extends Controller
 {
     /**
      * @OA\Get(
-     *     path="/api/admin/properties/approvals/pending",
+     *     path="/admin/properties/approvals/pending",
      *     summary="List properties pending approval",
      *     tags={"Admin Property Approvals"},
      *     security={{"bearerAuth":{}}},
@@ -36,7 +36,7 @@ class PropertyApprovalController extends Controller
 
     /**
      * @OA\Post(
-     *     path="/api/admin/properties/approvals/{id}/approve",
+     *     path="/admin/properties/approvals/{id}/approve",
      *     summary="Approve a property",
      *     tags={"Admin Property Approvals"},
      *     security={{"bearerAuth":{}}},
@@ -64,7 +64,7 @@ class PropertyApprovalController extends Controller
 
     /**
      * @OA\Post(
-     *     path="/api/admin/properties/approvals/{id}/reject",
+     *     path="/admin/properties/approvals/{id}/reject",
      *     summary="Reject a property",
      *     tags={"Admin Property Approvals"},
      *     security={{"bearerAuth":{}}},
