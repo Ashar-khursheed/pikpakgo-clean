@@ -132,7 +132,7 @@ class SearchController extends Controller
         $perPage   = (int) ($request->per_page ?? 12);
         $sort      = $request->sort ?? 'featured';
 
-        $query = PropertyListing::where('is_active', true)
+        $query = PropertyListing::active()
             ->select(PropertyListing::LISTING_COLUMNS)
 
             // Location text search
@@ -276,7 +276,7 @@ class SearchController extends Controller
                     ->selectRaw('COUNT(*) as property_count')
                     ->selectRaw('AVG(rating_average) as avg_rating')
                     ->selectRaw('MIN(price_from) as min_price')
-                    ->where('is_active', true)
+                    ->active()
                     ->groupBy('city', 'country', 'destination_code')
                     ->having('property_count', '>', 0)
                     ->orderBy('property_count', 'desc')
@@ -328,7 +328,7 @@ class SearchController extends Controller
             
             $query = PropertyListing::select('city', 'country', 'country_code', 'destination_code')
                 ->selectRaw('COUNT(*) as property_count')
-                ->where('is_active', true)
+                ->active()
                 ->groupBy('city', 'country', 'country_code', 'destination_code');
             
             if ($search) {
@@ -379,7 +379,7 @@ class SearchController extends Controller
 
         $results = Cache::remember('autocomplete_' . md5($q), 300, function () use ($q, $limit) {
             // Cities
-            $cities = PropertyListing::where('is_active', true)
+            $cities = PropertyListing::active()
                 ->where(function ($qb) use ($q) {
                     $qb->where('city', 'like', "{$q}%")
                        ->orWhere('city', 'like', "%{$q}%");
@@ -399,7 +399,7 @@ class SearchController extends Controller
                 ]);
 
             // Properties by name
-            $properties = PropertyListing::where('is_active', true)
+            $properties = PropertyListing::active()
                 ->where('name', 'like', "%{$q}%")
                 ->select('id', 'name', 'city', 'country', 'provider_property_id', 'featured_image', 'price_from', 'price_currency')
                 ->orderBy('booking_count', 'desc')

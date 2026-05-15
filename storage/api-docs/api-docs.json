@@ -1729,6 +1729,38 @@
                                     "seo_slug": {
                                         "type": "string",
                                         "example": "luxury-miami-villa"
+                                    },
+                                    "og_title": {
+                                        "type": "string"
+                                    },
+                                    "og_description": {
+                                        "type": "string"
+                                    },
+                                    "og_image": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "twitter_title": {
+                                        "type": "string"
+                                    },
+                                    "twitter_description": {
+                                        "type": "string"
+                                    },
+                                    "twitter_image": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "canonical_url": {
+                                        "type": "string"
+                                    },
+                                    "no_index": {
+                                        "type": "boolean"
+                                    },
+                                    "no_follow": {
+                                        "type": "boolean"
+                                    },
+                                    "schema_markup": {
+                                        "type": "object"
                                     }
                                 },
                                 "type": "object"
@@ -1916,6 +1948,38 @@
                                     },
                                     "seo_slug": {
                                         "type": "string"
+                                    },
+                                    "og_title": {
+                                        "type": "string"
+                                    },
+                                    "og_description": {
+                                        "type": "string"
+                                    },
+                                    "og_image": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "twitter_title": {
+                                        "type": "string"
+                                    },
+                                    "twitter_description": {
+                                        "type": "string"
+                                    },
+                                    "twitter_image": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "canonical_url": {
+                                        "type": "string"
+                                    },
+                                    "no_index": {
+                                        "type": "boolean"
+                                    },
+                                    "no_follow": {
+                                        "type": "boolean"
+                                    },
+                                    "schema_markup": {
+                                        "type": "object"
                                     }
                                 },
                                 "type": "object"
@@ -4007,6 +4071,87 @@
                 ]
             }
         },
+        "/api/admin/permissions": {
+            "get": {
+                "tags": [
+                    "Admin Permissions"
+                ],
+                "summary": "List all permissions",
+                "operationId": "02d5289d86c9a86f7534eb2a054ca6f8",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Admin Permissions"
+                ],
+                "summary": "Create a new permission",
+                "operationId": "0fb1f609f0ecece740fea48416bef2f1",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "delete-posts"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Permission created"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/permissions/{id}": {
+            "delete": {
+                "tags": [
+                    "Admin Permissions"
+                ],
+                "summary": "Delete a permission",
+                "operationId": "4965306003e3440f49c7b081f56fc538",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Permission deleted"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/admin/pricing-markups": {
             "get": {
                 "tags": [
@@ -4346,6 +4491,274 @@
                 "responses": {
                     "200": {
                         "description": "Markup calculation result"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/properties/approvals/pending": {
+            "get": {
+                "tags": [
+                    "Admin Property Approvals"
+                ],
+                "summary": "List properties pending approval",
+                "operationId": "9c3f9049e989a9b6d1ba0497f221c949",
+                "responses": {
+                    "200": {
+                        "description": "Paginated list of pending properties"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/properties/approvals/{id}/approve": {
+            "post": {
+                "tags": [
+                    "Admin Property Approvals"
+                ],
+                "summary": "Approve a property",
+                "operationId": "4e8f5c1eaf13fe64f5cbca852337446b",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Property approved"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/properties/approvals/{id}/reject": {
+            "post": {
+                "tags": [
+                    "Admin Property Approvals"
+                ],
+                "summary": "Reject a property",
+                "operationId": "52c81ed0bc2c250039bc69389574feed",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "reason": {
+                                        "type": "string",
+                                        "example": "Missing high-quality images"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Property rejected"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/roles": {
+            "get": {
+                "tags": [
+                    "Admin Roles"
+                ],
+                "summary": "List all roles",
+                "operationId": "2af0a74e89a916dd65550cb1ff927c18",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Admin Roles"
+                ],
+                "summary": "Create a new role",
+                "operationId": "811df9a4fd01b110d9ae33803b064cd3",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "editor"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Role created"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/roles/{id}": {
+            "put": {
+                "tags": [
+                    "Admin Roles"
+                ],
+                "summary": "Update a role",
+                "operationId": "bc5cd0cc445c49b0c1e18f94df0bbb07",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "updated-role"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Role updated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Admin Roles"
+                ],
+                "summary": "Delete a role",
+                "operationId": "f4ba84e17a0c7e7ef3dbd2465f808ecd",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Role deleted"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/roles/{id}/permissions": {
+            "post": {
+                "tags": [
+                    "Admin Roles"
+                ],
+                "summary": "Sync permissions to a role",
+                "operationId": "50b4e37a52c3ce97aca253484aacd0db",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "permissions": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "example": "manage-users"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Permissions synced"
                     }
                 },
                 "security": [
@@ -8682,8 +9095,20 @@
             "description": "Revenue, profit, and provider payout management"
         },
         {
+            "name": "Admin Permissions",
+            "description": "Granular permission management (Admin only)"
+        },
+        {
             "name": "Admin - Pricing Markups",
             "description": "Manage pricing markup rules applied to booking prices"
+        },
+        {
+            "name": "Admin Property Approvals",
+            "description": "Workflow for approving/rejecting properties (Admin only)"
+        },
+        {
+            "name": "Admin Roles",
+            "description": "User role management (Admin only)"
         },
         {
             "name": "Authentication",

@@ -58,7 +58,7 @@ class PropertyController extends Controller
         try {
             $perPage = min($request->input('per_page', 20), 100);
 
-            $query = PropertyListing::where('is_active', true)
+            $query = PropertyListing::active()
                 ->select(PropertyListing::LISTING_COLUMNS);
 
             // Text search
@@ -451,8 +451,8 @@ class PropertyController extends Controller
         try {
             $property = PropertyListing::findOrFail($id);
             
-            $similar = PropertyListing::where('id', '!=', $property->id)
-                ->where('is_active', true)
+            $similar = PropertyListing::active()
+                ->where('id', '!=', $property->id)
                 ->where(function($query) use ($property) {
                     $query->where('city', $property->city)
                           ->orWhere('destination_code', $property->destination_code);
@@ -494,7 +494,7 @@ class PropertyController extends Controller
         $limit = min((int) $request->get('limit', 8), 24);
 
         $properties = Cache::remember("featured_properties_{$limit}", 600, function () use ($limit) {
-            return PropertyListing::where('is_active', true)
+            return PropertyListing::active()
                 ->where('is_featured', true)
                 ->orderBy('booking_count', 'desc')
                 ->limit($limit)
@@ -517,7 +517,7 @@ class PropertyController extends Controller
     {
         $limit = min((int) $request->get('limit', 8), 24);
 
-        $properties = PropertyListing::where('is_active', true)
+        $properties = PropertyListing::active()
             ->orderBy('created_at', 'desc')
             ->limit($limit)
             ->get();
@@ -538,7 +538,7 @@ class PropertyController extends Controller
     {
         $limit = min((int) $request->get('limit', 8), 24);
 
-        $properties = PropertyListing::where('is_active', true)
+        $properties = PropertyListing::active()
             ->whereNotNull('rating_average')
             ->orderBy('rating_average', 'desc')
             ->orderBy('rating_count', 'desc')
@@ -635,7 +635,7 @@ class PropertyController extends Controller
     public function amenities()
     {
         $amenities = Cache::remember('all_amenities', 3600, function () {
-            $rows = PropertyListing::where('is_active', true)
+            $rows = PropertyListing::active()
                 ->whereNotNull('amenities')
                 ->pluck('amenities');
 
@@ -664,7 +664,7 @@ class PropertyController extends Controller
     public function types()
     {
         $types = Cache::remember('all_property_types', 3600, function () {
-            return PropertyListing::where('is_active', true)
+            return PropertyListing::active()
                 ->whereNotNull('property_type')
                 ->distinct()
                 ->pluck('property_type')

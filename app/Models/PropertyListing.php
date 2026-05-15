@@ -13,12 +13,17 @@ class PropertyListing extends Model
     /**
      * Columns required for listing cards/search results
      */
+    public const STATUS_PENDING = 'pending';
+    public const STATUS_APPROVED = 'approved';
+    public const STATUS_REJECTED = 'rejected';
+
     public const LISTING_COLUMNS = [
         'id', 'provider', 'provider_property_id', 'provider_code', 'name', 
         'property_type', 'star_rating', 'country', 'city', 'featured_image',
         'price_from', 'price_currency', 'rating_average', 'rating_count',
         'is_featured', 'bedrooms', 'bathrooms', 'max_guests',
-        'created_at', 'booking_count', 'view_count', 'destination_code'
+        'created_at', 'booking_count', 'view_count', 'destination_code',
+        'approval_status'
     ];
 
     protected $appends = ['seo_slug', 'seo'];
@@ -68,6 +73,10 @@ class PropertyListing extends Model
         'instant_book',
         'view_count',
         'booking_count',
+        'approval_status',
+        'approved_at',
+        'approved_by',
+        'rejection_reason',
         'api_data',
         'last_synced_at',
         'next_sync_at',
@@ -88,6 +97,7 @@ class PropertyListing extends Model
         'instant_book' => 'boolean',
         'last_synced_at' => 'datetime',
         'next_sync_at' => 'datetime',
+        'approved_at' => 'datetime',
         'price_last_updated' => 'datetime',
         'check_in_time' => 'datetime:H:i',
         'check_out_time' => 'datetime:H:i',
@@ -119,7 +129,24 @@ class PropertyListing extends Model
      */
     public function scopeActive($query)
     {
-        return $query->where('is_active', true);
+        return $query->where('is_active', true)
+                     ->where('approval_status', self::STATUS_APPROVED);
+    }
+
+    /**
+     * Scope for pending approval properties
+     */
+    public function scopePending($query)
+    {
+        return $query->where('approval_status', self::STATUS_PENDING);
+    }
+
+    /**
+     * Scope for rejected properties
+     */
+    public function scopeRejected($query)
+    {
+        return $query->where('approval_status', self::STATUS_REJECTED);
     }
 
     /**

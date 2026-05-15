@@ -26,6 +26,9 @@ use App\Http\Controllers\Api\Admin\AdminUserController;
 use App\Http\Controllers\Api\Admin\AdminPropertyFeesController;
 use App\Http\Controllers\Api\Admin\DashboardController;
 use App\Http\Controllers\Api\Admin\PricingMarkupController;
+use App\Http\Controllers\Api\Admin\RoleController;
+use App\Http\Controllers\Api\Admin\PermissionController;
+use App\Http\Controllers\Api\Admin\PropertyApprovalController;
 use App\Http\Controllers\Api\OwnerRezController;
 
 /*
@@ -286,6 +289,13 @@ Route::prefix('admin')->middleware(['auth:api', 'user.type:admin'])->group(funct
         Route::put('{id}/status', [AdminPropertyController::class, 'updateStatus']);
         Route::delete('{id}', [AdminPropertyController::class, 'destroy']);
 
+        // Property Approvals
+        Route::prefix('approvals')->group(function () {
+            Route::get('pending', [PropertyApprovalController::class, 'pending']);
+            Route::post('{id}/approve', [PropertyApprovalController::class, 'approve']);
+            Route::post('{id}/reject', [PropertyApprovalController::class, 'reject']);
+        });
+
         // Property Fees (nested under properties)
         Route::get('{propertyId}/fees', [AdminPropertyFeesController::class, 'index']);
         Route::post('{propertyId}/fees', [AdminPropertyFeesController::class, 'store']);
@@ -306,6 +316,21 @@ Route::prefix('admin')->middleware(['auth:api', 'user.type:admin'])->group(funct
         Route::get('{id}/bookings', [AdminUserController::class, 'getUserBookings']);
         Route::post('{id}/reset-password', [AdminUserController::class, 'resetPassword']);
         Route::delete('{id}', [AdminUserController::class, 'destroy']);
+    });
+
+    // Role & Permission Management
+    Route::prefix('roles')->group(function () {
+        Route::get('/', [RoleController::class, 'index']);
+        Route::post('/', [RoleController::class, 'store']);
+        Route::put('{id}', [RoleController::class, 'update']);
+        Route::delete('{id}', [RoleController::class, 'destroy']);
+        Route::post('{id}/permissions', [RoleController::class, 'syncPermissions']);
+    });
+
+    Route::prefix('permissions')->group(function () {
+        Route::get('/', [PermissionController::class, 'index']);
+        Route::post('/', [PermissionController::class, 'store']);
+        Route::delete('{id}', [PermissionController::class, 'destroy']);
     });
 
     // Pricing Markup Management
