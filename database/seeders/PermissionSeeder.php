@@ -61,5 +61,15 @@ class PermissionSeeder extends Seeder
 
         // Customer
         $customer = Role::firstOrCreate(['name' => 'customer', 'guard_name' => 'api']);
+
+        // Staff Roles
+        $contentWriter = Role::firstOrCreate(['name' => 'content-writer', 'guard_name' => 'api']);
+        $contentWriter->syncPermissions(['manage-blog']);
+
+        $seoSpecialist = Role::firstOrCreate(['name' => 'seo-specialist', 'guard_name' => 'api']);
+        $seoSpecialist->syncPermissions(['manage-seo']);
+
+        $ecomSales = Role::firstOrCreate(['name' => 'ecom-sales', 'guard_name' => 'api']);
+        $ecomSales->syncPermissions(['manage-bookings', 'view-financials']);
     }
 }

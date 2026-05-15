@@ -46,7 +46,7 @@ class AdminUserController extends Controller
             'last_name'      => 'required|string|max:100',
             'email'          => 'required|email|unique:users,email|max:200',
             'phone'          => 'nullable|string|max:20',
-            'user_type'      => 'required|in:customer,host,agency,admin',
+            'user_type'      => 'required|string|max:50',
             'status'         => 'nullable|in:active,inactive,suspended,pending',
             'country'        => 'nullable|string|max:100',
             'city'           => 'nullable|string|max:100',
@@ -211,7 +211,7 @@ class AdminUserController extends Controller
         $user = User::findOrFail($id);
 
         $request->validate([
-            'user_type' => 'required|in:customer,host,agency,admin',
+            'user_type' => 'required|string|max:50',
         ]);
 
         if ($user->id === auth()->id()) {

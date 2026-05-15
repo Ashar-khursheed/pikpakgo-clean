@@ -78,22 +78,23 @@ class User extends Authenticatable implements JWTSubject
      */
     public function assignRoleByUserType()
     {
-        $roleName = $this->user_type;
+        // Convert underscores to hyphens to match naming convention (e.g., content_writer -> content-writer)
+        $roleName = str_replace('_', '-', $this->user_type);
         
-        // Handle special cases if any
+        // Handle special cases
         if ($this->user_type === 'admin') {
-            // Check if super-admin role exists and if this user should have it
-            // For now, default to 'admin' role
             $roleName = 'admin';
         }
 
-        // Use firstOrCreate style logic or just sync
-        // Spatie's syncRoles will handle it
         try {
+            // Ensure the role exists in the database
+            // This allows the user to use ANY string as user_type and it will automatically become a role
+            \Spatie\Permission\Models\Role::firstOrCreate(['name' => $roleName, 'guard_name' => 'api']);
+
+            // Sync the role to the user
             $this->syncRoles([$roleName]);
         } catch (\Exception $e) {
-            // Role might not exist in DB yet
-            \Log::warning("Could not assign role {$roleName} to user {$this->id}: " . $e->getMessage());
+            \Log::error("Could not auto-assign role {$roleName} to user {$this->id}: " . $e->getMessage());
         }
     }
 
