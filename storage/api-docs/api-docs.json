@@ -4649,6 +4649,36 @@
             }
         },
         "/admin/roles/{id}": {
+            "get": {
+                "tags": [
+                    "Admin Roles"
+                ],
+                "summary": "Get a specific role with permissions",
+                "operationId": "9b7b5ee1c4787f120974ffbc99aca661",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Role details"
+                    },
+                    "404": {
+                        "description": "Role not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
             "put": {
                 "tags": [
                     "Admin Roles"
@@ -9036,6 +9066,14 @@
                     "preferred_language": {
                         "type": "string",
                         "example": "en"
+                    },
+                    "role_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "role_name": {
+                        "type": "string",
+                        "example": "admin"
                     }
                 },
                 "type": "object"

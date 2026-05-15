@@ -322,6 +322,7 @@ Route::prefix('admin')->middleware(['auth:api', 'user.type:admin'])->group(funct
     Route::prefix('roles')->group(function () {
         Route::get('/', [RoleController::class, 'index']);
         Route::post('/', [RoleController::class, 'store']);
+        Route::get('{id}', [RoleController::class, 'show']);
         Route::put('{id}', [RoleController::class, 'update']);
         Route::delete('{id}', [RoleController::class, 'destroy']);
         Route::post('{id}/permissions', [RoleController::class, 'syncPermissions']);

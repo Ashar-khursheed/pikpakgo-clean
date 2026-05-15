@@ -69,6 +69,27 @@ class RoleController extends Controller
     }
 
     /**
+     * @OA\Get(
+     *     path="/admin/roles/{id}",
+     *     summary="Get a specific role with permissions",
+     *     tags={"Admin Roles"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Response(response=200, description="Role details"),
+     *     @OA\Response(response=404, description="Role not found")
+     * )
+     */
+    public function show(int $id): JsonResponse
+    {
+        $role = \Spatie\Permission\Models\Role::with('permissions')->findOrFail($id);
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $role
+        ]);
+    }
+
+    /**
      * @OA\Put(
      *     path="/admin/roles/{id}",
      *     summary="Update a role",
