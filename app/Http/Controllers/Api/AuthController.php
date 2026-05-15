@@ -111,6 +111,9 @@ class AuthController extends Controller
 
         if ($request->user_type === 'agency') {
             $rules['agency_profile.agency_name'] = 'required|string|max:255';
+            $rules['agency_profile.agency_registration_number'] = 'nullable|string|max:255';
+            $rules['agency_profile.tax_id'] = 'nullable|string|max:255';
+            $rules['agency_profile.website'] = 'nullable|string|url|max:255';
         }
 
         $validator = Validator::make($request->all(), $rules);
