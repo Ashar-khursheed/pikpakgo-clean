@@ -60,6 +60,43 @@ class User extends Authenticatable implements JWTSubject
         'date_of_birth' => 'date',
     ];
 
+    protected static function booted()
+    {
+        static::created(function ($user) {
+            $user->assignRoleByUserType();
+        });
+
+        static::updated(function ($user) {
+            if ($user->isDirty('user_type')) {
+                $user->assignRoleByUserType();
+            }
+        });
+    }
+
+    /**
+     * Assign role based on user_type
+     */
+    public function assignRoleByUserType()
+    {
+        $roleName = $this->user_type;
+        
+        // Handle special cases if any
+        if ($this->user_type === 'admin') {
+            // Check if super-admin role exists and if this user should have it
+            // For now, default to 'admin' role
+            $roleName = 'admin';
+        }
+
+        // Use firstOrCreate style logic or just sync
+        // Spatie's syncRoles will handle it
+        try {
+            $this->syncRoles([$roleName]);
+        } catch (\Exception $e) {
+            // Role might not exist in DB yet
+            \Log::warning("Could not assign role {$roleName} to user {$this->id}: " . $e->getMessage());
+        }
+    }
+
     // JWT Methods
     public function getJWTIdentifier()
     {
