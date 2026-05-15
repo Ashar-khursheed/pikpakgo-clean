@@ -36,7 +36,9 @@ use Tymon\JWTAuth\Facades\JWTAuth;
  *     @OA\Property(property="email_verified", type="boolean", example=true),
  *     @OA\Property(property="country", type="string", example="USA"),
  *     @OA\Property(property="preferred_currency", type="string", example="USD"),
- *     @OA\Property(property="preferred_language", type="string", example="en")
+ *     @OA\Property(property="preferred_language", type="string", example="en"),
+ *     @OA\Property(property="role_id", type="integer", example=1),
+ *     @OA\Property(property="role_name", type="string", example="admin")
  * )
  */
 class AuthController extends Controller
@@ -247,6 +249,8 @@ class AuthController extends Controller
                 'last_login_ip' => $request->ip()
             ]);
 
+            $user->load('roles');
+
             return response()->json([
                 'success' => true,
                 'message' => 'Login successful',
@@ -343,7 +347,7 @@ class AuthController extends Controller
     public function me()
     {
         try {
-            $user = auth()->user();
+            $user = auth()->user()->load('roles');
             return response()->json([
                 'success' => true,
                 'data' => $user

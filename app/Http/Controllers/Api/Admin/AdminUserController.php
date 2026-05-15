@@ -115,7 +115,8 @@ class AdminUserController extends Controller
 
         $perPage = min((int) $request->get('per_page', 20), 100);
 
-        $users = $query->select([
+        $users = $query->with('roles')
+            ->select([
                 'id', 'first_name', 'last_name', 'email', 'phone',
                 'user_type', 'status', 'country', 'email_verified_at',
                 'last_login_at', 'created_at',

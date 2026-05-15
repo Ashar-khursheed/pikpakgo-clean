@@ -40,7 +40,7 @@ class ProfileController extends Controller
 
         return response()->json(['success' => true, 'data' => array_merge($user->only([
             'id', 'first_name', 'last_name', 'email', 'phone', 'country', 'city',
-            'profile_image', 'email_verified_at', 'last_login_at',
+            'profile_image', 'email_verified_at', 'last_login_at', 'role_id', 'role_name'
         ]), ['host_profile' => $profile])]);
     }
 
@@ -110,7 +110,7 @@ class ProfileController extends Controller
 
         return response()->json(['success' => true, 'data' => array_merge($user->only([
             'id', 'first_name', 'last_name', 'email', 'phone', 'country', 'city',
-            'profile_image', 'email_verified_at', 'last_login_at',
+            'profile_image', 'email_verified_at', 'last_login_at', 'role_id', 'role_name'
         ]), ['agency_profile' => $profile])]);
     }
 

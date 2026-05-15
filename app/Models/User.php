@@ -38,11 +38,18 @@ class User extends Authenticatable implements JWTSubject
         'last_login_ip',
     ];
 
+    protected $appends = [
+        'full_name',
+        'role_id',
+        'role_name',
+    ];
+
     protected $hidden = [
         'password',
         'remember_token',
         'verification_token',
         'reset_token',
+        'roles', // Hide the roles collection to keep response clean
     ];
 
     protected $casts = [
@@ -100,6 +107,16 @@ public function getJWTCustomClaims()
     public function getFullNameAttribute()
     {
         return "{$this->first_name} {$this->last_name}";
+    }
+
+    public function getRoleIdAttribute()
+    {
+        return $this->roles->first()?->id;
+    }
+
+    public function getRoleNameAttribute()
+    {
+        return $this->roles->first()?->name;
     }
 
     // Scopes
