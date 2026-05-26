@@ -214,7 +214,8 @@ class SearchController extends Controller
             if (auth('api')->check()) {
                 $wishlist = $wishlistItems->where('property_code', $property->id)->first()
                     ?? $wishlistItems->where('property_code', $property->provider_property_id)->first()
-                    ?? $wishlistItems->where('property_code', $property->provider_code)->first();
+                    ?? $wishlistItems->where('property_code', $property->provider_code)->first()
+                    ?? $wishlistItems->where('property_code', $property->seo_slug)->first();
             }
             $property->setAttribute('wishlist', $wishlist);
             

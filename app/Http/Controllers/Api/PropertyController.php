@@ -146,7 +146,8 @@ class PropertyController extends Controller
                 if (auth('api')->check()) {
                     $wishlist = $wishlistItems->where('property_code', $property->id)->first()
                         ?? $wishlistItems->where('property_code', $property->provider_property_id)->first()
-                        ?? $wishlistItems->where('property_code', $property->provider_code)->first();
+                        ?? $wishlistItems->where('property_code', $property->provider_code)->first()
+                        ?? $wishlistItems->where('property_code', $property->seo_slug)->first();
                 }
                 $property->setAttribute('wishlist', $wishlist);
                 
@@ -251,7 +252,8 @@ class PropertyController extends Controller
                         ->where(function($q) use ($property) {
                             $q->where('property_code', $property->id)
                               ->orWhere('property_code', $property->provider_property_id)
-                              ->orWhere('property_code', $property->provider_code);
+                              ->orWhere('property_code', $property->provider_code)
+                              ->orWhere('property_code', $property->seo_slug);
                         })->first();
                 }
                 $property->setAttribute('wishlist', $wishlist);
@@ -505,7 +507,8 @@ class PropertyController extends Controller
                 if (auth('api')->check()) {
                     $wishlist = $wishlistItems->where('property_code', $prop->id)->first()
                         ?? $wishlistItems->where('property_code', $prop->provider_property_id)->first()
-                        ?? $wishlistItems->where('property_code', $prop->provider_code)->first();
+                        ?? $wishlistItems->where('property_code', $prop->provider_code)->first()
+                        ?? $wishlistItems->where('property_code', $prop->seo_slug)->first();
                 }
                 $prop->setAttribute('wishlist', $wishlist);
             }
@@ -554,7 +557,8 @@ class PropertyController extends Controller
             if (auth('api')->check()) {
                 $wishlist = $wishlistItems->where('property_code', $prop->id)->first()
                     ?? $wishlistItems->where('property_code', $prop->provider_property_id)->first()
-                    ?? $wishlistItems->where('property_code', $prop->provider_code)->first();
+                    ?? $wishlistItems->where('property_code', $prop->provider_code)->first()
+                    ?? $wishlistItems->where('property_code', $prop->seo_slug)->first();
             }
             $prop->setAttribute('wishlist', $wishlist);
         }
@@ -590,7 +594,8 @@ class PropertyController extends Controller
             if (auth('api')->check()) {
                 $wishlist = $wishlistItems->where('property_code', $prop->id)->first()
                     ?? $wishlistItems->where('property_code', $prop->provider_property_id)->first()
-                    ?? $wishlistItems->where('property_code', $prop->provider_code)->first();
+                    ?? $wishlistItems->where('property_code', $prop->provider_code)->first()
+                    ?? $wishlistItems->where('property_code', $prop->seo_slug)->first();
             }
             $prop->setAttribute('wishlist', $wishlist);
         }
@@ -628,7 +633,8 @@ class PropertyController extends Controller
             if (auth('api')->check()) {
                 $wishlist = $wishlistItems->where('property_code', $prop->id)->first()
                     ?? $wishlistItems->where('property_code', $prop->provider_property_id)->first()
-                    ?? $wishlistItems->where('property_code', $prop->provider_code)->first();
+                    ?? $wishlistItems->where('property_code', $prop->provider_code)->first()
+                    ?? $wishlistItems->where('property_code', $prop->seo_slug)->first();
             }
             $prop->setAttribute('wishlist', $wishlist);
         }
