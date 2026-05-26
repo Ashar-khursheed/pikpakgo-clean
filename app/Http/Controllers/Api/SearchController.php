@@ -182,10 +182,16 @@ class SearchController extends Controller
         // Fetch all matching properties to filter by display price
         $properties = $query->get();
         
+        // Fetch authenticated user's wishlist items
+        $wishlistItems = collect();
+        if (auth('api')->check()) {
+            $wishlistItems = \App\Models\Wishlist::where('user_id', auth('api')->id())->get();
+        }
+        
         $checkIn = $request->checkIn ?? now()->addDays(7)->toDateString();
 
         // Apply markup and filter by display price
-        $processedProperties = $properties->map(function ($property) use ($checkIn) {
+        $processedProperties = $properties->map(function ($property) use ($checkIn, $wishlistItems) {
             $basePrice = $property->price_from ?? 0;
             
             if ($basePrice > 0) {
@@ -202,6 +208,15 @@ class SearchController extends Controller
             } else {
                 $property->display_price = $basePrice;
             }
+
+            // Attach wishlist object
+            $wishlist = null;
+            if (auth('api')->check()) {
+                $wishlist = $wishlistItems->where('property_code', $property->id)->first()
+                    ?? $wishlistItems->where('property_code', $property->provider_property_id)->first()
+                    ?? $wishlistItems->where('property_code', $property->provider_code)->first();
+            }
+            $property->setAttribute('wishlist', $wishlist);
             
             return $property;
         })->filter(function ($property) use ($minPrice, $maxPrice) {

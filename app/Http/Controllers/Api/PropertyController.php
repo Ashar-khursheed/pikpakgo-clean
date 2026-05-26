@@ -116,8 +116,14 @@ class PropertyController extends Controller
             $minPriceFilter = $request->input('min_price');
             $maxPriceFilter = $request->input('max_price');
 
+            // Fetch authenticated user's wishlist items
+            $wishlistItems = collect();
+            if (auth('api')->check()) {
+                $wishlistItems = \App\Models\Wishlist::where('user_id', auth('api')->id())->get();
+            }
+
             // Apply markup and filter by display price
-            $processedProperties = $properties->map(function ($property) {
+            $processedProperties = $properties->map(function ($property) use ($wishlistItems) {
                 $basePrice = $property->price_from ?? 0;
                 
                 if ($basePrice > 0) {
@@ -134,6 +140,15 @@ class PropertyController extends Controller
                 } else {
                     $property->display_price = $basePrice;
                 }
+
+                // Attach wishlist object
+                $wishlist = null;
+                if (auth('api')->check()) {
+                    $wishlist = $wishlistItems->where('property_code', $property->id)->first()
+                        ?? $wishlistItems->where('property_code', $property->provider_property_id)->first()
+                        ?? $wishlistItems->where('property_code', $property->provider_code)->first();
+                }
+                $property->setAttribute('wishlist', $wishlist);
                 
                 return $property;
             })->filter(function ($property) use ($minPriceFilter, $maxPriceFilter) {
@@ -228,6 +243,19 @@ class PropertyController extends Controller
                 }
                 
                 $property->append('seo');
+
+                // Attach wishlist object if authenticated
+                $wishlist = null;
+                if (auth('api')->check()) {
+                    $wishlist = \App\Models\Wishlist::where('user_id', auth('api')->id())
+                        ->where(function($q) use ($property) {
+                            $q->where('property_code', $property->id)
+                              ->orWhere('property_code', $property->provider_property_id)
+                              ->orWhere('property_code', $property->provider_code);
+                        })->first();
+                }
+                $property->setAttribute('wishlist', $wishlist);
+
                 return response()->json([
                     'success' => true,
                     'data' => $property
@@ -466,6 +494,21 @@ class PropertyController extends Controller
                 })
                 ->limit(6)
                 ->get();
+
+            $wishlistItems = collect();
+            if (auth('api')->check()) {
+                $wishlistItems = \App\Models\Wishlist::where('user_id', auth('api')->id())->get();
+            }
+
+            foreach ($similar as $prop) {
+                $wishlist = null;
+                if (auth('api')->check()) {
+                    $wishlist = $wishlistItems->where('property_code', $prop->id)->first()
+                        ?? $wishlistItems->where('property_code', $prop->provider_property_id)->first()
+                        ?? $wishlistItems->where('property_code', $prop->provider_code)->first();
+                }
+                $prop->setAttribute('wishlist', $wishlist);
+            }
             
             return response()->json([
                 'success' => true,
@@ -501,6 +544,21 @@ class PropertyController extends Controller
                 ->get();
         });
 
+        $wishlistItems = collect();
+        if (auth('api')->check()) {
+            $wishlistItems = \App\Models\Wishlist::where('user_id', auth('api')->id())->get();
+        }
+
+        foreach ($properties as $prop) {
+            $wishlist = null;
+            if (auth('api')->check()) {
+                $wishlist = $wishlistItems->where('property_code', $prop->id)->first()
+                    ?? $wishlistItems->where('property_code', $prop->provider_property_id)->first()
+                    ?? $wishlistItems->where('property_code', $prop->provider_code)->first();
+            }
+            $prop->setAttribute('wishlist', $wishlist);
+        }
+
         return response()->json(['success' => true, 'data' => $properties]);
     }
 
@@ -521,6 +579,21 @@ class PropertyController extends Controller
             ->orderBy('created_at', 'desc')
             ->limit($limit)
             ->get();
+
+        $wishlistItems = collect();
+        if (auth('api')->check()) {
+            $wishlistItems = \App\Models\Wishlist::where('user_id', auth('api')->id())->get();
+        }
+
+        foreach ($properties as $prop) {
+            $wishlist = null;
+            if (auth('api')->check()) {
+                $wishlist = $wishlistItems->where('property_code', $prop->id)->first()
+                    ?? $wishlistItems->where('property_code', $prop->provider_property_id)->first()
+                    ?? $wishlistItems->where('property_code', $prop->provider_code)->first();
+            }
+            $prop->setAttribute('wishlist', $wishlist);
+        }
 
         return response()->json(['success' => true, 'data' => $properties]);
     }
@@ -544,6 +617,21 @@ class PropertyController extends Controller
             ->orderBy('rating_count', 'desc')
             ->limit($limit)
             ->get();
+
+        $wishlistItems = collect();
+        if (auth('api')->check()) {
+            $wishlistItems = \App\Models\Wishlist::where('user_id', auth('api')->id())->get();
+        }
+
+        foreach ($properties as $prop) {
+            $wishlist = null;
+            if (auth('api')->check()) {
+                $wishlist = $wishlistItems->where('property_code', $prop->id)->first()
+                    ?? $wishlistItems->where('property_code', $prop->provider_property_id)->first()
+                    ?? $wishlistItems->where('property_code', $prop->provider_code)->first();
+            }
+            $prop->setAttribute('wishlist', $wishlist);
+        }
 
         return response()->json(['success' => true, 'data' => $properties]);
     }
