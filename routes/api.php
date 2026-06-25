@@ -12,6 +12,9 @@ use App\Http\Controllers\Api\BookingController;
 use App\Http\Controllers\Api\PropertyController;
 use App\Http\Controllers\Api\GuestController;
 use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\PriceMatchController;
+use App\Http\Controllers\Api\VerticalsController;
+use App\Http\Controllers\Api\TripPlannerController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\WishlistController;
 use App\Http\Controllers\Api\Admin\AdminBookingController;
@@ -30,6 +33,8 @@ use App\Http\Controllers\Api\Admin\RoleController;
 use App\Http\Controllers\Api\Admin\PermissionController;
 use App\Http\Controllers\Api\Admin\PropertyApprovalController;
 use App\Http\Controllers\Api\OwnerRezController;
+use App\Http\Controllers\Api\HotelbedsController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -190,6 +195,10 @@ Route::prefix('payments')->group(function () {
         Route::get('history', [PaymentController::class, 'getPaymentHistory']);
     });
 
+    // Stripe routes
+    Route::post('stripe/create-checkout-session', [PaymentController::class, 'createStripeCheckoutSession']);
+    Route::post('webhook/stripe', [PaymentController::class, 'stripeWebhook']);
+
     // Webhook (no auth, verified by signature)
     Route::post('webhook/authorize-net', [PaymentController::class, 'authorizeNetWebhook']);
 });
@@ -203,6 +212,7 @@ Route::middleware('auth:api')->prefix('profile')->group(function () {
     Route::put('host', [ProfileController::class, 'updateHostProfile']);
     Route::get('agency', [ProfileController::class, 'getAgencyProfile']);
     Route::put('agency', [ProfileController::class, 'updateAgencyProfile']);
+    Route::get('rewards', [ProfileController::class, 'getRewardsStatus']);
 });
 
 // ============================================
@@ -251,6 +261,20 @@ Route::prefix('ownerrez')->group(function () {
     Route::post('properties/{propertyId}/pricing', [OwnerRezController::class, 'getPricing']);
     Route::post('bookings', [OwnerRezController::class, 'createBooking']);
 });
+
+// ============================================
+// HOTELBEDS ROUTES
+// ============================================
+
+Route::prefix('hotelbeds')->group(function () {
+    Route::post('search', [HotelbedsController::class, 'searchHotels']);
+    Route::get('hotels/{hotelCode}', [HotelbedsController::class, 'getHotelDetails']);
+    Route::post('check-availability', [HotelbedsController::class, 'checkAvailability']);
+    Route::post('bookings', [HotelbedsController::class, 'createBooking']);
+    Route::get('bookings/{bookingReference}', [HotelbedsController::class, 'getBooking']);
+    Route::delete('bookings/{bookingReference}', [HotelbedsController::class, 'cancelBooking']);
+});
+
 
 /*
 |--------------------------------------------------------------------------
@@ -423,4 +447,48 @@ Route::prefix('admin')->middleware(['auth:api', 'user.type:admin'])->group(funct
         Route::put('{id}/reply', [AdminReviewController::class, 'reply']);
         Route::delete('{id}', [AdminReviewController::class, 'destroy']);
     });
+
+    // Price Match Claims Management
+    Route::prefix('price-match')->group(function () {
+        Route::get('claims', [PriceMatchController::class, 'adminListClaims']);
+        Route::post('claims/{id}/verify', [PriceMatchController::class, 'adminVerifyClaim']);
+    });
+});
+
+Route::post('price-match/claim', [PriceMatchController::class, 'submitClaim']);
+
+// ============================================
+// TRAVEL VERTICALS (Flights, Cars, Experiences, Transfers)
+// ============================================
+Route::prefix('flights')->group(function () {
+    Route::get('search', [VerticalsController::class, 'searchFlights']);
+    Route::middleware('auth:api')->post('book', [VerticalsController::class, 'bookFlight']);
+});
+
+Route::prefix('cars')->group(function () {
+    Route::get('search', [VerticalsController::class, 'searchCars']);
+    Route::middleware('auth:api')->post('book', [VerticalsController::class, 'bookCar']);
+});
+
+Route::prefix('experiences')->group(function () {
+    Route::get('search', [VerticalsController::class, 'searchExperiences']);
+    Route::middleware('auth:api')->post('book', [VerticalsController::class, 'bookExperience']);
+});
+
+Route::prefix('transfers')->group(function () {
+    Route::get('search', [VerticalsController::class, 'searchTransfers']);
+    Route::middleware('auth:api')->post('book', [VerticalsController::class, 'bookTransfer']);
+});
+
+// ============================================
+// AI TRIP PLANNER & SMART CART ROUTES
+// ============================================
+Route::post('trip-planner/generate', [TripPlannerController::class, 'generate']);
+
+Route::middleware('auth:api')->prefix('trip-planner')->group(function () {
+    Route::get('itineraries', [TripPlannerController::class, 'listItineraries']);
+    Route::post('itineraries', [TripPlannerController::class, 'saveItinerary']);
+    Route::get('itineraries/{id}', [TripPlannerController::class, 'showItinerary']);
+    Route::post('itineraries/{id}/add-item', [TripPlannerController::class, 'addItem']);
+    Route::post('itineraries/{id}/checkout', [TripPlannerController::class, 'checkout']);
 });

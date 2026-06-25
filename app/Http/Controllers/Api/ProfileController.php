@@ -307,4 +307,32 @@ class ProfileController extends Controller
 
         return response()->json(['success' => true, 'message' => 'Agency verification updated.', 'data' => $profile]);
     }
+
+    /**
+     * @OA\Get(
+     *     path="/profile/rewards",
+     *     summary="Get current user's reward points balance and tier history",
+     *     tags={"Profile"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(response=200, description="Rewards status details")
+     * )
+     */
+    public function getRewardsStatus(\App\Services\RewardService $rewardService)
+    {
+        $userId = auth()->id();
+        $balance = $rewardService->getUserPointsBalance($userId);
+        $tier = $rewardService->determineUserTier($userId);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'points_balance' => $balance,
+                'current_tier' => $tier,
+                'ledger' => \App\Models\RewardLedger::where('user_id', $userId)
+                    ->orderBy('created_at', 'desc')
+                    ->limit(50)
+                    ->get()
+            ]
+        ]);
+    }
 }

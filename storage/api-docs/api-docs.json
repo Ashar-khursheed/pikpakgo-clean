@@ -6254,6 +6254,434 @@
                 }
             }
         },
+        "/hotelbeds/search": {
+            "post": {
+                "tags": [
+                    "Hotelbeds"
+                ],
+                "summary": "Search hotels",
+                "description": "Search for available hotel rooms via Hotelbeds APITUDE",
+                "operationId": "6dc91bb0018786b3d0dca341ce6de9c8",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "checkIn",
+                                    "checkOut"
+                                ],
+                                "properties": {
+                                    "checkIn": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2027-12-25"
+                                    },
+                                    "checkOut": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2027-12-27"
+                                    },
+                                    "destinationCode": {
+                                        "type": "string",
+                                        "example": "MIA"
+                                    },
+                                    "guests": {
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "children": {
+                                        "type": "integer",
+                                        "example": 0
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Hotels retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Validation error"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/hotelbeds/hotels/{hotelCode}": {
+            "get": {
+                "tags": [
+                    "Hotelbeds"
+                ],
+                "summary": "Get hotel details",
+                "description": "Retrieve detailed static content information about a specific hotel from Hotelbeds",
+                "operationId": "e4f6fbb2d557fdaabd1e55113be78e60",
+                "parameters": [
+                    {
+                        "name": "hotelCode",
+                        "in": "path",
+                        "description": "Hotel Code",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "1001"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Hotel details retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Hotel not found"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/hotelbeds/check-availability": {
+            "post": {
+                "tags": [
+                    "Hotelbeds"
+                ],
+                "summary": "Check room availability",
+                "description": "Check room availability and real-time prices for a specific hotel",
+                "operationId": "83e63294571e645468d2b080bd7e9b93",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "hotelCode",
+                                    "checkIn",
+                                    "checkOut"
+                                ],
+                                "properties": {
+                                    "hotelCode": {
+                                        "type": "string",
+                                        "example": "1001"
+                                    },
+                                    "checkIn": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2027-12-25"
+                                    },
+                                    "checkOut": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2027-12-27"
+                                    },
+                                    "adults": {
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "children": {
+                                        "type": "integer",
+                                        "example": 0
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Availability details retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "available": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Validation error"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/hotelbeds/bookings": {
+            "post": {
+                "tags": [
+                    "Hotelbeds"
+                ],
+                "summary": "Create a hotel booking",
+                "description": "Book a specific hotel room rateKey via Hotelbeds APITUDE",
+                "operationId": "1d8f56a23ad23913420c07790dc1a269",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "rateKey",
+                                    "traveler"
+                                ],
+                                "properties": {
+                                    "rateKey": {
+                                        "type": "string",
+                                        "example": "rate-key-stardust-dbl"
+                                    },
+                                    "traveler": {
+                                        "required": [
+                                            "firstName",
+                                            "lastName"
+                                        ],
+                                        "properties": {
+                                            "firstName": {
+                                                "type": "string",
+                                                "example": "John"
+                                            },
+                                            "lastName": {
+                                                "type": "string",
+                                                "example": "Doe"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "guestsList": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "firstName": {
+                                                    "type": "string",
+                                                    "example": "John"
+                                                },
+                                                "lastName": {
+                                                    "type": "string",
+                                                    "example": "Doe"
+                                                },
+                                                "type": {
+                                                    "type": "string",
+                                                    "example": "AD"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "clientReference": {
+                                        "type": "string",
+                                        "example": "PKG-1234567"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Hotel booking created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Validation error"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/hotelbeds/bookings/{bookingReference}": {
+            "get": {
+                "tags": [
+                    "Hotelbeds"
+                ],
+                "summary": "Get hotel booking details",
+                "description": "Retrieve details of a booking reservation made via Hotelbeds",
+                "operationId": "360012ee300e35ff75d84d42ae289519",
+                "parameters": [
+                    {
+                        "name": "bookingReference",
+                        "in": "path",
+                        "description": "Hotelbeds Booking Reference",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "HB-123456789"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Booking details retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Booking not found"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Hotelbeds"
+                ],
+                "summary": "Cancel hotel booking",
+                "description": "Cancel a confirmed booking reservation on Hotelbeds",
+                "operationId": "850f6c95b866350b5ecf0932eebb3c00",
+                "parameters": [
+                    {
+                        "name": "bookingReference",
+                        "in": "path",
+                        "description": "Hotelbeds Booking Reference",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "HB-123456789"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Booking cancelled successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Failed to cancel booking"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/notifications": {
             "get": {
                 "tags": [
@@ -7132,6 +7560,52 @@
                 ]
             }
         },
+        "/payments/stripe/create-checkout-session": {
+            "post": {
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Create a Stripe Checkout Session for booking payment",
+                "operationId": "f0190def9bd412d50a522d10dba7692a",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "booking_reference",
+                                    "success_url",
+                                    "cancel_url"
+                                ],
+                                "properties": {
+                                    "booking_reference": {
+                                        "type": "string",
+                                        "example": "PKG-ABCD1234"
+                                    },
+                                    "success_url": {
+                                        "type": "string",
+                                        "example": "https://example.com/success"
+                                    },
+                                    "cancel_url": {
+                                        "type": "string",
+                                        "example": "https://example.com/cancel"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Stripe Checkout Session created successfully"
+                    },
+                    "400": {
+                        "description": "Booking not found or already paid"
+                    }
+                }
+            }
+        },
         "/performance/database-stats": {
             "get": {
                 "tags": [
@@ -7186,6 +7660,150 @@
                     },
                     "403": {
                         "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/price-match/claim": {
+            "post": {
+                "tags": [
+                    "Price Match Claims"
+                ],
+                "summary": "Submit a price-match claim for a booking",
+                "operationId": "cc8812b4235d86ae53dc67db27e309ca",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "booking_reference",
+                                    "competitor_url",
+                                    "competitor_price"
+                                ],
+                                "properties": {
+                                    "booking_reference": {
+                                        "type": "string",
+                                        "example": "PKG-ABCD1234"
+                                    },
+                                    "competitor_url": {
+                                        "type": "string",
+                                        "format": "url",
+                                        "example": "https://cheaptravel.com/miami-hotel"
+                                    },
+                                    "competitor_price": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 180
+                                    },
+                                    "screenshot": {
+                                        "description": "Optional screenshot of the cheaper deal",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Claim submitted successfully"
+                    },
+                    "400": {
+                        "description": "Validation errors or price not lower"
+                    }
+                }
+            }
+        },
+        "/admin/price-match/claims": {
+            "get": {
+                "tags": [
+                    "Price Match Claims"
+                ],
+                "summary": "List price match claims (Admin)",
+                "operationId": "a152308d1f237b3d4990e45db085f826",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "pending",
+                                "approved",
+                                "rejected"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Claims retrieved successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/admin/price-match/claims/{id}/verify": {
+            "post": {
+                "tags": [
+                    "Price Match Claims"
+                ],
+                "summary": "Approve or reject price match claim and issue refund (Admin)",
+                "operationId": "06158f24b4dcb40fbbba5fc66b4de7fd",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "status"
+                                ],
+                                "properties": {
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "approved",
+                                            "rejected"
+                                        ]
+                                    },
+                                    "verification_notes": {
+                                        "type": "string",
+                                        "example": "Verified cheaper deal on booking.com"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Verification processed successfully"
+                    },
+                    "404": {
+                        "description": "Claim not found"
                     }
                 },
                 "security": [
@@ -7510,6 +8128,25 @@
                     },
                     "404": {
                         "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/profile/rewards": {
+            "get": {
+                "tags": [
+                    "Profile"
+                ],
+                "summary": "Get current user's reward points balance and tier history",
+                "operationId": "3721853b34539e98fce2f2f8d5392419",
+                "responses": {
+                    "200": {
+                        "description": "Rewards status details"
                     }
                 },
                 "security": [
@@ -8859,6 +9496,812 @@
                 }
             }
         },
+        "/trip-planner/generate": {
+            "post": {
+                "tags": [
+                    "AI Trip Planner"
+                ],
+                "summary": "Generate AI travel itinerary & recommendations",
+                "operationId": "e156366d8db63eb3680412f169e861bd",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "destination",
+                                    "interests"
+                                ],
+                                "properties": {
+                                    "destination": {
+                                        "type": "string",
+                                        "example": "Miami"
+                                    },
+                                    "start_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2027-01-23"
+                                    },
+                                    "end_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2027-01-26"
+                                    },
+                                    "interests": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "example": [
+                                            "beach",
+                                            "nightlife",
+                                            "seafood"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Itinerary generated successfully"
+                    }
+                }
+            }
+        },
+        "/trip-planner/itineraries": {
+            "get": {
+                "tags": [
+                    "AI Trip Planner"
+                ],
+                "summary": "List all itineraries for current user",
+                "operationId": "ce91cc86db9add0dd3f377aa2de4e5ba",
+                "responses": {
+                    "200": {
+                        "description": "List of itineraries"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "AI Trip Planner"
+                ],
+                "summary": "Save a planned itinerary (Smart Cart container)",
+                "operationId": "48e626dd7a5c5d2de8dcc207f2a2eae2",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "title",
+                                    "destination"
+                                ],
+                                "properties": {
+                                    "title": {
+                                        "type": "string",
+                                        "example": "My Miami Getaway"
+                                    },
+                                    "destination": {
+                                        "type": "string",
+                                        "example": "Miami"
+                                    },
+                                    "start_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2027-01-23"
+                                    },
+                                    "end_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2027-01-26"
+                                    },
+                                    "interests": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "ai_recommendations": {
+                                        "type": "object"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Itinerary saved"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/trip-planner/itineraries/{id}": {
+            "get": {
+                "tags": [
+                    "AI Trip Planner"
+                ],
+                "summary": "Get details of a specific itinerary along with smart cart items",
+                "operationId": "a1f0de60dc03aace519b784ec1a61016",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Itinerary details with items"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/trip-planner/itineraries/{id}/add-item": {
+            "post": {
+                "tags": [
+                    "AI Trip Planner"
+                ],
+                "summary": "Add an item to the itinerary Smart Cart",
+                "operationId": "dc90b45ffb8fb12d9072ae263e847210",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "item_type",
+                                    "item_id",
+                                    "item_details",
+                                    "price"
+                                ],
+                                "properties": {
+                                    "item_type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "hotel",
+                                            "flight",
+                                            "car",
+                                            "experience",
+                                            "transfer"
+                                        ]
+                                    },
+                                    "item_id": {
+                                        "type": "string",
+                                        "example": "FL-241"
+                                    },
+                                    "item_details": {
+                                        "type": "object"
+                                    },
+                                    "price": {
+                                        "type": "number",
+                                        "example": 250
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Item added successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/trip-planner/itineraries/{id}/checkout": {
+            "post": {
+                "tags": [
+                    "AI Trip Planner"
+                ],
+                "summary": "Unified checkout of all smart cart items in the itinerary",
+                "operationId": "ad9eed4503db881cd9cfeb72f4daa625",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "payment_method"
+                                ],
+                                "properties": {
+                                    "payment_method": {
+                                        "type": "string",
+                                        "enum": [
+                                            "credit_card",
+                                            "stripe_checkout"
+                                        ]
+                                    },
+                                    "card_number": {
+                                        "type": "string"
+                                    },
+                                    "card_holder_name": {
+                                        "type": "string"
+                                    },
+                                    "card_expiry_month": {
+                                        "type": "string"
+                                    },
+                                    "card_expiry_year": {
+                                        "type": "string"
+                                    },
+                                    "card_cvv": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Unified checkout successful"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/flights/search": {
+            "get": {
+                "tags": [
+                    "Travel Verticals"
+                ],
+                "summary": "Search for flights (Mock)",
+                "operationId": "5e127c23dbdabb6492c0460fa6a1b04c",
+                "parameters": [
+                    {
+                        "name": "origin",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "JFK"
+                    },
+                    {
+                        "name": "destination",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "LAX"
+                    },
+                    {
+                        "name": "departure_date",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        },
+                        "example": "2027-01-23"
+                    },
+                    {
+                        "name": "return_date",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "passengers",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 1
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of available flights"
+                    }
+                }
+            }
+        },
+        "/flights/book": {
+            "post": {
+                "tags": [
+                    "Travel Verticals"
+                ],
+                "summary": "Book a flight",
+                "operationId": "219bf204a45ca6f8317c5714f25cfe10",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "airline",
+                                    "flight_number",
+                                    "departure_airport",
+                                    "arrival_airport",
+                                    "departure_time",
+                                    "arrival_time",
+                                    "passenger_details",
+                                    "total_price"
+                                ],
+                                "properties": {
+                                    "airline": {
+                                        "type": "string",
+                                        "example": "Delta Air Lines"
+                                    },
+                                    "flight_number": {
+                                        "type": "string",
+                                        "example": "DL-241"
+                                    },
+                                    "departure_airport": {
+                                        "type": "string",
+                                        "example": "JFK"
+                                    },
+                                    "arrival_airport": {
+                                        "type": "string",
+                                        "example": "LAX"
+                                    },
+                                    "departure_time": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2027-01-23 08:00:00"
+                                    },
+                                    "arrival_time": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2027-01-23 11:30:00"
+                                    },
+                                    "passenger_details": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "first_name": {
+                                                    "type": "string",
+                                                    "example": "John"
+                                                },
+                                                "last_name": {
+                                                    "type": "string",
+                                                    "example": "Doe"
+                                                },
+                                                "passport_number": {
+                                                    "type": "string",
+                                                    "example": "A1234567"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "total_price": {
+                                        "type": "number",
+                                        "example": 287.5
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Flight booking created"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/cars/search": {
+            "get": {
+                "tags": [
+                    "Travel Verticals"
+                ],
+                "summary": "Search for car rentals (Mock)",
+                "operationId": "1de012750e89097400ddfbc6ebc98fa1",
+                "parameters": [
+                    {
+                        "name": "location",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "MIA"
+                    },
+                    {
+                        "name": "pickup_date",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        },
+                        "example": "2027-01-23"
+                    },
+                    {
+                        "name": "dropoff_date",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        },
+                        "example": "2027-01-25"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of available cars"
+                    }
+                }
+            }
+        },
+        "/cars/book": {
+            "post": {
+                "tags": [
+                    "Travel Verticals"
+                ],
+                "summary": "Book a car rental",
+                "operationId": "21b4b41d941fafb76b1828ec111959c6",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "rental_company",
+                                    "car_model",
+                                    "car_class",
+                                    "pickup_location",
+                                    "dropoff_location",
+                                    "pickup_time",
+                                    "dropoff_time",
+                                    "driver_details",
+                                    "total_price"
+                                ],
+                                "properties": {
+                                    "rental_company": {
+                                        "type": "string",
+                                        "example": "Hertz"
+                                    },
+                                    "car_model": {
+                                        "type": "string",
+                                        "example": "Toyota Camry"
+                                    },
+                                    "car_class": {
+                                        "type": "string",
+                                        "example": "Fullsize"
+                                    },
+                                    "pickup_location": {
+                                        "type": "string",
+                                        "example": "MIA Airport"
+                                    },
+                                    "dropoff_location": {
+                                        "type": "string",
+                                        "example": "MIA Airport"
+                                    },
+                                    "pickup_time": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2027-01-23 10:00:00"
+                                    },
+                                    "dropoff_time": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2027-01-25 10:00:00"
+                                    },
+                                    "driver_details": {
+                                        "properties": {
+                                            "first_name": {
+                                                "type": "string",
+                                                "example": "John"
+                                            },
+                                            "last_name": {
+                                                "type": "string",
+                                                "example": "Doe"
+                                            },
+                                            "license_number": {
+                                                "type": "string",
+                                                "example": "DL123456"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "total_price": {
+                                        "type": "number",
+                                        "example": 118
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Car booking created"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/experiences/search": {
+            "get": {
+                "tags": [
+                    "Travel Verticals"
+                ],
+                "summary": "Search for experiences & theme parks (Mock)",
+                "operationId": "a66ab91be73a016491bff89400c8897b",
+                "parameters": [
+                    {
+                        "name": "location",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "Orlando"
+                    },
+                    {
+                        "name": "date",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of experiences"
+                    }
+                }
+            }
+        },
+        "/experiences/book": {
+            "post": {
+                "tags": [
+                    "Travel Verticals"
+                ],
+                "summary": "Book tickets for an experience / theme park",
+                "operationId": "3b42d2fb8f0e5d492720167ad149ed63",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "experience_name",
+                                    "category",
+                                    "activity_date",
+                                    "quantity",
+                                    "ticket_details",
+                                    "total_price"
+                                ],
+                                "properties": {
+                                    "experience_name": {
+                                        "type": "string",
+                                        "example": "Universal Studios 1-Day Ticket"
+                                    },
+                                    "category": {
+                                        "type": "string",
+                                        "enum": [
+                                            "experience",
+                                            "theme_park"
+                                        ]
+                                    },
+                                    "activity_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2027-01-23"
+                                    },
+                                    "quantity": {
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "ticket_details": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "Jane Doe"
+                                                },
+                                                "type": {
+                                                    "type": "string",
+                                                    "example": "Adult"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "total_price": {
+                                        "type": "number",
+                                        "example": 238
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Experience booking created"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/transfers/search": {
+            "get": {
+                "tags": [
+                    "Travel Verticals"
+                ],
+                "summary": "Search for ground transfers (Mock)",
+                "operationId": "e2cab7250ad3186ce82ab480c03654c8",
+                "parameters": [
+                    {
+                        "name": "pickup_location",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "MIA Airport"
+                    },
+                    {
+                        "name": "dropoff_location",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "South Beach"
+                    },
+                    {
+                        "name": "date",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        },
+                        "example": "2027-01-23"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of transfers"
+                    }
+                }
+            }
+        },
+        "/transfers/book": {
+            "post": {
+                "tags": [
+                    "Travel Verticals"
+                ],
+                "summary": "Book a ground transfer",
+                "operationId": "656bf36141358f8c7e02ff3f6e55f397",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "pickup_location",
+                                    "dropoff_location",
+                                    "transfer_time",
+                                    "transfer_type",
+                                    "passenger_count",
+                                    "total_price"
+                                ],
+                                "properties": {
+                                    "pickup_location": {
+                                        "type": "string",
+                                        "example": "MIA Airport"
+                                    },
+                                    "dropoff_location": {
+                                        "type": "string",
+                                        "example": "South Beach"
+                                    },
+                                    "transfer_time": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2027-01-23 15:30:00"
+                                    },
+                                    "transfer_type": {
+                                        "type": "string",
+                                        "example": "private_sedan"
+                                    },
+                                    "passenger_count": {
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "total_price": {
+                                        "type": "number",
+                                        "example": 55
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Transfer booking created"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/wishlist": {
             "get": {
                 "tags": [
@@ -9169,6 +10612,10 @@
             "description": "Anonymous guest session management for pre-auth browsing and booking"
         },
         {
+            "name": "Hotelbeds",
+            "description": "Hotel inventory search and booking via Hotelbeds API"
+        },
+        {
             "name": "Notifications",
             "description": "In-app user notifications with priority levels and badge count"
         },
@@ -9183,6 +10630,10 @@
         {
             "name": "Performance",
             "description": "Performance monitoring and system health"
+        },
+        {
+            "name": "Price Match Claims",
+            "description": "Price match claim requests, verification and processing"
         },
         {
             "name": "Profile",
@@ -9203,6 +10654,14 @@
         {
             "name": "Public Search",
             "description": "Public search endpoints — no authentication required"
+        },
+        {
+            "name": "AI Trip Planner",
+            "description": "AI Itinerary generation, Smart Cart additions, and unified checkout"
+        },
+        {
+            "name": "Travel Verticals",
+            "description": "Search and book Flights, Cars, Experiences, Theme Parks and Transfers"
         },
         {
             "name": "Wishlist",

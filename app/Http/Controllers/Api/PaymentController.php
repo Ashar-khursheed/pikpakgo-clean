@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use App\Services\StripeService;
+
 
 /**
  * @OA\Tag(
@@ -24,11 +26,16 @@ use Illuminate\Support\Str;
 class PaymentController extends Controller
 {
     protected $authorizeNetService;
+    protected $stripeService;
 
-    public function __construct(\App\Services\AuthorizeNetService $authorizeNetService)
-    {
+    public function __construct(
+        \App\Services\AuthorizeNetService $authorizeNetService,
+        StripeService $stripeService
+    ) {
         $this->authorizeNetService = $authorizeNetService;
+        $this->stripeService = $stripeService;
     }
+
 
     /**
      * @OA\Post(
@@ -152,6 +159,13 @@ class PaymentController extends Controller
                     'confirmed_at'           => now(),
                     'net_profit'             => $booking->markup_amount,
                 ]);
+
+                // Reward points earning
+                try {
+                    app(\App\Services\RewardService::class)->earnPointsForBooking($booking);
+                } catch (\Exception $e) {
+                    Log::error('Failed to earn reward points: ' . $e->getMessage());
+                }
 
                 // ── Dispatch provider booking job ───────────────────────────────
                 // Payment is now in our pocket. The job will forward the booking
@@ -304,6 +318,13 @@ class PaymentController extends Controller
                     'net_profit'             => $booking->markup_amount,
                 ]);
 
+                // Reward points earning
+                try {
+                    app(\App\Services\RewardService::class)->earnPointsForBooking($booking);
+                } catch (\Exception $e) {
+                    Log::error('Failed to earn reward points: ' . $e->getMessage());
+                }
+
                 ConfirmBookingWithProvider::dispatch($booking->id);
 
                 try {
@@ -426,6 +447,209 @@ class PaymentController extends Controller
     }
     
     /**
+     * @OA\Post(
+     *     path="/payments/stripe/create-checkout-session",
+     *     summary="Create a Stripe Checkout Session for booking payment",
+     *     tags={"Payments"},
+     *     @OA\RequestBody(required=true, @OA\JsonContent(
+     *         required={"booking_reference", "success_url", "cancel_url"},
+     *         @OA\Property(property="booking_reference", type="string", example="PKG-ABCD1234"),
+     *         @OA\Property(property="success_url", type="string", example="https://example.com/success"),
+     *         @OA\Property(property="cancel_url", type="string", example="https://example.com/cancel")
+     *     )),
+     *     @OA\Response(response=200, description="Stripe Checkout Session created successfully"),
+     *     @OA\Response(response=400, description="Booking not found or already paid")
+     * )
+     */
+    public function createStripeCheckoutSession(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'booking_reference' => 'required|string|exists:bookings,booking_reference',
+            'success_url' => 'required|url',
+            'cancel_url' => 'required|url',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors()
+            ], 400);
+        }
+
+        try {
+            $booking = Booking::where('booking_reference', $request->booking_reference)->firstOrFail();
+
+            if ($booking->payment_status === 'paid') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Booking is already paid'
+                ], 400);
+            }
+
+            $result = $this->stripeService->createCheckoutSession($booking, $request->success_url, $request->cancel_url);
+
+            if ($result['success']) {
+                $booking->update([
+                    'payment_status' => 'pending',
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'session_id' => $result['session_id'],
+                    'url' => $result['url']
+                ]);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => $result['message'] ?? 'Failed to create checkout session'
+            ], 400);
+
+        } catch (\Exception $e) {
+            Log::error('Stripe Checkout Session creation error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create Stripe session'
+            ], 500);
+        }
+    }
+
+    /**
+     * Stripe webhook handler
+     */
+    public function stripeWebhook(Request $request)
+    {
+        $webhookSecret = config('services.stripe.webhook_secret') ?? env('STRIPE_WEBHOOK_SECRET', '');
+
+        if ($webhookSecret) {
+            if (!$this->verifyStripeSignature($request, $webhookSecret)) {
+                Log::warning('Stripe webhook: invalid signature');
+                return response()->json(['error' => 'Invalid signature'], 401);
+            }
+        }
+
+        $payload = $request->json()->all();
+        $eventType = $payload['type'] ?? '';
+
+        Log::info('Stripe webhook received', ['type' => $eventType]);
+
+        if ($eventType === 'checkout.session.completed') {
+            $session = $payload['data']['object'] ?? [];
+            $bookingRef = $session['client_reference_id'] ?? null;
+            $paymentIntentId = $session['payment_intent'] ?? null;
+
+            if ($bookingRef) {
+                $booking = Booking::where('booking_reference', $bookingRef)->first();
+                if ($booking && $booking->payment_status !== 'paid') {
+                    $transactionId = 'TXN-' . strtoupper(Str::random(16));
+
+                    $transaction = PaymentTransaction::create([
+                        'transaction_id' => $transactionId,
+                        'booking_id' => $booking->id,
+                        'user_id' => $booking->user_id,
+                        'guest_session_id' => $booking->guest_session_id,
+                        'payment_gateway' => 'stripe',
+                        'gateway_transaction_id' => $paymentIntentId,
+                        'amount' => $booking->total_price,
+                        'currency' => $booking->currency,
+                        'transaction_type' => 'payment',
+                        'payment_method' => 'stripe_checkout',
+                        'card_brand' => 'Stripe',
+                        'card_last_four' => 'Stripe',
+                        'card_holder_name' => $booking->holder_name ?? 'Guest User',
+                        'billing_email' => $booking->holder_email,
+                        'status' => 'success',
+                        'processed_at' => now(),
+                    ]);
+
+                    $booking->update([
+                        'payment_status' => 'paid',
+                        'payment_transaction_id' => $transactionId,
+                        'paid_amount' => $booking->total_price,
+                        'paid_at' => now(),
+                        'booking_status' => 'confirmed',
+                        'confirmed_at' => now(),
+                        'net_profit' => $booking->markup_amount,
+                    ]);
+
+                    // Reward points earning
+                    try {
+                        app(\App\Services\RewardService::class)->earnPointsForBooking($booking);
+                    } catch (\Exception $e) {
+                        Log::error('Failed to earn reward points: ' . $e->getMessage());
+                    }
+
+                    ConfirmBookingWithProvider::dispatch($booking->id);
+
+                    try {
+                        Mail::to($booking->holder_email)->queue(new BookingConfirmationMail($booking));
+                        Mail::to($booking->holder_email)->queue(new PaymentReceiptMail($booking, $transaction));
+                        if ($booking->user_id) {
+                            UserNotification::notify(
+                                $booking->user_id,
+                                'booking_confirmed',
+                                'Booking Confirmed!',
+                                "Your booking {$booking->booking_reference} for {$booking->property_name} is confirmed.",
+                                ['booking_reference' => $booking->booking_reference]
+                            );
+                        }
+                    } catch (\Exception $mailEx) {
+                        Log::warning('Post Stripe webhook notifications failed: ' . $mailEx->getMessage());
+                    }
+                }
+            }
+        }
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * Verify Stripe signature manually
+     */
+    protected function verifyStripeSignature(Request $request, string $webhookSecret): bool
+    {
+        $signatureHeader = $request->header('Stripe-Signature');
+        if (!$signatureHeader) {
+            return false;
+        }
+
+        $parts = explode(',', $signatureHeader);
+        $timestamp = null;
+        $signatures = [];
+
+        foreach ($parts as $part) {
+            $subParts = explode('=', $part, 2);
+            if (count($subParts) === 2) {
+                if (trim($subParts[0]) === 't') {
+                    $timestamp = trim($subParts[1]);
+                } elseif (trim($subParts[0]) === 'v1') {
+                    $signatures[] = trim($subParts[1]);
+                }
+            }
+        }
+
+        if (!$timestamp || empty($signatures)) {
+            return false;
+        }
+
+        if (abs(time() - (int)$timestamp) > 300) {
+            return false;
+        }
+
+        $rawBody = $request->getContent();
+        $signedPayload = $timestamp . '.' . $rawBody;
+        $expectedSignature = hash_hmac('sha256', $signedPayload, $webhookSecret);
+
+        foreach ($signatures as $sig) {
+            if (hash_equals($expectedSignature, $sig)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Authorize.Net webhook handler with HMAC-SHA512 signature verification
      */
     public function authorizeNetWebhook(Request $request)
@@ -488,6 +712,14 @@ class PaymentController extends Controller
                     'confirmed_at'   => now(),
                     'net_profit'     => $booking->markup_amount,
                 ]);
+
+                // Reward points earning
+                try {
+                    app(\App\Services\RewardService::class)->earnPointsForBooking($booking);
+                } catch (\Exception $e) {
+                    Log::error('Failed to earn reward points: ' . $e->getMessage());
+                }
+
                 ConfirmBookingWithProvider::dispatch($booking->id);
             }
         }

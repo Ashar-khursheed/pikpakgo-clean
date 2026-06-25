@@ -534,6 +534,13 @@ class BookingController extends Controller
                 'cancellation_reason' => $request->reason
             ]);
 
+            // Rollback reward points
+            try {
+                app(\App\Services\RewardService::class)->rollbackPointsForBooking($booking);
+            } catch (\Exception $e) {
+                Log::error('Failed to rollback reward points: ' . $e->getMessage());
+            }
+
             $refundAmount = $booking->is_refundable ? (float) $booking->paid_amount : 0;
             try {
                 Mail::to($booking->holder_email)->queue(new BookingCancellationMail($booking->fresh(), $refundAmount));
@@ -599,6 +606,13 @@ class BookingController extends Controller
                 'cancelled_by' => 'user',
                 'cancellation_reason' => $request->reason
             ]);
+
+            // Rollback reward points
+            try {
+                app(\App\Services\RewardService::class)->rollbackPointsForBooking($booking);
+            } catch (\Exception $e) {
+                Log::error('Failed to rollback reward points: ' . $e->getMessage());
+            }
 
             $refundAmount = $booking->is_refundable ? (float) $booking->paid_amount : 0;
             try {

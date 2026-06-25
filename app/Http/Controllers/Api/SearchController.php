@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Services\OwnerRezService;
+use App\Services\HotelbedsService;
 use App\Services\PricingMarkupService;
+use App\Services\OwnerRezService;
+
 use App\Models\PropertyListing;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -21,14 +23,18 @@ class SearchController extends Controller
 {
     protected $ownerrezService;
     protected $pricingService;
+    protected $hotelbedsService;
     
     public function __construct(
         OwnerRezService $ownerrezService,
-        PricingMarkupService $pricingService
+        PricingMarkupService $pricingService,
+        HotelbedsService $hotelbedsService
     ) {
         $this->ownerrezService = $ownerrezService;
         $this->pricingService = $pricingService;
+        $this->hotelbedsService = $hotelbedsService;
     }
+
     
 
     
@@ -54,7 +60,90 @@ class SearchController extends Controller
      */
     public function searchHotels(Request $request)
     {
-        return $this->searchProperties($request);
+        // Accept both snake_case and camelCase field names
+        $input = $request->all();
+        if (isset($input['check_in']) && !isset($input['checkIn']))     $input['checkIn']  = $input['check_in'];
+        if (isset($input['check_out']) && !isset($input['checkOut']))   $input['checkOut'] = $input['check_out'];
+        if (isset($input['destination']) && !isset($input['location'])) $input['location'] = $input['destination'];
+        if (isset($input['adults']) && !isset($input['guests']))        $input['guests']   = $input['adults'];
+        $request->merge($input);
+
+        $validator = Validator::make($request->all(), [
+            'checkIn'         => 'required|date|after_or_equal:today',
+            'checkOut'        => 'required|date|after:checkIn',
+            'location'        => 'nullable|string',
+            'guests'          => 'nullable|integer|min:1',
+            'children'        => 'nullable|integer|min:0',
+            'destinationCode' => 'nullable|string|max:10',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors'  => $validator->errors()
+            ], 400);
+        }
+
+        $result = $this->hotelbedsService->searchHotels($request->all());
+
+        if (!$result['success']) {
+            return response()->json([
+                'success' => false,
+                'message' => $result['message'] ?? 'Failed to fetch hotels'
+            ], 500);
+        }
+
+        $hotelbedsData = $result['data'] ?? [];
+        $hotels = $hotelbedsData['hotels']['hotels'] ?? [];
+
+        // Apply markup and format to match standard PropertyListing fields
+        $formattedHotels = collect($hotels)->map(function ($hotel) use ($request) {
+            $basePrice = (float)($hotel['minRate'] ?? $hotel['rooms'][0]['rates'][0]['net'] ?? 0);
+            
+            // Format for applyPricingMarkup
+            $listing = [
+                'hotel_code' => $hotel['code'],
+                'name' => $hotel['name'],
+                'description' => $hotel['description'] ?? 'Hotelbeds property',
+                'property_type' => 'hotel',
+                'star_rating' => (int)substr($hotel['categoryCode'] ?? '3', 0, 1),
+                'city' => $hotel['destinationName'] ?? $request->location ?? 'Unknown',
+                'destination_code' => $hotel['destinationCode'] ?? null,
+                'latitude' => $hotel['latitude'] ?? null,
+                'longitude' => $hotel['longitude'] ?? null,
+                'price' => $basePrice,
+                'currency' => $hotel['currency'] ?? 'USD',
+                'images' => isset($hotel['images']) ? array_column($hotel['images'], 'path') : [],
+                'amenities' => $hotel['amenities'] ?? [],
+            ];
+
+            // Apply pricing markup
+            $listing = $this->applyPricingMarkup($listing, 'hotelbeds');
+
+            return $listing;
+        });
+
+        // Async/background cache properties in database
+        try {
+            $this->cachePropertyListings($formattedHotels->toArray(), 'hotelbeds');
+        } catch (\Exception $e) {
+            Log::error('SearchController searchHotels cache error: ' . $e->getMessage());
+        }
+
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'items' => $formattedHotels,
+                'total' => $formattedHotels->count(),
+            ],
+            'filters' => [
+                'location'     => $request->location,
+                'checkIn'      => $request->checkIn,
+                'checkOut'     => $request->checkOut,
+                'guests'       => $request->guests,
+            ],
+        ]);
     }
 
     /**
