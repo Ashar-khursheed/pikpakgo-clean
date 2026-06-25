@@ -297,6 +297,9 @@ Route::prefix('admin')->middleware(['auth:api', 'user.type:admin'])->group(funct
     // Booking Management
     Route::prefix('bookings')->group(function () {
         Route::get('export/csv', [AdminBookingController::class, 'exportCsv']);
+        Route::get('vertical/{type}', [AdminBookingController::class, 'listVerticalBookings']);
+        Route::get('vertical/{type}/{id}', [AdminBookingController::class, 'showVerticalBooking']);
+        Route::put('vertical/{type}/{id}/status', [AdminBookingController::class, 'updateVerticalBookingStatus']);
         Route::get('/', [AdminBookingController::class, 'index']);
         Route::get('{id}', [AdminBookingController::class, 'show']);
         Route::put('{id}/status', [AdminBookingController::class, 'updateStatus']);
@@ -310,6 +313,7 @@ Route::prefix('admin')->middleware(['auth:api', 'user.type:admin'])->group(funct
         Route::post('sync', [AdminPropertyController::class, 'syncFromAPIs']);
         Route::get('{id}', [AdminPropertyController::class, 'show']);
         Route::put('{id}', [AdminPropertyController::class, 'update']);
+        Route::post('upload-image', [AdminPropertyController::class, 'uploadImage']);
         Route::put('{id}/status', [AdminPropertyController::class, 'updateStatus']);
         Route::delete('{id}', [AdminPropertyController::class, 'destroy']);
 

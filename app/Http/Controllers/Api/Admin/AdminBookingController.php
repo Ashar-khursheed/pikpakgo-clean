@@ -262,4 +262,96 @@ class AdminBookingController extends Controller
 
         return response()->stream($callback, 200, $headers);
     }
+
+    /**
+     * List all bookings for a specific vertical (Flights, Cars, Experiences, Transfers)
+     */
+    public function listVerticalBookings(Request $request, $type)
+    {
+        $modelClass = $this->getVerticalModelClass($type);
+        if (!$modelClass) {
+            return response()->json(['success' => false, 'message' => 'Invalid vertical type'], 200);
+        }
+
+        $query = $modelClass::with('user:id,first_name,last_name,email');
+
+        if ($request->has('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->has('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('booking_reference', 'like', "%{$search}%");
+            });
+        }
+
+        $perPage = min((int) $request->get('per_page', 20), 100);
+        $bookings = $query->orderBy('created_at', 'desc')->paginate($perPage);
+
+        return response()->json(['success' => true, 'data' => $bookings]);
+    }
+
+    /**
+     * Show single vertical booking detail
+     */
+    public function showVerticalBooking($type, $id)
+    {
+        $modelClass = $this->getVerticalModelClass($type);
+        if (!$modelClass) {
+            return response()->json(['success' => false, 'message' => 'Invalid vertical type'], 200);
+        }
+
+        $booking = $modelClass::with('user:id,first_name,last_name,email,phone')->findOrFail($id);
+        return response()->json(['success' => true, 'data' => $booking]);
+    }
+
+    /**
+     * Update status for a specific vertical booking
+     */
+    public function updateVerticalBookingStatus(Request $request, $type, $id)
+    {
+        $modelClass = $this->getVerticalModelClass($type);
+        if (!$modelClass) {
+            return response()->json(['success' => false, 'message' => 'Invalid vertical type'], 200);
+        }
+
+        $booking = $modelClass::findOrFail($id);
+        $validated = $request->validate([
+            'status' => 'required|string|in:pending,confirmed,cancelled,completed,no_show,rejected',
+        ]);
+
+        $booking->update([
+            'status' => $validated['status']
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Booking status updated successfully',
+            'data' => $booking->fresh()
+        ]);
+    }
+
+    /**
+     * Helper to map type slug to Model class
+     */
+    protected function getVerticalModelClass($type)
+    {
+        switch (strtolower($type)) {
+            case 'flights':
+            case 'flight':
+                return \App\Models\FlightBooking::class;
+            case 'cars':
+            case 'car':
+                return \App\Models\CarBooking::class;
+            case 'experiences':
+            case 'experience':
+                return \App\Models\ExperienceBooking::class;
+            case 'transfers':
+            case 'transfer':
+                return \App\Models\TransferBooking::class;
+            default:
+                return null;
+        }
+    }
 }

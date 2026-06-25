@@ -496,6 +496,28 @@ class AdminPropertyController extends Controller
     }
 
     /**
+     * Upload an image file and return its URL
+     */
+    public function uploadImage(Request $request)
+    {
+        $request->validate([
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
+        ]);
+
+        if ($request->hasFile('image')) {
+            $path = $this->handleFileUpload($request->file('image'), 'properties');
+            
+            // Return 200 with success format
+            return response()->json([
+                'success' => true,
+                'url' => asset($path)
+            ]);
+        }
+
+        return response()->json(['success' => false, 'message' => 'No image file found'], 200);
+    }
+
+    /**
      * Helper to save property to DB from OwnerRez listing index item.
      * Real OwnerRez items use listingExternalId (not id/property_id).
      */
