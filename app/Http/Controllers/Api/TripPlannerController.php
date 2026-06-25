@@ -82,7 +82,7 @@ class TripPlannerController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Itinerary generation controller error: ' . $e->getMessage());
-            return response()->json(['success' => false, 'message' => 'Failed to generate itinerary.'], 500);
+            return response()->json(['success' => false, 'message' => 'Failed to generate itinerary: ' . $e->getMessage()], 200);
         }
     }
 
@@ -138,7 +138,7 @@ class TripPlannerController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Save itinerary error: ' . $e->getMessage());
-            return response()->json(['success' => false, 'message' => 'Failed to save itinerary.'], 500);
+            return response()->json(['success' => false, 'message' => 'Failed to save itinerary: ' . $e->getMessage()], 200);
         }
     }
 
@@ -153,15 +153,20 @@ class TripPlannerController extends Controller
      */
     public function listItineraries()
     {
-        $itineraries = Itinerary::where('user_id', auth()->id())
-            ->withCount('items')
-            ->orderBy('created_at', 'desc')
-            ->get();
+        try {
+            $itineraries = Itinerary::where('user_id', auth()->id())
+                ->withCount('items')
+                ->orderBy('created_at', 'desc')
+                ->get();
 
-        return response()->json([
-            'success' => true,
-            'data' => $itineraries
-        ]);
+            return response()->json([
+                'success' => true,
+                'data' => $itineraries
+            ]);
+        } catch (\Exception $e) {
+            Log::error('List itineraries error: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to retrieve itineraries: ' . $e->getMessage()], 200);
+        }
     }
 
     /**
@@ -187,7 +192,7 @@ class TripPlannerController extends Controller
                 'data' => $itinerary
             ]);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Itinerary not found.'], 404);
+            return response()->json(['success' => false, 'message' => 'Itinerary not found: ' . $e->getMessage()], 200);
         }
     }
 
@@ -241,7 +246,7 @@ class TripPlannerController extends Controller
             ], 201);
 
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Failed to add item to itinerary.'], 500);
+            return response()->json(['success' => false, 'message' => 'Failed to add item to itinerary: ' . $e->getMessage()], 200);
         }
     }
 
@@ -408,7 +413,7 @@ class TripPlannerController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Itinerary checkout error: ' . $e->getMessage());
-            return response()->json(['success' => false, 'message' => 'Checkout failed.'], 500);
+            return response()->json(['success' => false, 'message' => 'Checkout failed: ' . $e->getMessage()], 200);
         }
     }
 }

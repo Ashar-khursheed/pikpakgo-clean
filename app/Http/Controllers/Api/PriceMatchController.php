@@ -88,8 +88,8 @@ class PriceMatchController extends Controller
             Log::error('Price match claim submission error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to submit price match claim.'
-            ], 500);
+                'message' => 'Failed to submit price match claim: ' . $e->getMessage()
+            ], 200);
         }
     }
 
@@ -105,18 +105,26 @@ class PriceMatchController extends Controller
      */
     public function adminListClaims(Request $request)
     {
-        $query = PriceMatchClaim::with(['user:id,first_name,last_name,email', 'booking']);
+        try {
+            $query = PriceMatchClaim::with(['user:id,first_name,last_name,email', 'booking']);
 
-        if ($request->has('status')) {
-            $query->where('status', $request->status);
+            if ($request->has('status')) {
+                $query->where('status', $request->status);
+            }
+
+            $claims = $query->orderBy('created_at', 'desc')->paginate(20);
+
+            return response()->json([
+                'success' => true,
+                'data' => $claims
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Price match claims list error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve price match claims: ' . $e->getMessage()
+            ], 200);
         }
-
-        $claims = $query->orderBy('created_at', 'desc')->paginate(20);
-
-        return response()->json([
-            'success' => true,
-            'data' => $claims
-        ]);
     }
 
     /**
@@ -265,8 +273,8 @@ class PriceMatchController extends Controller
             Log::error('Price match claim verification error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to verify price match claim.'
-            ], 500);
+                'message' => 'Failed to verify price match claim: ' . $e->getMessage()
+            ], 200);
         }
     }
 }

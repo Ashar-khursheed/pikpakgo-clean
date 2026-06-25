@@ -319,20 +319,28 @@ class ProfileController extends Controller
      */
     public function getRewardsStatus(\App\Services\RewardService $rewardService)
     {
-        $userId = auth()->id();
-        $balance = $rewardService->getUserPointsBalance($userId);
-        $tier = $rewardService->determineUserTier($userId);
+        try {
+            $userId = auth()->id();
+            $balance = $rewardService->getUserPointsBalance($userId);
+            $tier = $rewardService->determineUserTier($userId);
 
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'points_balance' => $balance,
-                'current_tier' => $tier,
-                'ledger' => \App\Models\RewardLedger::where('user_id', $userId)
-                    ->orderBy('created_at', 'desc')
-                    ->limit(50)
-                    ->get()
-            ]
-        ]);
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'points_balance' => $balance,
+                    'current_tier' => $tier,
+                    'ledger' => \App\Models\RewardLedger::where('user_id', $userId)
+                        ->orderBy('created_at', 'desc')
+                        ->limit(50)
+                        ->get()
+                ]
+            ]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Rewards status error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve rewards status: ' . $e->getMessage()
+            ], 200);
+        }
     }
 }

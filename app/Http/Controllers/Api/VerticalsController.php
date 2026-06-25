@@ -40,66 +40,71 @@ class VerticalsController extends Controller
      */
     public function searchFlights(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'origin' => 'required|string|size:3',
-            'destination' => 'required|string|size:3',
-            'departure_date' => 'required|date|after_or_equal:today',
-            'return_date' => 'nullable|date|after:departure_date',
-            'passengers' => 'nullable|integer|min:1',
-        ]);
+        try {
+            $validator = Validator::make($request->all(), [
+                'origin' => 'required|string|size:3',
+                'destination' => 'required|string|size:3',
+                'departure_date' => 'required|date|after_or_equal:today',
+                'return_date' => 'nullable|date|after:departure_date',
+                'passengers' => 'nullable|integer|min:1',
+            ]);
 
-        if ($validator->fails()) {
-            return response()->json(['success' => false, 'errors' => $validator->errors()], 400);
-        }
+            if ($validator->fails()) {
+                return response()->json(['success' => false, 'errors' => $validator->errors()], 400);
+            }
 
-        $airlines = ['Delta Air Lines', 'United Airlines', 'American Airlines', 'JetBlue', 'Spirit Airlines'];
-        $airports = [
-            'JFK' => 'John F. Kennedy International Airport',
-            'LAX' => 'Los Angeles International Airport',
-            'MIA' => 'Miami International Airport',
-            'SFO' => 'San Francisco International Airport',
-            'ORD' => 'O\'Hare International Airport',
-        ];
-
-        $flights = [];
-        $passengers = $request->passengers ?? 1;
-
-        for ($i = 1; $i <= 5; $i++) {
-            $basePrice = 150 + ($i * 65);
-            $airline = $airlines[$i - 1];
-            $departureTime = \Carbon\Carbon::parse($request->departure_date)->addHours(6 + ($i * 2));
-            $arrivalTime = $departureTime->copy()->addHours(3)->addMinutes($i * 15);
-
-            $flights[] = [
-                'id' => 'FL-' . Str::random(8),
-                'airline' => $airline,
-                'flight_number' => $airline[0] . $airline[1] . '-' . (100 + $i * 47),
-                'departure' => [
-                    'code' => strtoupper($request->origin),
-                    'airport' => $airports[strtoupper($request->origin)] ?? 'Airport Name',
-                    'time' => $departureTime->toDateTimeString(),
-                ],
-                'arrival' => [
-                    'code' => strtoupper($request->destination),
-                    'airport' => $airports[strtoupper($request->destination)] ?? 'Airport Name',
-                    'time' => $arrivalTime->toDateTimeString(),
-                ],
-                'stops' => $i % 3 === 0 ? 1 : 0,
-                'class' => 'Economy',
-                'pricing' => [
-                    'base_fare' => $basePrice,
-                    'taxes' => $basePrice * 0.15,
-                    'total_price' => ($basePrice * 1.15) * $passengers,
-                    'currency' => 'USD',
-                ]
+            $airlines = ['Delta Air Lines', 'United Airlines', 'American Airlines', 'JetBlue', 'Spirit Airlines'];
+            $airports = [
+                'JFK' => 'John F. Kennedy International Airport',
+                'LAX' => 'Los Angeles International Airport',
+                'MIA' => 'Miami International Airport',
+                'SFO' => 'San Francisco International Airport',
+                'ORD' => 'O\'Hare International Airport',
             ];
-        }
 
-        return response()->json([
-            'success' => true,
-            'data' => $flights,
-            'search_parameters' => $request->all()
-        ]);
+            $flights = [];
+            $passengers = $request->passengers ?? 1;
+
+            for ($i = 1; $i <= 5; $i++) {
+                $basePrice = 150 + ($i * 65);
+                $airline = $airlines[$i - 1];
+                $departureTime = \Carbon\Carbon::parse($request->departure_date)->addHours(6 + ($i * 2));
+                $arrivalTime = $departureTime->copy()->addHours(3)->addMinutes($i * 15);
+
+                $flights[] = [
+                    'id' => 'FL-' . Str::random(8),
+                    'airline' => $airline,
+                    'flight_number' => $airline[0] . $airline[1] . '-' . (100 + $i * 47),
+                    'departure' => [
+                        'code' => strtoupper($request->origin),
+                        'airport' => $airports[strtoupper($request->origin)] ?? 'Airport Name',
+                        'time' => $departureTime->toDateTimeString(),
+                    ],
+                    'arrival' => [
+                        'code' => strtoupper($request->destination),
+                        'airport' => $airports[strtoupper($request->destination)] ?? 'Airport Name',
+                        'time' => $arrivalTime->toDateTimeString(),
+                    ],
+                    'stops' => $i % 3 === 0 ? 1 : 0,
+                    'class' => 'Economy',
+                    'pricing' => [
+                        'base_fare' => $basePrice,
+                        'taxes' => $basePrice * 0.15,
+                        'total_price' => ($basePrice * 1.15) * $passengers,
+                        'currency' => 'USD',
+                    ]
+                ];
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $flights,
+                'search_parameters' => $request->all()
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Flight search error: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Flight search failed: ' . $e->getMessage()], 200);
+        }
     }
 
     /**
@@ -188,7 +193,7 @@ class VerticalsController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Flight booking error: ' . $e->getMessage());
-            return response()->json(['success' => false, 'message' => 'Flight booking failed.'], 500);
+            return response()->json(['success' => false, 'message' => 'Flight booking failed: ' . $e->getMessage()], 200);
         }
     }
 
@@ -210,56 +215,61 @@ class VerticalsController extends Controller
      */
     public function searchCars(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'location' => 'required|string',
-            'pickup_date' => 'required|date|after_or_equal:today',
-            'dropoff_date' => 'required|date|after:pickup_date',
-        ]);
+        try {
+            $validator = Validator::make($request->all(), [
+                'location' => 'required|string',
+                'pickup_date' => 'required|date|after_or_equal:today',
+                'dropoff_date' => 'required|date|after:pickup_date',
+            ]);
 
-        if ($validator->fails()) {
-            return response()->json(['success' => false, 'errors' => $validator->errors()], 400);
-        }
+            if ($validator->fails()) {
+                return response()->json(['success' => false, 'errors' => $validator->errors()], 400);
+            }
 
-        $companies = ['Hertz', 'Enterprise', 'Avis', 'Budget', 'Sixt'];
-        $models = [
-            'Economy' => 'Chevrolet Spark',
-            'Compact' => 'Nissan Versa',
-            'Intermediate' => 'Hyundai Elantra',
-            'Fullsize' => 'Toyota Camry',
-            'SUV' => 'Ford Explorer',
-        ];
-
-        $cars = [];
-        $days = \Carbon\Carbon::parse($request->pickup_date)->diffInDays(\Carbon\Carbon::parse($request->dropoff_date));
-
-        $idx = 0;
-        foreach ($models as $class => $model) {
-            $company = $companies[$idx % 5];
-            $dailyRate = 35 + ($idx * 12);
-            $idx++;
-
-            $cars[] = [
-                'id' => 'CAR-' . Str::random(8),
-                'rental_company' => $company,
-                'car_model' => $model,
-                'car_class' => $class,
-                'pickup_location' => $request->location,
-                'dropoff_location' => $request->location,
-                'transmission' => 'Automatic',
-                'mileage' => 'Unlimited',
-                'pricing' => [
-                    'daily_rate' => $dailyRate,
-                    'total_price' => $dailyRate * $days,
-                    'currency' => 'USD',
-                ]
+            $companies = ['Hertz', 'Enterprise', 'Avis', 'Budget', 'Sixt'];
+            $models = [
+                'Economy' => 'Chevrolet Spark',
+                'Compact' => 'Nissan Versa',
+                'Intermediate' => 'Hyundai Elantra',
+                'Fullsize' => 'Toyota Camry',
+                'SUV' => 'Ford Explorer',
             ];
-        }
 
-        return response()->json([
-            'success' => true,
-            'data' => $cars,
-            'search_parameters' => $request->all()
-        ]);
+            $cars = [];
+            $days = \Carbon\Carbon::parse($request->pickup_date)->diffInDays(\Carbon\Carbon::parse($request->dropoff_date));
+
+            $idx = 0;
+            foreach ($models as $class => $model) {
+                $company = $companies[$idx % 5];
+                $dailyRate = 35 + ($idx * 12);
+                $idx++;
+
+                $cars[] = [
+                    'id' => 'CAR-' . Str::random(8),
+                    'rental_company' => $company,
+                    'car_model' => $model,
+                    'car_class' => $class,
+                    'pickup_location' => $request->location,
+                    'dropoff_location' => $request->location,
+                    'transmission' => 'Automatic',
+                    'mileage' => 'Unlimited',
+                    'pricing' => [
+                        'daily_rate' => $dailyRate,
+                        'total_price' => $dailyRate * $days,
+                        'currency' => 'USD',
+                    ]
+                ];
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $cars,
+                'search_parameters' => $request->all()
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Car search error: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Car search failed: ' . $e->getMessage()], 200);
+        }
     }
 
     /**
@@ -350,7 +360,7 @@ class VerticalsController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Car booking error: ' . $e->getMessage());
-            return response()->json(['success' => false, 'message' => 'Car rental booking failed.'], 500);
+            return response()->json(['success' => false, 'message' => 'Car rental booking failed: ' . $e->getMessage()], 200);
         }
     }
 
@@ -371,59 +381,64 @@ class VerticalsController extends Controller
      */
     public function searchExperiences(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'location' => 'required|string',
-            'date' => 'nullable|date|after_or_equal:today',
-        ]);
+        try {
+            $validator = Validator::make($request->all(), [
+                'location' => 'required|string',
+                'date' => 'nullable|date|after_or_equal:today',
+            ]);
 
-        if ($validator->fails()) {
-            return response()->json(['success' => false, 'errors' => $validator->errors()], 400);
+            if ($validator->fails()) {
+                return response()->json(['success' => false, 'errors' => $validator->errors()], 400);
+            }
+
+            $loc = strtolower($request->location);
+            $options = [];
+
+            if (str_contains($loc, 'orland') || str_contains($loc, 'disney')) {
+                $options = [
+                    ['name' => 'Magic Kingdom Disney Pass', 'category' => 'theme_park', 'price' => 125],
+                    ['name' => 'Universal Studios 1-Day Ticket', 'category' => 'theme_park', 'price' => 119],
+                    ['name' => 'Everglades Airboat Tour', 'category' => 'experience', 'price' => 45],
+                ];
+            } elseif (str_contains($loc, 'miami')) {
+                $options = [
+                    ['name' => 'Miami Jet Ski Rental', 'category' => 'experience', 'price' => 85],
+                    ['name' => 'Millionaire\'s Row Cruise', 'category' => 'experience', 'price' => 30],
+                    ['name' => 'Key West Day Trip from Miami', 'category' => 'experience', 'price' => 69],
+                ];
+            } else {
+                $options = [
+                    ['name' => 'City Hop-on Hop-off Bus Tour', 'category' => 'experience', 'price' => 39],
+                    ['name' => 'Guided Historic Walking Tour', 'category' => 'experience', 'price' => 25],
+                    ['name' => 'Local Food & Wine Tasting', 'category' => 'experience', 'price' => 75],
+                ];
+            }
+
+            $data = [];
+            foreach ($options as $idx => $opt) {
+                $data[] = [
+                    'id' => 'EXP-' . Str::random(8),
+                    'name' => $opt['name'],
+                    'category' => $opt['category'],
+                    'location' => $request->location,
+                    'duration' => $opt['category'] === 'theme_park' ? 'Full Day' : '2-4 Hours',
+                    'rating' => 4.5 + ($idx * 0.1),
+                    'pricing' => [
+                        'price_per_ticket' => $opt['price'],
+                        'currency' => 'USD',
+                    ]
+                ];
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $data,
+                'search_parameters' => $request->all()
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Experiences search error: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Experiences search failed: ' . $e->getMessage()], 200);
         }
-
-        $loc = strtolower($request->location);
-        $options = [];
-
-        if (str_contains($loc, 'orland') || str_contains($loc, 'disney')) {
-            $options = [
-                ['name' => 'Magic Kingdom Disney Pass', 'category' => 'theme_park', 'price' => 125],
-                ['name' => 'Universal Studios 1-Day Ticket', 'category' => 'theme_park', 'price' => 119],
-                ['name' => 'Everglades Airboat Tour', 'category' => 'experience', 'price' => 45],
-            ];
-        } elseif (str_contains($loc, 'miami')) {
-            $options = [
-                ['name' => 'Miami Jet Ski Rental', 'category' => 'experience', 'price' => 85],
-                ['name' => 'Millionaire\'s Row Cruise', 'category' => 'experience', 'price' => 30],
-                ['name' => 'Key West Day Trip from Miami', 'category' => 'experience', 'price' => 69],
-            ];
-        } else {
-            $options = [
-                ['name' => 'City Hop-on Hop-off Bus Tour', 'category' => 'experience', 'price' => 39],
-                ['name' => 'Guided Historic Walking Tour', 'category' => 'experience', 'price' => 25],
-                ['name' => 'Local Food & Wine Tasting', 'category' => 'experience', 'price' => 75],
-            ];
-        }
-
-        $data = [];
-        foreach ($options as $idx => $opt) {
-            $data[] = [
-                'id' => 'EXP-' . Str::random(8),
-                'name' => $opt['name'],
-                'category' => $opt['category'],
-                'location' => $request->location,
-                'duration' => $opt['category'] === 'theme_park' ? 'Full Day' : '2-4 Hours',
-                'rating' => 4.5 + ($idx * 0.1),
-                'pricing' => [
-                    'price_per_ticket' => $opt['price'],
-                    'currency' => 'USD',
-                ]
-            ];
-        }
-
-        return response()->json([
-            'success' => true,
-            'data' => $data,
-            'search_parameters' => $request->all()
-        ]);
     }
 
     /**
@@ -501,7 +516,7 @@ class VerticalsController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Experience booking error: ' . $e->getMessage());
-            return response()->json(['success' => false, 'message' => 'Experience booking failed.'], 500);
+            return response()->json(['success' => false, 'message' => 'Experience booking failed: ' . $e->getMessage()], 200);
         }
     }
 
@@ -523,57 +538,62 @@ class VerticalsController extends Controller
      */
     public function searchTransfers(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'pickup_location' => 'required|string',
-            'dropoff_location' => 'required|string',
-            'date' => 'required|date|after_or_equal:today',
-        ]);
+        try {
+            $validator = Validator::make($request->all(), [
+                'pickup_location' => 'required|string',
+                'dropoff_location' => 'required|string',
+                'date' => 'required|date|after_or_equal:today',
+            ]);
 
-        if ($validator->fails()) {
-            return response()->json(['success' => false, 'errors' => $validator->errors()], 400);
+            if ($validator->fails()) {
+                return response()->json(['success' => false, 'errors' => $validator->errors()], 400);
+            }
+
+            $transfers = [
+                [
+                    'id' => 'TRN-' . Str::random(8),
+                    'transfer_type' => 'shared_shuttle',
+                    'name' => 'Shared Airport Shuttle',
+                    'vehicle' => 'Ford Transit or similar',
+                    'capacity' => 'Up to 12 passengers',
+                    'pricing' => [
+                        'price' => 18.00,
+                        'currency' => 'USD',
+                    ]
+                ],
+                [
+                    'id' => 'TRN-' . Str::random(8),
+                    'transfer_type' => 'private_sedan',
+                    'name' => 'Private Sedan Transfer',
+                    'vehicle' => 'Toyota Camry or similar',
+                    'capacity' => 'Up to 3 passengers',
+                    'pricing' => [
+                        'price' => 55.00,
+                        'currency' => 'USD',
+                    ]
+                ],
+                [
+                    'id' => 'TRN-' . Str::random(8),
+                    'transfer_type' => 'private_suv',
+                    'name' => 'Private Luxury SUV',
+                    'vehicle' => 'Cadillac Escalade or similar',
+                    'capacity' => 'Up to 6 passengers',
+                    'pricing' => [
+                        'price' => 95.00,
+                        'currency' => 'USD',
+                    ]
+                ]
+            ];
+
+            return response()->json([
+                'success' => true,
+                'data' => $transfers,
+                'search_parameters' => $request->all()
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Transfers search error: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Transfers search failed: ' . $e->getMessage()], 200);
         }
-
-        $transfers = [
-            [
-                'id' => 'TRN-' . Str::random(8),
-                'transfer_type' => 'shared_shuttle',
-                'name' => 'Shared Airport Shuttle',
-                'vehicle' => 'Ford Transit or similar',
-                'capacity' => 'Up to 12 passengers',
-                'pricing' => [
-                    'price' => 18.00,
-                    'currency' => 'USD',
-                ]
-            ],
-            [
-                'id' => 'TRN-' . Str::random(8),
-                'transfer_type' => 'private_sedan',
-                'name' => 'Private Sedan Transfer',
-                'vehicle' => 'Toyota Camry or similar',
-                'capacity' => 'Up to 3 passengers',
-                'pricing' => [
-                    'price' => 55.00,
-                    'currency' => 'USD',
-                ]
-            ],
-            [
-                'id' => 'TRN-' . Str::random(8),
-                'transfer_type' => 'private_suv',
-                'name' => 'Private Luxury SUV',
-                'vehicle' => 'Cadillac Escalade or similar',
-                'capacity' => 'Up to 6 passengers',
-                'pricing' => [
-                    'price' => 95.00,
-                    'currency' => 'USD',
-                ]
-            ]
-        ];
-
-        return response()->json([
-            'success' => true,
-            'data' => $transfers,
-            'search_parameters' => $request->all()
-        ]);
     }
 
     /**
@@ -648,7 +668,7 @@ class VerticalsController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Transfer booking error: ' . $e->getMessage());
-            return response()->json(['success' => false, 'message' => 'Ground transfer booking failed.'], 500);
+            return response()->json(['success' => false, 'message' => 'Ground transfer booking failed: ' . $e->getMessage()], 200);
         }
     }
 }
