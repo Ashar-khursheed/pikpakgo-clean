@@ -32,6 +32,7 @@ use App\Http\Controllers\Api\Admin\PricingMarkupController;
 use App\Http\Controllers\Api\Admin\RoleController;
 use App\Http\Controllers\Api\Admin\PermissionController;
 use App\Http\Controllers\Api\Admin\PropertyApprovalController;
+use App\Http\Controllers\Api\Admin\AdminVerticalsController;
 use App\Http\Controllers\Api\OwnerRezController;
 use App\Http\Controllers\Api\HotelbedsController;
 
@@ -331,6 +332,33 @@ Route::prefix('admin')->middleware(['auth:api', 'user.type:admin'])->group(funct
         Route::get('{propertyId}/fees/preview', [AdminPropertyFeesController::class, 'preview']);
         Route::put('{propertyId}/fees/{feeId}', [AdminPropertyFeesController::class, 'update']);
         Route::delete('{propertyId}/fees/{feeId}', [AdminPropertyFeesController::class, 'destroy']);
+    });
+
+    // Verticals Inventory Management (Flights, Cars, Experiences, Transfers)
+    Route::prefix('verticals')->group(function () {
+        // Flights CRUD
+        Route::get('flights', [AdminVerticalsController::class, 'indexFlights']);
+        Route::post('flights', [AdminVerticalsController::class, 'storeFlight']);
+        Route::put('flights/{id}', [AdminVerticalsController::class, 'updateFlight']);
+        Route::delete('flights/{id}', [AdminVerticalsController::class, 'destroyFlight']);
+
+        // Cars CRUD
+        Route::get('cars', [AdminVerticalsController::class, 'indexCars']);
+        Route::post('cars', [AdminVerticalsController::class, 'storeCar']);
+        Route::put('cars/{id}', [AdminVerticalsController::class, 'updateCar']);
+        Route::delete('cars/{id}', [AdminVerticalsController::class, 'destroyCar']);
+
+        // Experiences CRUD
+        Route::get('experiences', [AdminVerticalsController::class, 'indexExperiences']);
+        Route::post('experiences', [AdminVerticalsController::class, 'storeExperience']);
+        Route::put('experiences/{id}', [AdminVerticalsController::class, 'updateExperience']);
+        Route::delete('experiences/{id}', [AdminVerticalsController::class, 'destroyExperience']);
+
+        // Transfers CRUD
+        Route::get('transfers', [AdminVerticalsController::class, 'indexTransfers']);
+        Route::post('transfers', [AdminVerticalsController::class, 'storeTransfer']);
+        Route::put('transfers/{id}', [AdminVerticalsController::class, 'updateTransfer']);
+        Route::delete('transfers/{id}', [AdminVerticalsController::class, 'destroyTransfer']);
     });
 
     // User Management
