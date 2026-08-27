@@ -48,7 +48,7 @@ class OwnerRezService
     // ---------------------------------------------------------------
     // Listing Index — GET /haapi/haxml/{advertiser_id}/listingindex
     // ---------------------------------------------------------------
-    public function getListingIndex(): array
+    public function getListingIndex(bool $forceRefresh = false): array
     {
         if (env('MOCK_SERVICES', false)) {
             return $this->getMockProperties();
@@ -56,6 +56,10 @@ class OwnerRezService
 
         if (!$this->advertiserId) {
             return ['success' => false, 'message' => 'Advertiser ID not configured.'];
+        }
+
+        if ($forceRefresh) {
+            Cache::forget('ownerrez_listing_index');
         }
 
         try {
@@ -139,7 +143,7 @@ class OwnerRezService
     // ---------------------------------------------------------------
     // Property Details — GET /haapi/haxml/{advertiser_id}/listing/{id}
     // ---------------------------------------------------------------
-    public function getPropertyDetails(string $propertyId): array
+    public function getPropertyDetails(string $propertyId, bool $forceRefresh = false): array
     {
         if (env('MOCK_SERVICES', false)) {
             return $this->getMockPropertyDetails($propertyId);
@@ -147,6 +151,10 @@ class OwnerRezService
 
         if (!$this->advertiserId) {
             return ['success' => false, 'message' => 'Advertiser ID not configured.'];
+        }
+
+        if ($forceRefresh) {
+            Cache::forget("ownerrez_property_{$propertyId}");
         }
 
         try {

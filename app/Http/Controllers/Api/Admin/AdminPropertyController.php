@@ -102,8 +102,8 @@ class AdminPropertyController extends Controller
 
         try {
             if ($provider === 'ownerrez') {
-                // Step 1: Get listing index (IDs only)
-                $indexResponse = $this->ownerrezService->getListingIndex();
+                // Step 1: Get listing index (IDs only) with force refresh
+                $indexResponse = $this->ownerrezService->getListingIndex(true);
 
                 if ($indexResponse['success']) {
                     $items = $indexResponse['data']['items'] ?? [];
@@ -112,8 +112,8 @@ class AdminPropertyController extends Controller
                         $listingId = $item['listingExternalId'] ?? null;
                         if (!$listingId) continue;
 
-                        // Step 2: Fetch full listing details for each ID
-                        $detail = $this->ownerrezService->getPropertyDetails($listingId);
+                        // Step 2: Fetch full listing details for each ID with force refresh
+                        $detail = $this->ownerrezService->getPropertyDetails($listingId, true);
 
                         if ($detail['success'] && !empty($detail['data'])) {
                             $raw = $detail['data'];
